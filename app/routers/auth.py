@@ -26,7 +26,8 @@ def login(datos: LoginRequest, response: Response, db: Session = Depends(get_db)
                      expira=datetime.now(UTC) + timedelta(hours=DURACION_SESION_HORAS))
     db.add(sesion)
     db.commit()
-    response.set_cookie(COOKIE_SESION, sesion.id, httponly=True, samesite="lax", secure=True)
+    response.set_cookie(COOKIE_SESION, sesion.id, httponly=True, samesite="lax", secure=True,
+                         max_age=DURACION_SESION_HORAS * 3600)
 
 
 @router.post("/logout", status_code=204)
