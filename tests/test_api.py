@@ -26,3 +26,33 @@ def test_flujo_login_yo_logout(db, usuario_test):
     assert cliente.get("/api/auth/yo").status_code == 401
 
     app.dependency_overrides.clear()
+
+
+def test_negocio_id_rechazado_en_body_y_query(db):
+    app.dependency_overrides[get_db] = lambda: db
+    cliente = TestClient(app, base_url="https://testserver")
+
+    resp_body = cliente.post("/api/movimientos", json={"negocio_id": 1, "monto": 100})
+    assert resp_body.status_code == 400
+    assert resp_body.json()["error"] == "negocio_id_no_permitido"
+
+    resp_query = cliente.get("/api/cajas?negocio_id=1")
+    assert resp_query.status_code == 400
+    assert resp_query.json()["error"] == "negocio_id_no_permitido"
+
+    app.dependency_overrides.clear()
+
+
+def test_formato_422_datos_invalidos(db, usuario_test):
+    negocio, usuario, password = usuario_test
+    app.dependency_overrides[get_db] = lambda: db
+    cliente = TestClient(app, base_url="https://testserver")
+
+    resp = cliente.post("/api/auth/login", json={"usuario": usuario.usuario, "password": ["no-debe-filtrarse"]})
+    assert resp.status_code == 422
+    cuerpo = resp.json()
+    assert cuerpo["error"] == "datos_invalidos"
+    assert isinstance(cuerpo["detalle"], str)
+    assert "no-debe-filtrarse" not in resp.text
+
+    app.dependency_overrides.clear()

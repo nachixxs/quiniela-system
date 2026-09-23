@@ -11,6 +11,11 @@ COOKIE_SESION = "sesion"
 DURACION_SESION_HORAS = 12
 
 
+def no_implementado() -> HTTPException:
+    """Stub compartido: lo conecta la 3.A3 a la lógica de dominio (backend-dev)."""
+    return HTTPException(501, {"error": "no_implementado", "detalle": "Endpoint pendiente de conectar."})
+
+
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
