@@ -1,0 +1,2818 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "FastAPI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_auth_logout_post",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/yo": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Yo",
+        "operationId": "yo_api_auth_yo_get",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Yo Api Auth Yo Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dia/actual": {
+      "get": {
+        "tags": [
+          "dia"
+        ],
+        "summary": "Dia Actual",
+        "operationId": "dia_actual_api_dia_actual_get",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaActualOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dia/abrir": {
+      "post": {
+        "tags": [
+          "dia"
+        ],
+        "summary": "Dia Abrir",
+        "operationId": "dia_abrir_api_dia_abrir_post",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaConTurnos"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dia/{dia_id}/cerrar": {
+      "post": {
+        "tags": [
+          "dia"
+        ],
+        "summary": "Dia Cerrar",
+        "operationId": "dia_cerrar_api_dia__dia_id__cerrar_post",
+        "parameters": [
+          {
+            "name": "dia_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dia Id"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/turno/{turno_id}/ticket": {
+      "post": {
+        "tags": [
+          "dia"
+        ],
+        "summary": "Turno Ticket",
+        "operationId": "turno_ticket_api_turno__turno_id__ticket_post",
+        "parameters": [
+          {
+            "name": "turno_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Turno Id"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/movimientos": {
+      "post": {
+        "tags": [
+          "movimientos"
+        ],
+        "summary": "Crear Movimiento",
+        "operationId": "crear_movimiento_api_movimientos_post",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovimientoCrear"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovimientoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "movimientos"
+        ],
+        "summary": "Listar Movimientos",
+        "operationId": "listar_movimientos_api_movimientos_get",
+        "parameters": [
+          {
+            "name": "turno_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Turno Id"
+            }
+          },
+          {
+            "name": "caja_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Caja Id"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "apuesta_quiniela",
+                    "venta_otro_juego",
+                    "fiado",
+                    "cobro_fiado",
+                    "cobro_subagente",
+                    "ingreso_del_dueno",
+                    "cobro_mercado_pago",
+                    "pago_premio",
+                    "pago_banco",
+                    "sueldo",
+                    "gasto",
+                    "retiro_dueno",
+                    "traspaso",
+                    "traspaso_boletas",
+                    "rendicion_boletas"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cliente Id"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hasta"
+            }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Pagina"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovimientosPagina"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/movimientos/{movimiento_id}/anular": {
+      "post": {
+        "tags": [
+          "movimientos"
+        ],
+        "summary": "Anular Movimiento",
+        "operationId": "anular_movimiento_api_movimientos__movimiento_id__anular_post",
+        "parameters": [
+          {
+            "name": "movimiento_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Movimiento Id"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnularRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovimientoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/traspaso": {
+      "post": {
+        "tags": [
+          "caja"
+        ],
+        "summary": "Traspaso",
+        "operationId": "traspaso_api_traspaso_post",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TraspasoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Saldo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/arqueo": {
+      "post": {
+        "tags": [
+          "caja"
+        ],
+        "summary": "Arqueo",
+        "operationId": "arqueo_api_arqueo_post",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArqueoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArqueoOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rendicion": {
+      "post": {
+        "tags": [
+          "caja"
+        ],
+        "summary": "Rendicion",
+        "operationId": "rendicion_api_rendicion_post",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RendicionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RendicionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cajas": {
+      "get": {
+        "tags": [
+          "catalogos"
+        ],
+        "summary": "Listar Cajas",
+        "operationId": "listar_cajas_api_cajas_get",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CajaEstado"
+                  },
+                  "title": "Response Listar Cajas Api Cajas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/juegos": {
+      "get": {
+        "tags": [
+          "catalogos"
+        ],
+        "summary": "Listar Juegos",
+        "operationId": "listar_juegos_api_juegos_get",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JuegoOut"
+                  },
+                  "title": "Response Listar Juegos Api Juegos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clientes/deudores": {
+      "get": {
+        "tags": [
+          "catalogos"
+        ],
+        "summary": "Clientes Deudores",
+        "operationId": "clientes_deudores_api_clientes_deudores_get",
+        "parameters": [
+          {
+            "name": "orden",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "monto",
+                "antiguedad"
+              ],
+              "type": "string",
+              "default": "monto",
+              "title": "Orden"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeudorOut"
+                  },
+                  "title": "Response Clientes Deudores Api Clientes Deudores Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clientes": {
+      "get": {
+        "tags": [
+          "catalogos"
+        ],
+        "summary": "Buscar Clientes",
+        "operationId": "buscar_clientes_api_clientes_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClienteBusqueda"
+                  },
+                  "title": "Response Buscar Clientes Api Clientes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "catalogos"
+        ],
+        "summary": "Crear Cliente",
+        "operationId": "crear_cliente_api_clientes_post",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClienteCrear"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteBusqueda"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clientes/{cliente_id}": {
+      "get": {
+        "tags": [
+          "catalogos"
+        ],
+        "summary": "Detalle Cliente",
+        "operationId": "detalle_cliente_api_clientes__cliente_id__get",
+        "parameters": [
+          {
+            "name": "cliente_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cliente Id"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteDetalle"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reportes/dia/{fecha}": {
+      "get": {
+        "tags": [
+          "reportes"
+        ],
+        "summary": "Reporte Dia",
+        "operationId": "reporte_dia_api_reportes_dia__fecha__get",
+        "parameters": [
+          {
+            "name": "fecha",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Fecha"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteDia"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reportes/diferencias": {
+      "get": {
+        "tags": [
+          "reportes"
+        ],
+        "summary": "Reporte Diferencias",
+        "operationId": "reporte_diferencias_api_reportes_diferencias_get",
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hasta"
+            }
+          },
+          {
+            "name": "caja_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Caja Id"
+            }
+          },
+          {
+            "name": "turno",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "mañana",
+                    "noche"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Turno"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiferenciaItem"
+                  },
+                  "title": "Response Reporte Diferencias Api Reportes Diferencias Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reportes/mercado-pago": {
+      "get": {
+        "tags": [
+          "reportes"
+        ],
+        "summary": "Reporte Mercado Pago",
+        "operationId": "reporte_mercado_pago_api_reportes_mercado_pago_get",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteMercadoPago"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reportes/ventas-por-juego": {
+      "get": {
+        "tags": [
+          "reportes"
+        ],
+        "summary": "Reporte Ventas Por Juego",
+        "operationId": "reporte_ventas_por_juego_api_reportes_ventas_por_juego_get",
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hasta"
+            }
+          },
+          {
+            "name": "agrupar",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "dia",
+                "semana",
+                "mes"
+              ],
+              "type": "string",
+              "default": "dia",
+              "title": "Agrupar"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VentaJuegoItem"
+                  },
+                  "title": "Response Reporte Ventas Por Juego Api Reportes Ventas Por Juego Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reportes/rendiciones": {
+      "get": {
+        "tags": [
+          "reportes"
+        ],
+        "summary": "Reporte Rendiciones",
+        "operationId": "reporte_rendiciones_api_reportes_rendiciones_get",
+        "parameters": [
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Desde"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hasta"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RendicionItem"
+                  },
+                  "title": "Response Reporte Rendiciones Api Reportes Rendiciones Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/asistente": {
+      "post": {
+        "tags": [
+          "asistente"
+        ],
+        "summary": "Preguntar",
+        "operationId": "preguntar_api_asistente_post",
+        "parameters": [
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsistenteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsistenteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/salud": {
+      "get": {
+        "summary": "Salud",
+        "operationId": "salud_api_salud_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Salud Api Salud Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnularRequest": {
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "motivo"
+        ],
+        "title": "AnularRequest"
+      },
+      "ArqueoOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "efectivo_esperado": {
+            "type": "integer",
+            "title": "Efectivo Esperado"
+          },
+          "boletas_esperadas": {
+            "type": "integer",
+            "title": "Boletas Esperadas"
+          },
+          "diferencia_efectivo": {
+            "type": "integer",
+            "title": "Diferencia Efectivo"
+          },
+          "diferencia_boletas": {
+            "type": "integer",
+            "title": "Diferencia Boletas"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "cuadra",
+              "con_diferencia",
+              "explicada"
+            ],
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "efectivo_esperado",
+          "boletas_esperadas",
+          "diferencia_efectivo",
+          "diferencia_boletas",
+          "estado"
+        ],
+        "title": "ArqueoOut"
+      },
+      "ArqueoRequest": {
+        "properties": {
+          "caja_id": {
+            "type": "integer",
+            "title": "Caja Id"
+          },
+          "turno_id": {
+            "type": "integer",
+            "title": "Turno Id"
+          },
+          "efectivo_contado": {
+            "type": "integer",
+            "title": "Efectivo Contado"
+          },
+          "boletas_contadas": {
+            "type": "integer",
+            "title": "Boletas Contadas"
+          },
+          "nota": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota"
+          }
+        },
+        "type": "object",
+        "required": [
+          "caja_id",
+          "turno_id",
+          "efectivo_contado",
+          "boletas_contadas"
+        ],
+        "title": "ArqueoRequest"
+      },
+      "AsistenteOut": {
+        "properties": {
+          "respuesta": {
+            "type": "string",
+            "title": "Respuesta"
+          },
+          "tools_usadas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tools Usadas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "respuesta",
+          "tools_usadas"
+        ],
+        "title": "AsistenteOut"
+      },
+      "AsistenteRequest": {
+        "properties": {
+          "pregunta": {
+            "type": "string",
+            "title": "Pregunta"
+          },
+          "arqueo_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arqueo Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pregunta"
+        ],
+        "title": "AsistenteRequest"
+      },
+      "CajaEstado": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "operativa",
+              "central"
+            ],
+            "title": "Tipo"
+          },
+          "efectivo": {
+            "type": "integer",
+            "title": "Efectivo"
+          },
+          "boletas": {
+            "type": "integer",
+            "title": "Boletas"
+          },
+          "esperado": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Saldo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "tipo",
+          "efectivo",
+          "boletas"
+        ],
+        "title": "CajaEstado"
+      },
+      "ClienteBusqueda": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "saldo": {
+            "type": "integer",
+            "title": "Saldo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "saldo"
+        ],
+        "title": "ClienteBusqueda"
+      },
+      "ClienteCrear": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "alias": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alias"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre"
+        ],
+        "title": "ClienteCrear"
+      },
+      "ClienteDetalle": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "saldo": {
+            "type": "integer",
+            "title": "Saldo"
+          },
+          "movimientos": {
+            "items": {
+              "$ref": "#/components/schemas/MovimientoOut"
+            },
+            "type": "array",
+            "title": "Movimientos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "saldo",
+          "movimientos"
+        ],
+        "title": "ClienteDetalle"
+      },
+      "Desglose": {
+        "properties": {
+          "quiniela": {
+            "type": "integer",
+            "title": "Quiniela"
+          },
+          "otros_juegos": {
+            "type": "integer",
+            "title": "Otros Juegos"
+          },
+          "cobros": {
+            "type": "integer",
+            "title": "Cobros"
+          },
+          "fiados": {
+            "type": "integer",
+            "title": "Fiados"
+          },
+          "mercado_pago": {
+            "type": "integer",
+            "title": "Mercado Pago"
+          },
+          "premios": {
+            "type": "integer",
+            "title": "Premios"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quiniela",
+          "otros_juegos",
+          "cobros",
+          "fiados",
+          "mercado_pago",
+          "premios"
+        ],
+        "title": "Desglose"
+      },
+      "DeudorOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "saldo": {
+            "type": "integer",
+            "title": "Saldo"
+          },
+          "dias_deuda_mas_vieja": {
+            "type": "integer",
+            "title": "Dias Deuda Mas Vieja"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "saldo",
+          "dias_deuda_mas_vieja"
+        ],
+        "title": "DeudorOut"
+      },
+      "DiaActualOut": {
+        "properties": {
+          "dia": {
+            "$ref": "#/components/schemas/DiaOut"
+          },
+          "rendicion_pendiente": {
+            "type": "boolean",
+            "title": "Rendicion Pendiente"
+          },
+          "turnos": {
+            "items": {
+              "$ref": "#/components/schemas/TurnoOut"
+            },
+            "type": "array",
+            "title": "Turnos"
+          },
+          "cajas": {
+            "items": {
+              "$ref": "#/components/schemas/CajaEstado"
+            },
+            "type": "array",
+            "title": "Cajas"
+          },
+          "arqueos_pendientes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Arqueos Pendientes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dia",
+          "rendicion_pendiente",
+          "turnos",
+          "cajas",
+          "arqueos_pendientes"
+        ],
+        "title": "DiaActualOut"
+      },
+      "DiaConTurnos": {
+        "properties": {
+          "dia": {
+            "$ref": "#/components/schemas/DiaOut"
+          },
+          "turnos": {
+            "items": {
+              "$ref": "#/components/schemas/TurnoOut"
+            },
+            "type": "array",
+            "title": "Turnos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dia",
+          "turnos"
+        ],
+        "title": "DiaConTurnos"
+      },
+      "DiaOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado"
+            ],
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fecha",
+          "estado"
+        ],
+        "title": "DiaOut"
+      },
+      "DiferenciaItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "caja_id": {
+            "type": "integer",
+            "title": "Caja Id"
+          },
+          "turno_id": {
+            "type": "integer",
+            "title": "Turno Id"
+          },
+          "momento": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Momento"
+          },
+          "diferencia_efectivo": {
+            "type": "integer",
+            "title": "Diferencia Efectivo"
+          },
+          "diferencia_boletas": {
+            "type": "integer",
+            "title": "Diferencia Boletas"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "cuadra",
+              "con_diferencia",
+              "explicada"
+            ],
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "caja_id",
+          "turno_id",
+          "momento",
+          "diferencia_efectivo",
+          "diferencia_boletas",
+          "estado"
+        ],
+        "title": "DiferenciaItem"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JuegoMonto": {
+        "properties": {
+          "juego_id": {
+            "type": "integer",
+            "title": "Juego Id"
+          },
+          "monto": {
+            "type": "integer",
+            "title": "Monto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "juego_id",
+          "monto"
+        ],
+        "title": "JuegoMonto"
+      },
+      "JuegoOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "title": "JuegoOut"
+      },
+      "LoginRequest": {
+        "properties": {
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "usuario",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "MovimientoCrear": {
+        "properties": {
+          "ref_cliente": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Ref Cliente"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "fiado",
+              "cobro_fiado",
+              "cobro_subagente",
+              "ingreso_del_dueno",
+              "cobro_mercado_pago",
+              "pago_premio",
+              "pago_banco",
+              "sueldo",
+              "gasto",
+              "retiro_dueno"
+            ],
+            "title": "Tipo"
+          },
+          "monto": {
+            "type": "integer",
+            "title": "Monto"
+          },
+          "caja_id": {
+            "type": "integer",
+            "title": "Caja Id"
+          },
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          },
+          "contraparte": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contraparte"
+          },
+          "nota": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota"
+          },
+          "corresponde_a_fecha": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corresponde A Fecha"
+          },
+          "explica_arqueo_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explica Arqueo Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref_cliente",
+          "tipo",
+          "monto",
+          "caja_id"
+        ],
+        "title": "MovimientoCrear"
+      },
+      "MovimientoOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "apuesta_quiniela",
+              "venta_otro_juego",
+              "fiado",
+              "cobro_fiado",
+              "cobro_subagente",
+              "ingreso_del_dueno",
+              "cobro_mercado_pago",
+              "pago_premio",
+              "pago_banco",
+              "sueldo",
+              "gasto",
+              "retiro_dueno",
+              "traspaso",
+              "traspaso_boletas",
+              "rendicion_boletas"
+            ],
+            "title": "Tipo"
+          },
+          "monto": {
+            "type": "integer",
+            "title": "Monto"
+          },
+          "caja_id": {
+            "type": "integer",
+            "title": "Caja Id"
+          },
+          "turno_id": {
+            "type": "integer",
+            "title": "Turno Id"
+          },
+          "cliente_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Id"
+          },
+          "juego_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Juego Id"
+          },
+          "contraparte": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contraparte"
+          },
+          "nota": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nota"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creado En"
+          },
+          "corresponde_a_fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Corresponde A Fecha"
+          },
+          "es_ajuste": {
+            "type": "boolean",
+            "title": "Es Ajuste"
+          },
+          "anula_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anula Id"
+          },
+          "motivo_anulacion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Anulacion"
+          },
+          "explica_arqueo_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explica Arqueo Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tipo",
+          "monto",
+          "caja_id",
+          "turno_id",
+          "cliente_id",
+          "juego_id",
+          "contraparte",
+          "nota",
+          "creado_en",
+          "corresponde_a_fecha",
+          "es_ajuste",
+          "anula_id",
+          "motivo_anulacion",
+          "explica_arqueo_id"
+        ],
+        "title": "MovimientoOut"
+      },
+      "MovimientosPagina": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MovimientoOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "pagina": {
+            "type": "integer",
+            "title": "Pagina"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "pagina"
+        ],
+        "title": "MovimientosPagina"
+      },
+      "RendicionItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          },
+          "total_esperado": {
+            "type": "integer",
+            "title": "Total Esperado"
+          },
+          "total_contado": {
+            "type": "integer",
+            "title": "Total Contado"
+          },
+          "diferencia": {
+            "type": "integer",
+            "title": "Diferencia"
+          },
+          "cantidad_boletas": {
+            "type": "integer",
+            "title": "Cantidad Boletas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fecha",
+          "total_esperado",
+          "total_contado",
+          "diferencia",
+          "cantidad_boletas"
+        ],
+        "title": "RendicionItem"
+      },
+      "RendicionOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "total_esperado": {
+            "type": "integer",
+            "title": "Total Esperado"
+          },
+          "total_contado": {
+            "type": "integer",
+            "title": "Total Contado"
+          },
+          "diferencia": {
+            "type": "integer",
+            "title": "Diferencia"
+          },
+          "cantidad_boletas": {
+            "type": "integer",
+            "title": "Cantidad Boletas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "total_esperado",
+          "total_contado",
+          "diferencia",
+          "cantidad_boletas"
+        ],
+        "title": "RendicionOut"
+      },
+      "RendicionRequest": {
+        "properties": {
+          "boletas_contadas": {
+            "type": "integer",
+            "title": "Boletas Contadas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "boletas_contadas"
+        ],
+        "title": "RendicionRequest"
+      },
+      "ReporteDia": {
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          },
+          "totales_por_tipo": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Totales Por Tipo"
+          },
+          "apuestas": {
+            "type": "integer",
+            "title": "Apuestas"
+          },
+          "boletas": {
+            "type": "integer",
+            "title": "Boletas"
+          },
+          "arqueos": {
+            "items": {
+              "$ref": "#/components/schemas/ArqueoOut"
+            },
+            "type": "array",
+            "title": "Arqueos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fecha",
+          "totales_por_tipo",
+          "apuestas",
+          "boletas",
+          "arqueos"
+        ],
+        "title": "ReporteDia"
+      },
+      "ReporteMercadoPago": {
+        "properties": {
+          "acumulado": {
+            "type": "integer",
+            "title": "Acumulado"
+          },
+          "desde": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desde"
+          }
+        },
+        "type": "object",
+        "required": [
+          "acumulado",
+          "desde"
+        ],
+        "title": "ReporteMercadoPago"
+      },
+      "Saldo": {
+        "properties": {
+          "efectivo": {
+            "type": "integer",
+            "title": "Efectivo"
+          },
+          "boletas": {
+            "type": "integer",
+            "title": "Boletas"
+          }
+        },
+        "type": "object",
+        "required": [
+          "efectivo",
+          "boletas"
+        ],
+        "title": "Saldo"
+      },
+      "TicketOut": {
+        "properties": {
+          "esperado": {
+            "$ref": "#/components/schemas/Saldo"
+          },
+          "desglose": {
+            "$ref": "#/components/schemas/Desglose"
+          }
+        },
+        "type": "object",
+        "required": [
+          "esperado",
+          "desglose"
+        ],
+        "title": "TicketOut"
+      },
+      "TicketRequest": {
+        "properties": {
+          "quiniela": {
+            "type": "integer",
+            "title": "Quiniela"
+          },
+          "juegos": {
+            "items": {
+              "$ref": "#/components/schemas/JuegoMonto"
+            },
+            "type": "array",
+            "title": "Juegos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quiniela",
+          "juegos"
+        ],
+        "title": "TicketRequest"
+      },
+      "TraspasoRequest": {
+        "properties": {
+          "caja_origen_id": {
+            "type": "integer",
+            "title": "Caja Origen Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "caja_origen_id"
+        ],
+        "title": "TraspasoRequest"
+      },
+      "TurnoOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "abierto",
+              "cerrado"
+            ],
+            "title": "Estado"
+          },
+          "tiene_ticket": {
+            "type": "boolean",
+            "title": "Tiene Ticket"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "estado",
+          "tiene_ticket"
+        ],
+        "title": "TurnoOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VentaJuegoItem": {
+        "properties": {
+          "periodo": {
+            "type": "string",
+            "title": "Periodo"
+          },
+          "juego_id": {
+            "type": "integer",
+            "title": "Juego Id"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "periodo",
+          "juego_id",
+          "total"
+        ],
+        "title": "VentaJuegoItem"
+      }
+    }
+  }
+}
