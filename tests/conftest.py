@@ -1,22 +1,20 @@
 import pytest
+from alembic import command
+from alembic.config import Config
 from sqlalchemy.orm import Session
 
-from app.db import Base, engine
+from app.db import engine
 from app.modelos import Negocio, Usuario, hasher
 
 
 @pytest.fixture(scope="session")
 def tablas():
-    Base.metadata.create_all(engine)  # no hace nada si ya las creó Alembic
+    command.upgrade(Config("alembic.ini"), "head")  # un modelo sin migración rompe los tests
 
 
 @pytest.fixture
 def db(tablas):
-    """Sesión dentro de una transacción que se deshace al terminar el test.
-
-    Los commit() del código quedan en savepoints: nada llega a la base.
-    Para la API: app.dependency_overrides[get_db] = lambda: db
-    """
+    """Sesión en una transacción que se deshace al final: los commit() quedan en savepoints."""
     with engine.connect() as conexion:
         transaccion = conexion.begin()
         with Session(bind=conexion, join_transaction_mode="create_savepoint") as sesion:
@@ -26,7 +24,6 @@ def db(tablas):
 
 @pytest.fixture
 def usuario_test(db):
-    """Devuelve (negocio, usuario, password) ficticios, con la contraseña en claro."""
     password = "clave-de-test"
     negocio = Negocio(nombre="Agencia de Prueba")
     db.add(negocio)
