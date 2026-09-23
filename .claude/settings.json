@@ -1,0 +1,23 @@
+{
+  "worktree": {
+    "symlinkDirectories": [".venv"],
+    "baseRef": "head"
+  },
+  "permissions": {
+    "deny": [
+      "Bash(git add -A*)",
+      "Bash(git add --all*)",
+      "Bash(git add .)",
+      "Bash(git commit *--no-verify*)",
+      "Bash(git push *--force*)",
+      "PowerShell(git add -A*)",
+      "PowerShell(git add --all*)",
+      "PowerShell(git add .)",
+      "PowerShell(git commit *--no-verify*)",
+      "PowerShell(git push *--force*)",
+      "Edit(**/.env)",
+      "Edit(**/.worktreeinclude)",
+      "Read(**/.env)"
+    ]
+  }
+}
