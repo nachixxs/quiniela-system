@@ -5,26 +5,31 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-TipoMovimiento = Literal[
-    "apuesta_quiniela", "venta_otro_juego", "fiado", "cobro_fiado", "cobro_subagente",
-    "ingreso_del_dueno", "cobro_mercado_pago", "pago_premio", "pago_banco", "sueldo", "gasto",
-    "retiro_dueno", "traspaso", "traspaso_boletas", "rendicion_boletas",
+from app.modelos import Estado, TipoMovimiento
+
+TipoMovimientoCarga = Literal[
+    "fiado", "cobro_fiado", "cobro_subagente", "ingreso_del_dueno", "cobro_mercado_pago",
+    "pago_premio", "pago_banco", "sueldo", "gasto", "retiro_dueno",
 ]
 EstadoArqueo = Literal["cuadra", "con_diferencia", "explicada"]
 
 
-# --- Día y turnos ---
 class DiaOut(BaseModel):
     id: int
     fecha: date
-    estado: Literal["abierto", "cerrado"]
+    estado: Estado
 
 
 class TurnoOut(BaseModel):
     id: int
     nombre: str
-    estado: Literal["abierto", "cerrado"]
+    estado: Estado
     tiene_ticket: bool
+
+
+class Saldo(BaseModel):
+    efectivo: int
+    boletas: int
 
 
 class CajaEstado(BaseModel):
@@ -33,7 +38,7 @@ class CajaEstado(BaseModel):
     tipo: Literal["operativa", "central"]
     efectivo: int
     boletas: int
-    esperado: dict[str, int] | None = None
+    esperado: Saldo | None = None
 
 
 class DiaActualOut(BaseModel):
@@ -59,22 +64,30 @@ class TicketRequest(BaseModel):
     juegos: list[JuegoMonto]
 
 
+class Desglose(BaseModel):
+    quiniela: int
+    otros_juegos: int
+    cobros: int
+    fiados: int
+    mercado_pago: int
+    premios: int
+
+
 class TicketOut(BaseModel):
-    esperado: dict[str, int]
-    desglose: dict[str, int]
+    esperado: Saldo
+    desglose: Desglose
 
 
-# --- Movimientos ---
 class MovimientoCrear(BaseModel):
     ref_cliente: UUID
-    tipo: TipoMovimiento
+    tipo: TipoMovimientoCarga
     monto: int
     caja_id: int
     cliente_id: int | None = None
-    juego_id: int | None = None
     contraparte: str | None = None
     nota: str | None = None
     corresponde_a_fecha: date | None = None
+    explica_arqueo_id: int | None = None
 
 
 class MovimientoOut(BaseModel):
@@ -91,6 +104,8 @@ class MovimientoOut(BaseModel):
     corresponde_a_fecha: date
     es_ajuste: bool
     anula_id: int | None
+    motivo_anulacion: str | None
+    explica_arqueo_id: int | None
 
 
 class MovimientosPagina(BaseModel):
@@ -103,14 +118,8 @@ class AnularRequest(BaseModel):
     motivo: str
 
 
-# --- Traspaso, arqueo, rendición ---
 class TraspasoRequest(BaseModel):
     caja_origen_id: int
-
-
-class TraspasoOut(BaseModel):
-    efectivo: int
-    boletas: int
 
 
 class ArqueoRequest(BaseModel):
@@ -142,7 +151,6 @@ class RendicionOut(BaseModel):
     cantidad_boletas: int
 
 
-# --- Cajas, juegos, clientes ---
 class JuegoOut(BaseModel):
     id: int
     nombre: str
@@ -160,17 +168,11 @@ class ClienteCrear(BaseModel):
     telefono: str | None = None
 
 
-class ClienteDetalle(BaseModel):
-    id: int
-    nombre: str
-    saldo: int
+class ClienteDetalle(ClienteBusqueda):
     movimientos: list[MovimientoOut]
 
 
-class DeudorOut(BaseModel):
-    id: int
-    nombre: str
-    saldo: int
+class DeudorOut(ClienteBusqueda):
     dias_deuda_mas_vieja: int
 
 
@@ -213,7 +215,6 @@ class RendicionItem(BaseModel):
     cantidad_boletas: int
 
 
-# --- Asistente ---
 class AsistenteRequest(BaseModel):
     pregunta: str
     arqueo_id: int | None = None

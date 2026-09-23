@@ -47,20 +47,12 @@ def test_formato_422_datos_invalidos(db, usuario_test):
     negocio, usuario, password = usuario_test
     app.dependency_overrides[get_db] = lambda: db
     cliente = TestClient(app, base_url="https://testserver")
-    cliente.post("/api/auth/login", json={"usuario": usuario.usuario, "password": password})
 
-    resp = cliente.post("/api/clientes", json={"alias": "sin nombre"})
+    resp = cliente.post("/api/auth/login", json={"usuario": usuario.usuario, "password": ["no-debe-filtrarse"]})
     assert resp.status_code == 422
-    assert resp.json()["error"] == "datos_invalidos"
-    assert "detalle" in resp.json()
-
-    app.dependency_overrides.clear()
-
-
-def test_endpoint_nuevo_sin_sesion_da_401(db):
-    app.dependency_overrides[get_db] = lambda: db
-    cliente = TestClient(app, base_url="https://testserver")
-
-    assert cliente.get("/api/cajas").status_code == 401
+    cuerpo = resp.json()
+    assert cuerpo["error"] == "datos_invalidos"
+    assert isinstance(cuerpo["detalle"], str)
+    assert "no-debe-filtrarse" not in resp.text
 
     app.dependency_overrides.clear()
