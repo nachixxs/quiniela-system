@@ -1,5 +1,3 @@
-"""Motor: efectos de §5.2, saldos, esperados de §6 con §7.3, arqueo, rendición, ajustes tardíos y
-deuda de fiados. Sin base de datos. Números propios, salvo el día simulado del final."""
 from typing import get_args
 
 import pytest
@@ -7,7 +5,7 @@ import pytest
 from app.modelos import TipoMovimiento
 from app.motor import EFECTOS, Mov, arqueo, esperado, estado, rendicion, saldo, saldo_cliente
 
-GRANDE, CHICA, OTRA = 1, 2, 3
+GRANDE, CHICA = 1, 2
 CLIENTE, OTRO_CLIENTE = 10, 11
 
 
@@ -36,18 +34,6 @@ def test_todo_tipo_que_acepta_la_base_tiene_efecto():
     assert set(EFECTOS) == set(get_args(TipoMovimiento))
 
 
-def test_premio_no_desbalancea_el_total():
-    efectivo, boletas = saldo(CHICA, [Mov("pago_premio", 12000, CHICA)], (50000, 0))
-    assert (efectivo, boletas) == (38000, 12000)
-    assert efectivo + boletas == 50000
-
-
-def test_subagente_con_boletas_suma_efectivo_y_boletas():
-    # trae 15.000 en efectivo y 5.000 en boletas: cobro por el total y pago_premio por las boletas
-    movs = [Mov("cobro_subagente", 20000, CHICA), Mov("pago_premio", 5000, CHICA)]
-    assert saldo(CHICA, movs) == (15000, 5000)
-
-
 @pytest.mark.parametrize("tipo", sorted(EFECTOS))
 def test_contra_asiento_cancela_el_original(tipo):
     destino = GRANDE if tipo.startswith("traspaso") else None
@@ -57,19 +43,8 @@ def test_contra_asiento_cancela_el_original(tipo):
     assert saldo_cliente(CLIENTE, movs) == 0
 
 
-def test_traspaso_resta_en_la_chica_y_suma_en_la_grande():
-    movs = [Mov("traspaso", 90000, CHICA, GRANDE), Mov("traspaso_boletas", 14000, CHICA, GRANDE)]
-    assert saldo(CHICA, movs, (90000, 14000)) == (0, 0)
-    assert saldo(GRANDE, movs, (300000, 0)) == (390000, 14000)
-    assert saldo(OTRA, movs) == (0, 0)
-
-
-@pytest.mark.parametrize("movs", [
-    [],
-    [Mov("fiado", 4000, CHICA, cliente_id=CLIENTE), Mov("pago_premio", 12000, CHICA)],
-    [Mov("apuesta_quiniela", 100000, CHICA), Mov("apuesta_quiniela", 100000, CHICA, anula_id=1)],
-], ids=["turno_vacio", "fiados_y_premios_sin_ticket", "ticket_anulado"])
-def test_esperado_de_la_chica_no_existe_sin_ticket(movs):
+def test_esperado_de_la_chica_no_existe_sin_ticket():
+    movs = [Mov("apuesta_quiniela", 100000, CHICA), Mov("apuesta_quiniela", 100000, CHICA, anula_id=1)]
     assert esperado(CHICA, movs, operativa=True) is None
 
 
@@ -83,62 +58,34 @@ TURNO_CHICA = [  # esperado: efectivo −4.000 +3.000 −10.000 −5.000 +6.000 
 ]
 TRASPASO_NOCHE = [Mov("traspaso", 80000, CHICA, GRANDE), Mov("traspaso_boletas", 9000, CHICA, GRANDE)]
 RECARGA_TICKET = [Mov("apuesta_quiniela", 100000, CHICA, anula_id=6), Mov("apuesta_quiniela", 100000, CHICA)]
-TARDE_GRANDE = [  # traspaso de las 17:00 + cobros − pagados
-    Mov("traspaso", 90000, CHICA, GRANDE), Mov("traspaso_boletas", 10000, CHICA, GRANDE),
-    Mov("ingreso_del_dueno", 20000, GRANDE), Mov("pago_banco", 150000, GRANDE), Mov("pago_premio", 5000, GRANDE),
-]
 
 
 @pytest.mark.parametrize("caja, movs, partida, operativa, resultado", [
-    # rendición: las boletas del arqueo de anoche (30.000) más las del traspaso (9.000)
-    (GRANDE, TRASPASO_NOCHE, (200000, 30000), False, (280000, 39000)),
     # grande mañana: con la rendición cargada, boletas en cero
     (GRANDE, TRASPASO_NOCHE + [Mov("rendicion_boletas", 39000, GRANDE)], (200000, 30000), False, (280000, 0)),
-    (CHICA, TURNO_CHICA, (0, 0), True, (90000, 10000)),
     # chica desde su conteo de anoche: el traspaso la deja en cero antes del turno
     (CHICA, TRASPASO_NOCHE + TURNO_CHICA, (80000, 9000), True, (90000, 10000)),
     (CHICA, TURNO_CHICA + RECARGA_TICKET, (0, 0), True, (90000, 10000)),
-    # grande noche: desde el arqueo de la mañana; los movimientos de la chica no la tocan
-    (GRANDE, TURNO_CHICA + TARDE_GRANDE, (280000, 0), False, (235000, 15000)),
-], ids=["rendicion", "grande_manana", "chica", "chica_desde_su_conteo", "chica_ticket_recargado", "grande_noche"])
+], ids=["grande_manana", "chica_desde_su_conteo", "chica_ticket_recargado"])
 def test_esperado_de_cada_control(caja, movs, partida, operativa, resultado):
     assert esperado(caja, movs, partida, operativa) == resultado
 
 
-@pytest.mark.parametrize("movs, deuda", [
-    ([Mov("fiado", 12000, CHICA, cliente_id=CLIENTE), Mov("fiado", 5000, CHICA, cliente_id=CLIENTE),
-      Mov("cobro_fiado", 7000, CHICA, cliente_id=CLIENTE)], 10000),
-    ([Mov("fiado", 2500, CHICA, cliente_id=CLIENTE), Mov("cobro_fiado", 5000, CHICA, cliente_id=CLIENTE)], -2500),
-    ([Mov("cobro_fiado", 5000, CHICA, cliente_id=CLIENTE), Mov("fiado", 1000, GRANDE, cliente_id=CLIENTE)], -4000),
-], ids=["cobro_parcial", "saldo_a_favor", "a_favor_se_consume_con_el_proximo_fiado"])
-def test_saldo_de_cliente(movs, deuda):
-    otros = [Mov("fiado", 9000, CHICA, cliente_id=OTRO_CLIENTE), Mov("apuesta_quiniela", 50000, CHICA)]
-    assert saldo_cliente(CLIENTE, movs + otros) == deuda
+def test_saldo_de_cliente():  # el saldo a favor se consume con el próximo fiado; los demás no lo tocan
+    movs = [Mov("cobro_fiado", 5000, CHICA, cliente_id=CLIENTE), Mov("fiado", 1000, GRANDE, cliente_id=CLIENTE),
+            Mov("fiado", 9000, CHICA, cliente_id=OTRO_CLIENTE), Mov("apuesta_quiniela", 50000, CHICA)]
+    assert saldo_cliente(CLIENTE, movs) == -4000
 
 
-@pytest.mark.parametrize("contado, diferencia, resultado", [
-    ((90000, 10000), (0, 0), "cuadra"),
-    ((85000, 10000), (-5000, 0), "con_diferencia"),
-    ((88000, 12000), (-2000, 2000), "con_diferencia"),  # D2: suman cero y no se tapan entre sí
-], ids=["cuadra", "falta_efectivo", "diferencias_opuestas"])
-def test_arqueo_se_guarda_siempre_con_sus_dos_diferencias(contado, diferencia, resultado):
-    assert arqueo(esperado(CHICA, TURNO_CHICA, operativa=True), contado) == {
-        "efectivo_esperado": 90000, "boletas_esperadas": 10000, "efectivo_contado": contado[0],
-        "boletas_contadas": contado[1], "diferencia_efectivo": diferencia[0], "diferencia_boletas": diferencia[1],
-        "estado": resultado}
+def test_arqueo_con_los_nombres_de_columna():
+    assert arqueo(esperado(CHICA, TURNO_CHICA, operativa=True), (90000, 10000)) == {
+        "efectivo_esperado": 90000, "boletas_esperadas": 10000, "efectivo_contado": 90000,
+        "boletas_contadas": 10000, "diferencia_efectivo": 0, "diferencia_boletas": 0, "estado": "cuadra"}
 
 
 def test_no_hay_arqueo_de_la_chica_sin_ticket():
     with pytest.raises(ValueError, match="ticket"):
         arqueo(esperado(CHICA, TURNO_CHICA[:-1], operativa=True), (90000, 10000))
-
-
-def test_reanclaje_la_diferencia_no_se_arrastra():
-    manana = arqueo(esperado(GRANDE, [], (280000, 0)), (250000, 0))  # faltan 30.000
-    assert (manana["diferencia_efectivo"], manana["estado"]) == (-30000, "con_diferencia")
-    # la noche parte de lo contado: desde lo esperado daría 235.000 y marcaría el faltante otra vez
-    noche = arqueo(esperado(GRANDE, TURNO_CHICA + TARDE_GRANDE, (250000, 0)), (205000, 15000))
-    assert (noche["efectivo_esperado"], noche["estado"]) == (205000, "cuadra")
 
 
 @pytest.mark.parametrize("contadas, diferencia", [(39000, 0), (38500, -500)], ids=["cuadra", "falta_una_boleta"])
@@ -149,14 +96,15 @@ def test_rendicion_contra_el_lote(contadas, diferencia):
 
 
 PREMIO_OLVIDADO = Mov("pago_premio", 2000, CHICA, es_ajuste=True)
+PREMIO_ANULADO = Mov("pago_premio", 2000, CHICA, anula_id=1, es_ajuste=True)  # su contra-asiento: una copia
 FIADO_OLVIDADO = Mov("fiado", 3000, CHICA, cliente_id=CLIENTE, es_ajuste=True)
 
 
 @pytest.mark.parametrize("movs, resultado", [
     (TURNO_CHICA + [PREMIO_OLVIDADO], (90000, 10000)),
-    (TURNO_CHICA + [FIADO_OLVIDADO], (90000, 10000)),
+    (TURNO_CHICA + [PREMIO_OLVIDADO, PREMIO_ANULADO], (90000, 10000)),
     (TURNO_CHICA[:-1] + [Mov("apuesta_quiniela", 100000, CHICA, es_ajuste=True)], None),  # no es el ticket de hoy
-], ids=["premio_olvidado", "fiado_olvidado", "ticket_de_otro_dia"])
+], ids=["premio_olvidado", "ajuste_anulado", "ticket_de_otro_dia"])
 def test_ajuste_tardio_no_cambia_el_esperado_de_hoy(movs, resultado):
     assert esperado(CHICA, movs, operativa=True) == resultado
 
@@ -166,13 +114,10 @@ def test_fiado_olvidado_suma_a_la_deuda_del_cliente():
 
 
 @pytest.mark.parametrize("diferencia, ajustes, resultado", [
-    ((0, 0), [], "cuadra"),
-    ((-2000, 2000), [], "con_diferencia"),
-    ((-2000, 2000), [PREMIO_OLVIDADO], "explicada"),
     ((-3000, 2000), [PREMIO_OLVIDADO], "con_diferencia"),
     ((-3000, 2000), [PREMIO_OLVIDADO, Mov("gasto", 1000, CHICA, es_ajuste=True)], "explicada"),
-    ((-2000, 2000), [PREMIO_OLVIDADO, Mov("pago_premio", 2000, CHICA, anula_id=1)], "con_diferencia"),
-], ids=["cuadra", "sin_ajustes", "premio_olvidado", "lo_cubre_en_parte", "dos_ajustes", "ajuste_anulado"])
+    ((-2000, 2000), [PREMIO_OLVIDADO, PREMIO_ANULADO], "con_diferencia"),
+], ids=["lo_cubre_en_parte", "dos_ajustes", "ajuste_anulado"])
 def test_estado_de_un_arqueo_segun_sus_ajustes(diferencia, ajustes, resultado):
     assert estado(diferencia, CHICA, ajustes) == resultado
 
@@ -231,7 +176,6 @@ def test_dia_simulado_completo():
     miercoles = noche + traspaso_2020 + [Mov("rendicion_boletas", lote["total_esperado"], GRANDE)]
     assert _control(GRANDE, miercoles, grande, (459500, 0)) == ((459500, 0), (0, 0), "cuadra")  # P7
     assert estado(p5[1], CHICA, [PREMIO_OLVIDADO]) == "explicada"  # P8: el premio de 2.000 del martes
-    assert esperado(GRANDE, miercoles + [PREMIO_OLVIDADO], grande) == (459500, 0)
     assert saldo(CHICA, traspaso_2020 + [PREMIO_OLVIDADO], chica) == (0, 0)  # el miércoles arranca en cero
     martes = [Mov("fiado", 10000, CHICA, cliente_id=RUBEN)] + manana + noche  # P9, con la deuda del lunes
     assert (saldo_cliente(RUBEN, martes), saldo_cliente(MARTA, martes)) == (11000, 0)

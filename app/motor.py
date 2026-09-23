@@ -26,13 +26,13 @@ EFECTOS = {
 
 @dataclass
 class Mov:
-    """Lo que el motor necesita de un movimiento."""
+    """Contra-asiento (§7.1): copia tipo, monto, caja_id, destino_id, cliente_id, es_ajuste y explica_arqueo_id, más anula_id y motivo."""
     tipo: str
     monto: int  # siempre positivo: el signo lo pone el tipo
     caja_id: int
     destino_id: int | None = None  # solo traspasos: la caja padre del origen (§5.4)
     cliente_id: int | None = None  # solo fiado y cobro_fiado
-    anula_id: int | None = None  # contra-asiento (§7.1): mismo tipo y monto, efecto invertido
+    anula_id: int | None = None  # contra-asiento: el motor invierte su efecto
     es_ajuste: bool = False  # carga tardía (§7.8)
 
 
