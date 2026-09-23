@@ -1,3 +1,8 @@
+import os
+
+# antes de importar app: sin DATABASE_URL, los tests van a su base y no a la de desarrollo (el CI la define)
+os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://quiniela_test:quiniela_test@127.0.0.1:5433/quiniela_test")
+
 import pytest
 from alembic import command
 from alembic.config import Config
