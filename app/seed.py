@@ -4,7 +4,19 @@ import sys
 from sqlalchemy import select
 
 from app.db import SessionLocal
-from app.modelos import Negocio, Usuario, hasher
+from app.modelos import Caja, Juego, Negocio, Usuario, hasher
+
+JUEGOS = ["Quiniela", "Quini 6", "Loto", "Brinco", "Combinada", "Lotería", "Telekino"]
+
+
+def obtener_o_crear(db, modelo, **campos):
+    """Idempotente: el seed se puede correr sobre una base ya sembrada sin duplicar."""
+    fila = db.scalar(select(modelo).filter_by(**campos))
+    if fila is None:
+        fila = modelo(**campos)
+        db.add(fila)
+        db.flush()
+    return fila
 
 
 def main():
@@ -12,16 +24,17 @@ def main():
     if not password:
         sys.exit("Falta la variable de entorno SEED_PASSWORD: es la clave del usuario demo.")
     with SessionLocal() as db:
-        negocio = db.scalar(select(Negocio).where(Negocio.nombre == "Quiniela La Estrella"))
-        if negocio is None:
-            negocio = Negocio(nombre="Quiniela La Estrella")
-            db.add(negocio)
-            db.flush()
+        negocio = obtener_o_crear(db, Negocio, nombre="Quiniela La Estrella")
         if db.scalar(select(Usuario).where(Usuario.usuario == "demo")) is None:
             db.add(Usuario(negocio_id=negocio.id, usuario="demo", nombre="Operador Demo",
                            password_hash=hasher.hash(password)))
+        grande = obtener_o_crear(db, Caja, negocio_id=negocio.id, nombre="Caja grande", tipo="central")
+        obtener_o_crear(db, Caja, negocio_id=negocio.id, nombre="Caja chica", tipo="operativa",
+                        caja_padre_id=grande.id)
+        for nombre in JUEGOS:
+            obtener_o_crear(db, Juego, negocio_id=negocio.id, nombre=nombre, es_quiniela=nombre == "Quiniela")
         db.commit()
-    print("Seed listo: Quiniela La Estrella, usuario demo.")
+    print("Seed listo: Quiniela La Estrella, usuario demo, dos cajas y siete juegos.")
 
 
 if __name__ == "__main__":

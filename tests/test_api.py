@@ -1,7 +1,9 @@
 from fastapi.testclient import TestClient
 
+from app.auth import hash_token
 from app.db import get_db
 from app.main import app
+from app.modelos import Sesion
 
 
 def test_flujo_login_yo_logout(db, usuario_test):
@@ -11,6 +13,10 @@ def test_flujo_login_yo_logout(db, usuario_test):
 
     assert cliente.post("/api/auth/login", json={"usuario": usuario.usuario, "password": "mala"}).status_code == 401
     assert cliente.post("/api/auth/login", json={"usuario": usuario.usuario, "password": password}).status_code == 204
+
+    token = cliente.cookies.get("sesion")
+    assert db.get(Sesion, token) is None
+    assert db.get(Sesion, hash_token(token)) is not None
 
     resp = cliente.get("/api/auth/yo")
     assert resp.json() == {"id": usuario.id, "nombre": usuario.nombre,

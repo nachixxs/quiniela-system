@@ -1,3 +1,4 @@
+import hashlib
 from datetime import UTC, datetime
 
 from fastapi import Cookie, Depends, HTTPException
@@ -10,9 +11,13 @@ COOKIE_SESION = "sesion"
 DURACION_SESION_HORAS = 12
 
 
+def hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 def usuario_actual(sesion: str | None = Cookie(default=None, alias=COOKIE_SESION),
                     db: Session = Depends(get_db)) -> Usuario:
-    fila = db.get(Sesion, sesion) if sesion else None
+    fila = db.get(Sesion, hash_token(sesion)) if sesion else None
     usuario = db.get(Usuario, fila.usuario_id) if fila and fila.expira >= datetime.now(UTC) else None
     if usuario is None:
         raise HTTPException(401, {"error": "no_autenticado", "detalle": "Sesión inválida o vencida."})
