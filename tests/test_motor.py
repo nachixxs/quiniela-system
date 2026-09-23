@@ -147,17 +147,17 @@ def test_dia_simulado_completo():
         Mov("fiado", 4000, CHICA, cliente_id=RUBEN), Mov("fiado", 2500, CHICA, cliente_id=MARTA),
         Mov("cobro_fiado", 6000, CHICA, cliente_id=RUBEN), Mov("pago_premio", 12000, CHICA),
         Mov("pago_premio", 3500, CHICA), Mov("cobro_mercado_pago", 9000, CHICA),
-        Mov("cobro_subagente", 27000, CHICA), Mov("pago_premio", 7000, CHICA),  # D9: 20.000 + 7.000 en boletas
         Mov("venta_otro_juego", 8000, CHICA), Mov("venta_otro_juego", 5000, CHICA),
         Mov("apuesta_quiniela", 150000, CHICA),
     ]
-    p3 = _control(CHICA, noche_lunes + manana, chica, (158000, 22500), operativa=True)
-    assert p3 == ((158000, 22500), (0, 0), "cuadra")
-    chica = (158000, 22500)
-    traspaso_17 = [Mov("traspaso", 158000, CHICA, GRANDE), Mov("traspaso_boletas", 22500, CHICA, GRANDE)]
+    p3 = _control(CHICA, noche_lunes + manana, chica, (138000, 15500), operativa=True)
+    assert p3 == ((138000, 15500), (0, 0), "cuadra")
+    chica = (138000, 15500)
+    traspaso_17 = [Mov("traspaso", 138000, CHICA, GRANDE), Mov("traspaso_boletas", 15500, CHICA, GRANDE)]
     tarde = [Mov("ingreso_del_dueno", 30000, GRANDE), Mov("pago_banco", 250000, GRANDE),
              Mov("sueldo", 60000, GRANDE), Mov("gasto", 4500, GRANDE), Mov("retiro_dueno", 20000, GRANDE),
-             Mov("pago_premio", 25000, GRANDE)]
+             Mov("pago_premio", 25000, GRANDE),
+             Mov("cobro_subagente", 27000, GRANDE), Mov("pago_premio", 7000, GRANDE)]  # D9, D10: solo en la grande
     p4 = _control(GRANDE, manana + traspaso_17 + tarde, grande, (355500, 47500))
     assert p4 == ((355500, 47500), (0, 0), "cuadra")  # el faltante de la mañana no se arrastró
     grande = (355500, 47500)
