@@ -140,9 +140,10 @@ def test_dia_simulado_completo():
     lote = rendicion(GRANDE, noche_lunes, grande, 57500)  # P1
     assert lote == {"total_esperado": 57500, "total_contado": 57500, "diferencia": 0}
     rendicion_1 = [Mov("rendicion_boletas", lote["total_esperado"], GRANDE)]  # por el saldo de boletas
-    p2 = _control(GRANDE, noche_lunes + rendicion_1, grande, (527000, 0))
-    assert p2 == ((530000, 0), (-3000, 0), "con_diferencia")
-    grande = (527000, 0)
+    banco = [Mov("pago_banco", 250000, GRANDE)]  # siempre a la mañana, antes del arqueo
+    p2 = _control(GRANDE, noche_lunes + rendicion_1 + banco, grande, (277000, 0))
+    assert p2 == ((280000, 0), (-3000, 0), "con_diferencia")
+    grande = (277000, 0)
     manana = [
         Mov("fiado", 4000, CHICA, cliente_id=RUBEN), Mov("fiado", 2500, CHICA, cliente_id=MARTA),
         Mov("cobro_fiado", 6000, CHICA, cliente_id=RUBEN), Mov("pago_premio", 12000, CHICA),
@@ -154,8 +155,7 @@ def test_dia_simulado_completo():
     assert p3 == ((138000, 15500), (0, 0), "cuadra")
     chica = (138000, 15500)
     traspaso_17 = [Mov("traspaso", 138000, CHICA, GRANDE), Mov("traspaso_boletas", 15500, CHICA, GRANDE)]
-    tarde = [Mov("ingreso_del_dueno", 30000, GRANDE), Mov("pago_banco", 250000, GRANDE),
-             Mov("sueldo", 60000, GRANDE), Mov("gasto", 4500, GRANDE), Mov("retiro_dueno", 20000, GRANDE),
+    tarde = [Mov("ingreso_del_dueno", 30000, GRANDE), Mov("sueldo", 60000, GRANDE), Mov("gasto", 4500, GRANDE), Mov("retiro_dueno", 20000, GRANDE),
              Mov("pago_premio", 25000, GRANDE),
              Mov("cobro_subagente", 27000, GRANDE), Mov("pago_premio", 7000, GRANDE)]  # D9, D10: solo en la grande
     p4 = _control(GRANDE, manana + traspaso_17 + tarde, grande, (355500, 47500))
