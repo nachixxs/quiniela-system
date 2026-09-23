@@ -1,0 +1,8 @@
+.venv
+.git
+.env
+.claude
+node_modules
+web
+e2e
+__pycache__
