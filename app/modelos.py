@@ -60,7 +60,6 @@ class DiaOperativo(Base):
     negocio_id: Mapped[int] = mapped_column(ForeignKey("negocio.id"))
     fecha: Mapped[date]
     estado: Mapped[Estado] = mapped_column(default="abierto")
-    efectivo_apertura: Mapped[int | None]  # plata contada; si queda o se va lo decide D3 (CP2)
 
 
 class Turno(Base):
