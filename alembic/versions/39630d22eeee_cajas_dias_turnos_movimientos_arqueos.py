@@ -96,7 +96,7 @@ def upgrade():
     sa.Column('tipo', sa.Enum(
         'apuesta_quiniela', 'venta_otro_juego', 'fiado', 'cobro_fiado', 'cobro_subagente',
         'ingreso_del_dueno', 'cobro_mercado_pago', 'pago_premio', 'pago_banco', 'sueldo', 'gasto',
-        'retiro_dueno', 'traspaso', 'rendicion_boletas', native_enum=False), nullable=False),
+        'retiro_dueno', 'traspaso', 'traspaso_boletas', 'rendicion_boletas', native_enum=False), nullable=False),
     sa.Column('monto', sa.Integer(), nullable=False),
     sa.Column('juego_id', sa.Integer(), nullable=True),
     sa.Column('cliente_id', sa.Integer(), nullable=True),
@@ -106,11 +106,11 @@ def upgrade():
     sa.Column('corresponde_a_fecha', sa.Date(), nullable=False),
     sa.Column('es_ajuste', sa.Boolean(), nullable=False),
     sa.Column('explica_arqueo_id', sa.Integer(), nullable=True),
-    sa.Column('anulado_por_id', sa.Integer(), nullable=True),
+    sa.Column('anula_id', sa.Integer(), nullable=True),
     sa.Column('motivo_anulacion', sa.String(), nullable=True),
     sa.Column('ref_cliente', sa.Uuid(), nullable=True),
     sa.CheckConstraint('monto > 0', name='monto_positivo'),
-    sa.ForeignKeyConstraint(['anulado_por_id'], ['movimiento.id'], ),
+    sa.ForeignKeyConstraint(['anula_id'], ['movimiento.id'], ),
     sa.ForeignKeyConstraint(['caja_id'], ['caja.id'], ),
     sa.ForeignKeyConstraint(['cliente_id'], ['cliente.id'], ),
     sa.ForeignKeyConstraint(['dia_id'], ['dia_operativo.id'], ),
@@ -119,6 +119,7 @@ def upgrade():
     sa.ForeignKeyConstraint(['negocio_id'], ['negocio.id'], ),
     sa.ForeignKeyConstraint(['turno_id'], ['turno.id'], ),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('anula_id'),
     sa.UniqueConstraint('ref_cliente')
     )
 

@@ -15,7 +15,7 @@ hasher = PasswordHash.recommended()  # argon2 (D4); lo usan seed y auth
 TipoMovimiento = Literal[
     "apuesta_quiniela", "venta_otro_juego", "fiado", "cobro_fiado", "cobro_subagente",
     "ingreso_del_dueno", "cobro_mercado_pago", "pago_premio", "pago_banco", "sueldo", "gasto",
-    "retiro_dueno", "traspaso", "rendicion_boletas",
+    "retiro_dueno", "traspaso", "traspaso_boletas", "rendicion_boletas",
 ]
 Estado = Literal["abierto", "cerrado"]
 
@@ -37,7 +37,7 @@ class Usuario(Base):
 
 class Sesion(Base):
     __tablename__ = "sesion"
-    id: Mapped[str] = mapped_column(primary_key=True)  # secrets.token_urlsafe, va en la cookie
+    id: Mapped[str] = mapped_column(primary_key=True)  # sha256 del token (D6); el token va solo en la cookie
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuario.id"))
     negocio_id: Mapped[int] = mapped_column(ForeignKey("negocio.id"))
     creada: Mapped[datetime] = mapped_column(server_default=func.now())
@@ -126,8 +126,8 @@ class Movimiento(Base):
     corresponde_a_fecha: Mapped[date]  # la del día, salvo ajuste tardío (§7.8)
     es_ajuste: Mapped[bool] = mapped_column(default=False)
     explica_arqueo_id: Mapped[int | None] = mapped_column(ForeignKey("arqueo.id"))
-    # §7.1: el original apunta a su contra-asiento; el contra-asiento lleva el motivo
-    anulado_por_id: Mapped[int | None] = mapped_column(ForeignKey("movimiento.id"))
+    # §7.1: el original nunca se edita; el contra-asiento apunta a él y lleva el motivo
+    anula_id: Mapped[int | None] = mapped_column(ForeignKey("movimiento.id"), unique=True)
     motivo_anulacion: Mapped[str | None]
     ref_cliente: Mapped[UUID | None] = mapped_column(unique=True)  # idempotencia (CONTRATO-API)
 
