@@ -3,6 +3,7 @@
 .env
 .claude
 node_modules
-web
+web/node_modules
+web/dist
 e2e
 __pycache__

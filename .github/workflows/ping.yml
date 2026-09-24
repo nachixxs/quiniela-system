@@ -1,0 +1,11 @@
+name: Ping
+on:
+  schedule: [{ cron: "*/10 * * * *" }]
+  workflow_dispatch: {}
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      # el cron de Actions puede atrasarse y se desactiva tras 60 días sin actividad en el repo;
+      # este ping 24x7 consume ~720 de las 750 h/mes free de Render: no correr otro servicio free en el mismo workspace
+      - run: curl -fsS "${{ vars.APP_URL }}/api/salud"
