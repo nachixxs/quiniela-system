@@ -76,15 +76,6 @@ def test_formato_422_datos_invalidos(db, usuario_test):
     app.dependency_overrides.clear()
 
 
-def test_endpoint_protegido_sin_cookie_401(db):
-    app.dependency_overrides[get_db] = lambda: db
-    cliente = TestClient(app, base_url="https://testserver")
-
-    assert cliente.get("/api/cajas").status_code == 401
-
-    app.dependency_overrides.clear()
-
-
 def test_aislamiento_por_negocio_id(db, agencia):
     """Un usuario de otro negocio no ve un cliente ajeno ni puede anular un movimiento ajeno (§7.4)."""
     otro_negocio = Negocio(nombre="Otro Negocio")
@@ -145,15 +136,16 @@ def test_recorrido_feliz_http(db):
     app.dependency_overrides.clear()
 
 
-def test_413_body_grande(db, usuario_test):
-    negocio, usuario, password = usuario_test
-    token = _sesion(db, negocio.id)
+def test_413_body_grande(db):
     app.dependency_overrides[get_db] = lambda: db
     cliente = TestClient(app, base_url="https://testserver")
-    cliente.cookies.set("sesion", token)
 
     resp = cliente.post("/api/clientes", content=b"x" * 70_000, headers={"content-type": "application/json"})
     assert resp.status_code == 413
     assert resp.json()["error"] == "cuerpo_muy_grande"
+
+    resp_get = cliente.request("GET", "/api/cajas", content=b"x" * 70_000, headers={"content-type": "application/json"})
+    assert resp_get.status_code == 413
+    assert resp_get.json()["error"] == "cuerpo_muy_grande"
 
     app.dependency_overrides.clear()

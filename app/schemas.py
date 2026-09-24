@@ -37,12 +37,10 @@ class Saldo(BaseModel):
     boletas: int
 
 
-class CajaEstado(BaseModel):
+class CajaEstado(Saldo):
     id: int
     nombre: str
     tipo: Literal["operativa", "central"]
-    efectivo: int
-    boletas: int
     esperado: Saldo | None = None
 
 
@@ -212,13 +210,8 @@ class VentaJuegoItem(BaseModel):
     total: int
 
 
-class RendicionItem(OrmModel):
-    id: int
+class RendicionItem(RendicionOut):
     fecha: date
-    total_esperado: int
-    total_contado: int
-    diferencia: int
-    cantidad_boletas: int
 
 
 class AsistenteRequest(BaseModel):
