@@ -104,6 +104,9 @@ export function Arqueo({ onVolver }: { onVolver: () => void }) {
       >
         {guardar.isPending ? "Arqueando..." : "Arquear"}
       </button>
+      {(!cajaId || !turnoId || !efectivo || !boletas) && (
+        <p className="text-center text-sm text-slate-500">Completá caja, turno, efectivo y boletas (0 si no hay)</p>
+      )}
     </div>
   );
 }
