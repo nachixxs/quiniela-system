@@ -1,11 +1,8 @@
-// Fixtures a mano (D16). Todo dato es ficticio (SPECS §7 regla 10).
+// Fixtures y handlers de mocks a mano (D16). Todo dato es ficticio (SPECS §7 regla 10).
+import { ApiError } from "./tipos";
 import type {
-  CajaEstado,
-  ClienteBusqueda,
-  ClienteDetalle,
-  DeudorOut,
-  DiaActualOut,
-  Usuario,
+  ArqueoRequest, CajaEstado, ClienteBusqueda, ClienteDetalle,
+  DeudorOut, DiaActualOut, MovimientoCrear, Usuario,
 } from "./tipos";
 
 export const usuarioMock: Usuario = {
@@ -56,3 +53,32 @@ export const deudoresMock: DeudorOut[] = [
   { id: 14, nombre: "Roberto Pérez", saldo: 30000, dias_deuda_mas_vieja: 2 },
   { id: 15, nombre: "Susana Gómez", saldo: 12500, dias_deuda_mas_vieja: 9 },
 ];
+
+// Handlers de las rutas mockeadas sin parámetro dinámico (esas van aparte en cliente.ts)
+export const RUTAS_MOCK: Record<string, (cuerpo: unknown) => unknown> = {
+  "POST /auth/login": (c) => {
+    const { usuario, password } = c as { usuario: string; password: string };
+    if (usuario === "marisa" && password === "estrella123") return undefined;
+    throw new ApiError("credenciales_invalidas", "Usuario o contraseña incorrectos.");
+  },
+  "POST /auth/logout": () => undefined,
+  "GET /auth/yo": () => usuarioMock,
+  "GET /dia/actual": () => diaActualMock,
+  "GET /cajas": () => cajasMock,
+  "GET /clientes/deudores": () => deudoresMock,
+  "POST /movimientos": (c) => {
+    const m = c as MovimientoCrear;
+    return {
+      id: 999, ...m, turno_id: 2, juego_id: null, creado_en: new Date().toISOString(),
+      corresponde_a_fecha: m.corresponde_a_fecha ?? "2026-09-23", es_ajuste: !!m.corresponde_a_fecha,
+      anula_id: null, motivo_anulacion: null,
+    };
+  },
+  "POST /arqueo": (c) => {
+    const a = c as ArqueoRequest;
+    return {
+      id: 47, efectivo_esperado: a.efectivo_contado, boletas_esperadas: a.boletas_contadas,
+      diferencia_efectivo: 0, diferencia_boletas: 0, estado: "cuadra",
+    };
+  },
+};

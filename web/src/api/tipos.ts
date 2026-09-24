@@ -16,3 +16,9 @@ export interface Usuario {
   nombre: string;
   negocio: { id: number; nombre: string };
 }
+
+export class ApiError extends Error {
+  constructor(public codigo: string, public detalle: string) {
+    super(detalle);
+  }
+}
