@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../api/cliente";
-import { pesos } from "../util";
+import { pesos, uuid } from "../util";
 
 export function CuentaCorriente({ onVolver }: { onVolver: () => void }) {
   const [orden, setOrden] = useState<"monto" | "antiguedad">("monto");
   const [clienteId, setClienteId] = useState<number | null>(null);
   const [monto, setMonto] = useState("");
-  const [refCliente, setRefCliente] = useState(() => crypto.randomUUID());
+  const [refCliente, setRefCliente] = useState(() => uuid());
   const queryClient = useQueryClient();
 
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
@@ -28,7 +28,7 @@ export function CuentaCorriente({ onVolver }: { onVolver: () => void }) {
       });
     },
     onSuccess: () => {
-      setRefCliente(crypto.randomUUID());
+      setRefCliente(uuid());
       setMonto("");
       queryClient.invalidateQueries({ queryKey: ["deudores"] });
       queryClient.invalidateQueries({ queryKey: ["cliente", clienteId] });

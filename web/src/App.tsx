@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUsuario } from "./contexto/usuario";
 import { Login } from "./pantallas/Login";
 import { Inicio } from "./pantallas/Inicio";
@@ -7,21 +7,34 @@ import { Arqueo } from "./pantallas/Arqueo";
 import { CuentaCorriente } from "./pantallas/CuentaCorriente";
 
 type Pantalla = "inicio" | "carga-rapida" | "arqueo" | "cuenta-corriente";
+const pantallaDeHash = (): Pantalla => {
+  const h = location.hash.slice(1);
+  return h === "carga-rapida" || h === "arqueo" || h === "cuenta-corriente" ? h : "inicio";
+};
 
 export function App() {
-  const { usuario } = useUsuario();
-  const [pantalla, setPantalla] = useState<Pantalla>("inicio");
-  const irAInicio = () => setPantalla("inicio");
+  const { usuario, cargando } = useUsuario();
+  const [pantalla, setPantalla] = useState<Pantalla>(pantallaDeHash);
 
+  useEffect(() => {
+    const onHash = () => setPantalla(pantallaDeHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  const ir = (p: Pantalla) => { location.hash = p === "inicio" ? "" : p; };
+  const volver = () => (location.hash ? history.back() : setPantalla("inicio"));
+
+  if (cargando) return <div className="min-h-screen bg-slate-100" />;
   if (!usuario) return <Login />;
-  if (pantalla === "carga-rapida") return <CargaRapida onVolver={irAInicio} />;
-  if (pantalla === "arqueo") return <Arqueo onVolver={irAInicio} />;
-  if (pantalla === "cuenta-corriente") return <CuentaCorriente onVolver={irAInicio} />;
+  if (pantalla === "carga-rapida") return <CargaRapida onVolver={volver} />;
+  if (pantalla === "arqueo") return <Arqueo onVolver={volver} />;
+  if (pantalla === "cuenta-corriente") return <CuentaCorriente onVolver={volver} />;
   return (
     <Inicio
-      onCargaRapida={() => setPantalla("carga-rapida")}
-      onArqueo={() => setPantalla("arqueo")}
-      onCuentaCorriente={() => setPantalla("cuenta-corriente")}
+      onCargaRapida={() => ir("carga-rapida")}
+      onArqueo={() => ir("arqueo")}
+      onCuentaCorriente={() => ir("cuenta-corriente")}
     />
   );
 }

@@ -66,11 +66,16 @@ export const deudoresMock: DeudorOut[] = [
 export const RUTAS_MOCK: Record<string, (cuerpo: unknown) => unknown> = {
   "POST /auth/login": (c) => {
     const { usuario, password } = c as { usuario: string; password: string };
-    if (usuario === "marisa" && password === "estrella123") return undefined;
-    throw new ApiError("credenciales_invalidas", "Usuario o contraseña incorrectos.");
+    if (usuario !== "marisa" || password !== "estrella123") throw new ApiError("credenciales_invalidas", "Usuario o contraseña incorrectos.");
+    try { sessionStorage.setItem("sesion_mock", "1"); } catch { /* sin storage */ }
   },
-  "POST /auth/logout": () => undefined,
-  "GET /auth/yo": () => usuarioMock,
+  "POST /auth/logout": () => { try { sessionStorage.removeItem("sesion_mock"); } catch { /* sin storage */ } },
+  "GET /auth/yo": () => {
+    let hay = false;
+    try { hay = sessionStorage.getItem("sesion_mock") === "1"; } catch { /* sin storage */ }
+    if (!hay) throw new ApiError("no_autenticado", "Iniciá sesión para continuar.");
+    return usuarioMock;
+  },
   "GET /dia/actual": () => diaActualMock,
   "GET /cajas": () => cajasMock,
   "POST /movimientos": (c) => {

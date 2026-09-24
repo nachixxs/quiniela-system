@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "../api/cliente";
 import type { ClienteBusqueda, MovimientoCrear } from "../api/tipos";
+import { uuid } from "../util";
 
 // D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja.
 const OPCIONES_PAGO: { etiqueta: string; tipo: MovimientoCrear["tipo"] }[] = [
@@ -22,7 +23,7 @@ export function CargaRapida({ onVolver }: { onVolver: () => void }) {
   const [monto, setMonto] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [cliente, setCliente] = useState<ClienteBusqueda | null>(null);
-  const [refCliente, setRefCliente] = useState(() => crypto.randomUUID());
+  const [refCliente, setRefCliente] = useState(() => uuid());
   const [confirmacion, setConfirmacion] = useState("");
   const [tipoPago, setTipoPago] = useState(OPCIONES_PAGO[0].tipo);
 
@@ -46,7 +47,7 @@ export function CargaRapida({ onVolver }: { onVolver: () => void }) {
     },
     onSuccess: (mov) => {
       setConfirmacion(`Guardado: ${seleccion?.etiqueta} $${mov.monto.toLocaleString("es-AR")}`);
-      setRefCliente(crypto.randomUUID());
+      setRefCliente(uuid());
       setSeleccion(null);
       setMonto("");
       setBusqueda("");
