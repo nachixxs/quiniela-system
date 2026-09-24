@@ -4,7 +4,7 @@ import { useUsuario } from "../contexto/usuario";
 
 const formatoPesos = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
-export function Inicio() {
+export function Inicio({ onCargaRapida }: { onCargaRapida: () => void }) {
   const { usuario, setUsuario } = useUsuario();
   const queryClient = useQueryClient();
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
@@ -60,7 +60,12 @@ export function Inicio() {
       </section>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <BotonProximamente etiqueta="Carga rápida" />
+        <button
+          onClick={onCargaRapida}
+          className="rounded-xl bg-blue-600 p-5 text-base font-semibold text-white shadow active:bg-blue-700"
+        >
+          Carga rápida
+        </button>
         <BotonProximamente etiqueta="Arqueo" />
         <BotonProximamente etiqueta="Cuenta corriente" />
       </section>
