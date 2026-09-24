@@ -4,6 +4,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import func, select
 
+from app import consultas
 from app import operaciones as op
 from app.modelos import Arqueo, DiaOperativo, Movimiento, Turno
 
@@ -27,7 +28,8 @@ def test_dia_completo_contra_la_base(db, agencia):
     op.cargar_ticket(db, a.n, a.manana, 90000, [])
     ticket = op.cargar_ticket(db, a.n, a.manana, 100000, [{"juego_id": a.juego, "monto": 8000}])  # recargado
     assert ticket == {"esperado": {"efectivo": 92000, "boletas": 12000}, "desglose": {
-        "quiniela": 100000, "otros_juegos": 8000, "cobros": 0, "fiados": -4000, "mercado_pago": 0, "premios": -12000}}
+        "quiniela": 100000, "otros_juegos": 8000, "cobros": 0, "fiados": -4000, "mercado_pago": 0, "premios": -12000,
+        "otros_pagos": 0}}
     assert arqueo(a.chica, a.manana, (90000, 12000)) == ((92000, 12000), (-2000, 0), "con_diferencia")
     assert db.get(Turno, a.manana).estado == "cerrado"
     assert op.traspasar(db, a.n, a.chica) == {"efectivo": 90000, "boletas": 12000}  # lo contado, no lo esperado
@@ -79,6 +81,28 @@ def test_despues_del_arqueo_anular_y_ajustar_no_mueven_la_partida(db, agencia):
     assert op.traspasar(db, a.n, a.chica) == {"efectivo": 86000, "boletas": 12000}
 
 
+def test_el_traspaso_no_se_lleva_lo_cargado_despues_del_arqueo(db, agencia):
+    """16:40: la mañana ya está arqueada y se paga un gasto del turno noche antes de traspasar (DIA-SIMULADO)."""
+    a = agencia
+    op.cargar_ticket(db, a.n, a.manana, 50000, [])
+    op.guardar_arqueo(db, a.n, a.chica, a.manana, 50000, 0)
+    mov(db, a, "gasto", 1000)
+    assert op.traspasar(db, a.n, a.chica) == {"efectivo": 50000, "boletas": 0}
+    with pytest.raises(op.Conflicto):  # el mismo arqueo no se traspasa dos veces
+        op.traspasar(db, a.n, a.chica)
+    ticket = op.cargar_ticket(db, a.n, a.noche, 80000, [])  # la noche vendió 30.000 y el gasto quedó en la chica
+    assert ticket["esperado"]["efectivo"] == 29000 and ticket["desglose"]["otros_pagos"] == -1000
+    assert op.guardar_arqueo(db, a.n, a.chica, a.noche, 29000, 0).estado == "cuadra"
+    assert op.guardar_arqueo(db, a.n, a.grande, a.noche, 50000, 0).estado == "cuadra"
+
+
+def test_el_desglose_del_ticket_suma_el_esperado(db, agencia):  # D20
+    mov(db, agencia, "gasto", 2500)
+    mov(db, agencia, "fiado", 4000, cliente_id=agencia.cliente)
+    ticket = op.cargar_ticket(db, agencia.n, agencia.manana, 60000, [])
+    assert sum(ticket["desglose"].values()) == ticket["esperado"]["efectivo"] == 53500
+
+
 def test_subagente_solo_en_la_caja_grande(db, agencia):  # D10
     with pytest.raises(op.Invalido):
         mov(db, agencia, "cobro_subagente", 27000)
@@ -97,3 +121,27 @@ def test_el_dia_no_cierra_con_turnos_abiertos(db, agencia):  # §7.7
     with pytest.raises(op.Conflicto):
         op.cerrar_dia(db, agencia.n, agencia.dia)
     assert db.get(DiaOperativo, agencia.dia).estado == "abierto"
+
+
+def test_saldo_del_cliente_sin_anulados_y_a_favor(db, agencia):  # §5.6
+    a = agencia
+    fiado = mov(db, a, "fiado", 4000, cliente_id=a.cliente)
+    mov(db, a, "fiado", 3000, cliente_id=a.cliente)
+    op.anular_movimiento(db, a.n, fiado.id, "Era de otro cliente")
+    assert consultas.buscar_clientes(db, a.n, "rub") == [{"id": a.cliente, "nombre": "Rubén Ficticio", "saldo": 3000}]
+    assert [d["saldo"] for d in consultas.deudores(db, a.n)] == [3000]
+    mov(db, a, "cobro_fiado", 5000, cliente_id=a.cliente)  # pagó de más: queda a favor
+    detalle = consultas.cliente(db, a.n, a.cliente)
+    assert detalle["saldo"] == -2000 and len(detalle["movimientos"]) == 4
+    assert consultas.deudores(db, a.n) == []
+
+
+def test_la_chica_no_tiene_esperado_hasta_el_ticket(db, agencia):  # §7.3
+    mov(db, agencia, "pago_premio", 12000)
+
+    def chica():
+        return next(c for c in consultas.cajas(db, agencia.n) if c["id"] == agencia.chica)
+
+    assert chica()["esperado"] is None
+    op.cargar_ticket(db, agencia.n, agencia.manana, 100000, [])
+    assert chica()["esperado"] == {"efectivo": 88000, "boletas": 12000}

@@ -3,7 +3,7 @@ from typing import Literal
 from uuid import UUID
 
 from pwdlib import PasswordHash
-from sqlalchemy import CheckConstraint, ForeignKey, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, ForeignKey, Index, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -75,6 +75,8 @@ class Turno(Base):
 
 class Cliente(Base):
     __tablename__ = "cliente"  # el saldo no se guarda: fiado − cobro_fiado (§5.6)
+    __table_args__ = tuple(Index(f"ix_cliente_{c}_trgm", c, postgresql_using="gin", postgresql_ops={c: "gin_trgm_ops"})
+                           for c in ("nombre", "alias"))  # el ILIKE '%q%' de GET /clientes?q=
     id: Mapped[int] = mapped_column(primary_key=True)
     negocio_id: Mapped[int] = mapped_column(ForeignKey("negocio.id"))
     nombre: Mapped[str]

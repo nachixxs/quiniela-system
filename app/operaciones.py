@@ -16,9 +16,11 @@ VENTAS = ("apuesta_quiniela", "venta_otro_juego")  # salen solo del ticket (D15)
 TIPOS_CARGA = set(motor.EFECTOS) - set(VENTAS) - {"traspaso", "traspaso_boletas", "rendicion_boletas"}
 DESGLOSE = {"quiniela": ("apuesta_quiniela",), "otros_juegos": ("venta_otro_juego",), "fiados": ("fiado",),
             "cobros": ("cobro_fiado", "cobro_subagente", "ingreso_del_dueno"),
-            "mercado_pago": ("cobro_mercado_pago",), "premios": ("pago_premio",)}  # POST /turno/{id}/ticket
+            "mercado_pago": ("cobro_mercado_pago",), "premios": ("pago_premio",),
+            "otros_pagos": ("gasto", "retiro_dueno", "sueldo", "pago_banco")}  # suma el esperado del ticket (D20)
 COPIA = ("negocio_id", "dia_id", "turno_id", "caja_id", "tipo", "monto", "juego_id", "cliente_id", "contraparte",
          "nota", "corresponde_a_fecha", "explica_arqueo_id")  # lo que el contra-asiento copia del original
+ARGENTINA = timezone(timedelta(hours=-3))  # la fecha del local, no la del servidor
 
 
 class ErrorDominio(Exception):
@@ -97,7 +99,7 @@ def _reexplicar(db: Session, negocio_id: int, arqueo_id: int) -> None:
 
 def abrir_dia(db: Session, negocio_id: int, fecha: date | None = None) -> tuple[DiaOperativo, list[Turno]]:
     """POST /dia/abrir: hoy (o `fecha`) con sus dos turnos abiertos (D3b). Un día abierto por vez."""
-    fecha = fecha or datetime.now(timezone(timedelta(hours=-3))).date()  # la fecha del local
+    fecha = fecha or datetime.now(ARGENTINA).date()
     if db.scalar(select(DiaOperativo.id).where(DiaOperativo.negocio_id == negocio_id,
                                                or_(DiaOperativo.estado == "abierto", DiaOperativo.fecha == fecha))):
         raise Conflicto("dia_existente", "Hay un día abierto, o ese día ya se abrió: un día cerrado no se reabre.")
@@ -154,6 +156,17 @@ def crear_movimiento(db: Session, negocio_id: int, *, ref_cliente: UUID, tipo: s
     return m
 
 
+def crear_cliente(db: Session, negocio_id: int, nombre: str, alias: str | None = None,
+                  telefono: str | None = None) -> Cliente:
+    """POST /clientes. Nace con saldo 0: el saldo no se guarda, se calcula (§5.6)."""
+    if not nombre.strip():
+        raise Invalido("falta_nombre", "El cliente lleva nombre.")
+    cliente = Cliente(negocio_id=negocio_id, nombre=nombre.strip(), alias=alias, telefono=telefono)
+    db.add(cliente)
+    db.commit()
+    return cliente
+
+
 def anular_movimiento(db: Session, negocio_id: int, movimiento_id: int, motivo: str) -> Movimiento:
     """POST /movimientos/{id}/anular: devuelve el contra-asiento. Las ventas se corrigen recargando el ticket."""
     m = obtener(db, Movimiento, negocio_id, movimiento_id)
@@ -173,14 +186,15 @@ def anular_movimiento(db: Session, negocio_id: int, movimiento_id: int, motivo: 
 
 
 def traspasar(db: Session, negocio_id: int, caja_origen_id: int) -> dict:
-    """POST /traspaso: todo el saldo a la caja padre en dos filas (D9); la deja en cero (§5.4). Devuelve lo movido."""
+    """POST /traspaso: sube a la caja padre lo contado en el último arqueo, en dos filas (D9). Lo cargado después de
+    ese arqueo es del turno siguiente y se queda en la caja (DIA-SIMULADO). Devuelve lo movido."""
     caja = obtener(db, Caja, negocio_id, caja_origen_id)
     if caja.caja_padre_id is None:
         raise Invalido("sin_caja_padre", "Esta caja no traspasa a otra.")
     turno = _turno(db, negocio_id, abierto=False)
-    efectivo, boletas = motor.saldo(caja.id, *control(db, negocio_id, caja))
-    if efectivo < 0 or boletas < 0:
-        raise Conflicto("saldo_negativo", "La caja da saldo negativo: falta cargar el ticket o arquearla.")
+    movs, (efectivo, boletas) = control(db, negocio_id, caja)
+    if any(m.tipo.startswith("traspaso") and m.caja_id == caja.id for m in movs):
+        raise Conflicto("ya_traspasado", "Lo contado en el último arqueo ya se traspasó: primero arqueá la caja.")
     for tipo, monto in (("traspaso", efectivo), ("traspaso_boletas", boletas)):
         if monto:
             _nuevo(db, turno, caja.id, tipo, monto)
