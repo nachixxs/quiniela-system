@@ -16,7 +16,8 @@ VENTAS = ("apuesta_quiniela", "venta_otro_juego")  # salen solo del ticket (D15)
 TIPOS_CARGA = set(motor.EFECTOS) - set(VENTAS) - {"traspaso", "traspaso_boletas", "rendicion_boletas"}
 DESGLOSE = {"quiniela": ("apuesta_quiniela",), "otros_juegos": ("venta_otro_juego",), "fiados": ("fiado",),
             "cobros": ("cobro_fiado", "cobro_subagente", "ingreso_del_dueno"),
-            "mercado_pago": ("cobro_mercado_pago",), "premios": ("pago_premio",)}  # POST /turno/{id}/ticket
+            "mercado_pago": ("cobro_mercado_pago",), "premios": ("pago_premio",),
+            "otros_pagos": ("gasto", "retiro_dueno", "sueldo", "pago_banco")}  # suma el esperado del ticket (D20)
 COPIA = ("negocio_id", "dia_id", "turno_id", "caja_id", "tipo", "monto", "juego_id", "cliente_id", "contraparte",
          "nota", "corresponde_a_fecha", "explica_arqueo_id")  # lo que el contra-asiento copia del original
 
@@ -173,14 +174,15 @@ def anular_movimiento(db: Session, negocio_id: int, movimiento_id: int, motivo: 
 
 
 def traspasar(db: Session, negocio_id: int, caja_origen_id: int) -> dict:
-    """POST /traspaso: todo el saldo a la caja padre en dos filas (D9); la deja en cero (§5.4). Devuelve lo movido."""
+    """POST /traspaso: sube a la caja padre lo contado en el último arqueo, en dos filas (D9). Lo cargado después de
+    ese arqueo es del turno siguiente y se queda en la caja (DIA-SIMULADO). Devuelve lo movido."""
     caja = obtener(db, Caja, negocio_id, caja_origen_id)
     if caja.caja_padre_id is None:
         raise Invalido("sin_caja_padre", "Esta caja no traspasa a otra.")
     turno = _turno(db, negocio_id, abierto=False)
-    efectivo, boletas = motor.saldo(caja.id, *control(db, negocio_id, caja))
-    if efectivo < 0 or boletas < 0:
-        raise Conflicto("saldo_negativo", "La caja da saldo negativo: falta cargar el ticket o arquearla.")
+    movs, (efectivo, boletas) = control(db, negocio_id, caja)
+    if any(m.tipo.startswith("traspaso") and m.caja_id == caja.id for m in movs):
+        raise Conflicto("ya_traspasado", "Lo contado en el último arqueo ya se traspasó: primero arqueá la caja.")
     for tipo, monto in (("traspaso", efectivo), ("traspaso_boletas", boletas)):
         if monto:
             _nuevo(db, turno, caja.id, tipo, monto)
