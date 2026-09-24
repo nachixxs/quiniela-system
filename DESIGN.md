@@ -1,636 +1,196 @@
----
-version: alpha
-name: Revolut-design-analysis
-description: |
-  Revolut's marketing surfaces pair a stark black canvas with the brand's
-  cobalt-violet (`#494fdf`) and a wide accent palette of deep, fully-saturated
-  product colours — teal, light-blue, deep pink, light-green, warning orange.
-  The system reads as fintech-meets-product-brochure: oversized 80px–136px
-  Aeonik Pro display headlines, generous whitespace, photography-led hero
-  bands, and full-width product mockups (cards, phones, terminals) shown as
-  hero objects inside near-black sections. Most surfaces are either black or
-  off-white; pill-shaped buttons and rounded-12/20px content cards carry the
-  consumer-financial-app feel without crossing into playful territory.
+# DESIGN.md: Quiniela La Estrella
 
-colors:
-  primary: "#494fdf"
-  primary-bright: "#4f55f1"
-  primary-deep: "#3a40c4"
-  on-primary: "#ffffff"
-  ink: "#191c1f"
-  body: "#1f2226"
-  charcoal: "#3a3d40"
-  mute: "#505a63"
-  ash: "#5c5e60"
-  stone: "#8d969e"
-  faint: "#c9c9cd"
-  on-dark: "#ffffff"
-  on-dark-mute: "rgba(255,255,255,0.72)"
-  canvas-light: "#ffffff"
-  canvas-dark: "#000000"
-  surface-soft: "#f4f4f4"
-  surface-card: "#ffffff"
-  surface-deep: "#0a0a0a"
-  surface-elevated: "#16181a"
-  hairline-light: "#e2e2e7"
-  hairline-dark: "rgba(255,255,255,0.12)"
-  hairline-strong: "#191c1f"
-  divider-soft: "rgba(255,255,255,0.06)"
-  accent-teal: "#00a87e"
-  accent-blue-link: "#376cd5"
-  accent-light-blue: "#007bc2"
-  accent-light-green: "#428619"
-  accent-green-text: "#006400"
-  accent-yellow: "#b09000"
-  accent-warning: "#ec7e00"
-  accent-pink: "#e61e49"
-  accent-danger: "#e23b4a"
-  accent-deep-red: "#8b0000"
-  accent-brown: "#936d62"
-  link: "#376cd5"
+El sistema de diseño de esta app, no de otra. Los tokens viven en `web/src/index.css`
+(`@theme`), los componentes compartidos en `web/src/ui.tsx`. Si algo de acá y el código no
+coinciden, manda el código y se corrige este archivo.
 
-typography:
-  display-xxl:
-    fontFamily: Aeonik Pro
-    fontSize: 136px
-    fontWeight: 500
-    lineHeight: 1.0
-    letterSpacing: -2.72px
-  display-xl:
-    fontFamily: Aeonik Pro
-    fontSize: 80px
-    fontWeight: 500
-    lineHeight: 1.0
-    letterSpacing: -0.8px
-  display-lg:
-    fontFamily: Aeonik Pro
-    fontSize: 48px
-    fontWeight: 500
-    lineHeight: 1.21
-    letterSpacing: -0.48px
-  display-md:
-    fontFamily: Aeonik Pro
-    fontSize: 40px
-    fontWeight: 500
-    lineHeight: 1.2
-    letterSpacing: -0.4px
-  heading-lg:
-    fontFamily: Aeonik Pro
-    fontSize: 32px
-    fontWeight: 500
-    lineHeight: 1.19
-    letterSpacing: -0.32px
-  heading-md:
-    fontFamily: Aeonik Pro
-    fontSize: 24px
-    fontWeight: 500
-    lineHeight: 1.33
-    letterSpacing: 0
-  heading-sm:
-    fontFamily: Aeonik Pro
-    fontSize: 20px
-    fontWeight: 500
-    lineHeight: 1.4
-    letterSpacing: 0
-  body-lg:
-    fontFamily: Inter
-    fontSize: 18px
-    fontWeight: 400
-    lineHeight: 1.56
-    letterSpacing: -0.09px
-  body-md:
-    fontFamily: Inter
-    fontSize: 16px
-    fontWeight: 400
-    lineHeight: 1.5
-    letterSpacing: 0.24px
-  body-md-bold:
-    fontFamily: Inter
-    fontSize: 16px
-    fontWeight: 600
-    lineHeight: 1.5
-    letterSpacing: 0.16px
-  body-sm:
-    fontFamily: Inter
-    fontSize: 14px
-    fontWeight: 400
-    lineHeight: 1.43
-  button-lg:
-    fontFamily: Aeonik Pro
-    fontSize: 20px
-    fontWeight: 500
-    lineHeight: 1.4
-  button-md:
-    fontFamily: Inter
-    fontSize: 16px
-    fontWeight: 600
-    lineHeight: 1.5
-    letterSpacing: 0.24px
-  button-sm:
-    fontFamily: Inter
-    fontSize: 14px
-    fontWeight: 600
-    lineHeight: 1.43
-  caption:
-    fontFamily: Inter
-    fontSize: 13px
-    fontWeight: 400
-    lineHeight: 1.4
-  link-emph:
-    fontFamily: Inter
-    fontSize: 16px
-    fontWeight: 700
-    lineHeight: 1.5
-    letterSpacing: 0.24px
+## 1. Dirección
 
-rounded:
-  none: 0px
-  sm: 8px
-  md: 12px
-  lg: 20px
-  xl: 28px
-  full: 9999px
+**Un tablero de noche con una estrella dorada.** El nombre del negocio da la metáfora: el
+azul noche es el tablero donde se lee la plata del día; el dorado es la estrella, y marca
+una sola cosa por vista: la acción principal.
 
-spacing:
-  xxs: 4px
-  xs: 6px
-  sm: 8px
-  md: 14px
-  lg: 16px
-  xl: 24px
-  xxl: 32px
-  xxxl: 48px
-  block: 80px
-  section: 88px
-  band: 120px
+- **Quién la usa:** Marisa y el dueño, en el mostrador, con el celular en una mano y la
+  plata en la otra, decenas de veces por turno. Primero celular (390 px), después escritorio.
+- **Qué tiene que sentirse:** una app de banco argentina (Mercado Pago, Ualá, Revolut),
+  no una planilla. Números grandes, toques cortos, respuesta inmediata.
+- **Qué no es:** una landing. Nada de gradientes decorativos, glassmorphism, blobs de luz
+  ni tarjetas dentro de tarjetas. Se probaron halos de luz sobre la noche y quedaban como
+  una mancha gris: se sacaron.
 
-components:
-  button-primary:
-    backgroundColor: "{colors.canvas-light}"
-    textColor: "{colors.canvas-dark}"
-    typography: "{typography.button-md}"
-    rounded: "{rounded.full}"
-    padding: 14px 28px
-    height: 48px
-  button-primary-pressed:
-    backgroundColor: "{colors.faint}"
-    textColor: "{colors.canvas-dark}"
-    typography: "{typography.button-md}"
-    rounded: "{rounded.full}"
-  button-dark:
-    backgroundColor: "{colors.canvas-dark}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.button-md}"
-    rounded: "{rounded.full}"
-    padding: 14px 28px
-    height: 48px
-  button-soft:
-    backgroundColor: "{colors.surface-soft}"
-    textColor: "{colors.ink}"
-    typography: "{typography.button-md}"
-    rounded: "{rounded.full}"
-    padding: 14px 28px
-    height: 48px
-  button-outline-light:
-    backgroundColor: "{colors.canvas-light}"
-    textColor: "{colors.ink}"
-    typography: "{typography.button-md}"
-    rounded: "{rounded.full}"
-    padding: 13px 27px
-    height: 48px
-  button-outline-dark:
-    backgroundColor: "{colors.canvas-dark}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.button-md}"
-    rounded: "{rounded.full}"
-    padding: 13px 27px
-    height: 48px
-  button-pill-sm:
-    backgroundColor: "{colors.surface-soft}"
-    textColor: "{colors.ink}"
-    typography: "{typography.button-sm}"
-    rounded: "{rounded.full}"
-    padding: 8px 16px
-    height: 36px
-  text-input:
-    backgroundColor: "{colors.canvas-light}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.md}"
-    padding: 14px 16px
-    height: 56px
-  hero-band-dark:
-    backgroundColor: "{colors.canvas-dark}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.display-xxl}"
-    rounded: "{rounded.none}"
-    padding: 88px 24px
-  hero-band-photo:
-    backgroundColor: "{colors.canvas-dark}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.display-xl}"
-    rounded: "{rounded.none}"
-    padding: 0
-  feature-card-light:
-    backgroundColor: "{colors.canvas-light}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.lg}"
-    padding: 32px
-  feature-card-dark:
-    backgroundColor: "{colors.surface-elevated}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.lg}"
-    padding: 32px
-  plan-card:
-    backgroundColor: "{colors.surface-elevated}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.lg}"
-    padding: 32px
-  plan-card-featured:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.on-primary}"
-    typography: "{typography.body-md}"
-    rounded: "{rounded.lg}"
-    padding: 32px
-  product-mockup:
-    backgroundColor: "{colors.canvas-dark}"
-    textColor: "{colors.on-dark}"
-    rounded: "{rounded.xl}"
-    padding: 48px
-  download-tile:
-    backgroundColor: "{colors.surface-soft}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.md}"
-    padding: 12px 20px
-    height: 56px
-  badge-tag:
-    backgroundColor: "{colors.surface-soft}"
-    textColor: "{colors.ink}"
-    typography: "{typography.caption}"
-    rounded: "{rounded.full}"
-    padding: 4px 12px
-  badge-feature:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.on-primary}"
-    typography: "{typography.caption}"
-    rounded: "{rounded.full}"
-    padding: 4px 12px
-  nav-bar:
-    backgroundColor: "{colors.canvas-dark}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.button-md}"
-    rounded: "{rounded.none}"
-    height: 64px
-  sub-nav-pill:
-    backgroundColor: "{colors.surface-elevated}"
-    textColor: "{colors.on-dark}"
-    typography: "{typography.button-sm}"
-    rounded: "{rounded.full}"
-    padding: 8px 16px
-  footer:
-    backgroundColor: "{colors.canvas-dark}"
-    textColor: "{colors.on-dark-mute}"
-    typography: "{typography.body-sm}"
-    rounded: "{rounded.none}"
-    padding: 80px 24px
----
+## 2. Color
 
-## Overview
+Los colores son **roles**, no tonos: el tema oscuro reasigna los mismos nombres. Nunca se
+escribe un hex en un componente.
 
-Revolut's marketing canvas operates in a high-contrast two-mode system: a
-**near-black storytelling canvas** (`{colors.canvas-dark}` — `#000000`)
-that hosts hero bands, product mockups, and the planning section, alternating
-with **white catalogue bands** (`{colors.canvas-light}` — `#ffffff`) that
-host comparison tables, FAQ rows, and download tiles. The two modes switch
-in full-bleed bands rather than soft transitions; sections slam against each
-other to create the magazine-spread rhythm the brand is known for.
+| Token | Claro | Oscuro | Para qué |
+|---|---|---|---|
+| `lienzo` | #f2f3f7 | #0b1020 | Fondo de la página |
+| `superficie` | #ffffff | #141b2e | Tarjetas, hojas, barra inferior |
+| `superficie-2` | #eceef3 | #1c2438 | Campos, filas en hover, segmentado |
+| `tinta` | #121826 | #eef0f6 | Texto |
+| `tinta-suave` | #525b6e | #a3abbd | Etiquetas, detalle, ícono inactivo |
+| `borde` | #dfe2ea | #262f45 | Separadores (se usan poco) |
+| `noche` | #101a33 | #151f3c | Tablero, barra de arriba, barra lateral, login |
+| `noche-2` | #1d2a4d | #22305a | Tarjetas sobre la noche |
+| `en-noche` / `en-noche-suave` | #fff / #b7bac2 | igual | Texto sobre la noche |
+| `estrella` | #f4b73f | #f6c14f | Acción principal, pastilla activa, marca |
+| `estrella-fuerte` | #e9a521 | #f8cd6e | Hover de la acción principal |
+| `en-estrella` | #101a33 | igual | Texto sobre dorado: siempre azul noche |
+| `foco` | #101a33 | #f6c14f | Anillo de foco (sobre la noche, dorado) |
+| `exito` / `-suave` | #13794b / #e3f4ec | #4cc98a / #10291f | Cierra, cobro, abierto |
+| `peligro` / `-suave` | #c42b2b / #fbe7e6 | #ff7a70 / #33161a | Error, plata que sale |
+| `aviso` / `-suave` | #b54708 / #fdf0da | #ff9d4d / #2e2210 | Diferencia, pendiente, fiado |
 
-The display typography is **Aeonik Pro at weight 500**, used at sizes from
-20px to 136px. The flagship hero ("Banking & Beyond", "Join the 70+ million
-using Revolut") sits at 80–136px with `lineHeight: 1.0` and tight negative
-letter-spacing. Body type is **Inter** at weight 400 — open-source,
-no-nonsense, paired with positive tracking (`0.24px`) on UI labels for
-slightly more mechanical precision.
+Reglas:
 
-The brand accent is `{colors.primary}` (`#494fdf`) — a saturated cobalt
-violet — but it appears scarcely on marketing surfaces. The actual primary
-CTA on the hero is the **white pill on black** ("Choose your subscription"),
-and the cobalt violet is reserved for featured plan cards, secondary CTAs in
-white sections, and the brand glyph itself. A wide secondary palette of deep
-teal, light-blue, deep-pink, light-green, warning orange, and yellow appears
-inside product mockups and feature illustrations — never as button surfaces.
+- **El dorado nunca es texto sobre blanco** (1,8:1). Va de fondo, con texto `en-estrella`
+  (9,6:1). Sobre la noche sí puede ser ícono o texto (9,6:1).
+- **Una sola acción dorada por vista.** Lo demás es secundario (`superficie-2`) o fantasma.
+- **Color de estado = significado, no decoración.** Verde es "cierra / entró plata",
+  rojo es "error / salió plata", naranja es "mirá esto". Nunca un verde para adornar.
+- Contraste medido: todo par de texto usado da 4,5:1 o más en los dos temas (el más justo
+  es `peligro` sobre `peligro-suave`, 4,74).
+- Tema: por defecto el del sistema; la elección se guarda en `localStorage`
+  (`quiniela-tema`). Un script en `index.html` lo aplica antes de pintar (sin parpadeo) y
+  `theme-color` sigue al tema para que la barra del navegador sea parte de la noche.
 
-**Key Characteristics:**
-- Two-mode canvas system — `{colors.canvas-dark}` (true black) for storytelling, `{colors.canvas-light}` (white) for browsing — switched in full-bleed bands.
-- Display typography is **Aeonik Pro 500** at sizes 20–136px with tight `lineHeight: 1.0` and large negative letter-spacing on display sizes.
-- The actual primary CTA is `{component.button-primary}` — a **white pill with black text**, sitting on the dark canvas as the brightest pixel. Cobalt-violet `{colors.primary}` is reserved for featured plan cards and secondary CTAs.
-- Eight saturated accent colours live inside product mockups and illustrations only, never as button surfaces — teal, light-blue, deep-pink, light-green, warning orange, yellow, brown, danger red.
-- All buttons are pill-shaped (`{rounded.full}`); content cards use `{rounded.lg}` (20px); inputs and small chips use `{rounded.md}` (12px).
-- Photography is product-led — phone mockups, card mockups, terminal mockups — shown full-bleed inside dark sections with no caption overlay.
+## 3. Tipografía
 
-## Colors
+**Geist** (variable, `@fontsource-variable/geist`, 29 kB latin woff2, servida desde el
+propio bundle). Se eligió sobre Inter por las cifras: los montos se leen más compactos y
+con más carácter, y tiene el aire de producto financiero que pide la dirección.
 
-### Brand & Accent
-- **Cobalt Violet** (`{colors.primary}` — `#494fdf`): the brand accent. Reserved for featured plan cards (`{component.plan-card-featured}`), the brand wordmark icon, and secondary CTAs in white-canvas regions.
-- **Cobalt Bright** (`{colors.primary-bright}` — `#4f55f1`): a one-step-up bright variant used in inline link colour and accent-photo headers.
-- **Cobalt Deep** (`{colors.primary-deep}` — `#3a40c4`): the active/pressed state of cobalt elements.
-- **On-Primary** (`{colors.on-primary}` — `#ffffff`): label colour on top of `{colors.primary}` surfaces.
+- Cifras tabulares en todo el `body` (`font-variant-numeric: tabular-nums`): los montos
+  no bailan al cambiar ni al alinear columnas.
+- Todo monto pasa por `pesos()` (`util.ts`). El frontend no calcula plata.
+- Escala, sin tokens propios (se usan las clases de Tailwind):
 
-### Surface
-- **Canvas Light** (`{colors.canvas-light}` — `#ffffff`): the white catalogue mode for FAQ, download tiles, comparison tables.
-- **Canvas Dark** (`{colors.canvas-dark}` — `#000000`): the storytelling canvas — true black, never near-black.
-- **Surface Soft** (`{colors.surface-soft}` — `#f4f4f4`): a subtle off-white used on download tiles, soft buttons, and inset card groups inside white bands.
-- **Surface Card** (`{colors.surface-card}` — `#ffffff`): pure white card surface, used for feature cards in white-canvas regions.
-- **Surface Deep** (`{colors.surface-deep}` — `#0a0a0a`): a one-step-up dark surface for inset cards inside black-canvas regions.
-- **Surface Elevated** (`{colors.surface-elevated}` — `#16181a`): the planning-section card background — slightly luminous, lifts plan cards off the black canvas.
-- **Hairline Light** (`{colors.hairline-light}` — `#e2e2e7`): 1px dividers inside white bands.
-- **Hairline Dark** (`{colors.hairline-dark}` — `rgba(255,255,255,0.12)`): the corresponding low-contrast divider in dark regions.
-- **Hairline Strong** (`{colors.hairline-strong}` — `#191c1f`): structural full-strength dividers and the outline of light cards.
-
-### Text
-- **Ink** (`{colors.ink}` — `#191c1f`): primary text colour. Notably warmer than pure black, paired with the white canvas for body legibility.
-- **Body** (`{colors.body}` — `#1f2226`): long-form body where `{colors.ink}` would feel slightly too sharp.
-- **Charcoal** (`{colors.charcoal}` — `#3a3d40`): captions, secondary nav.
-- **Mute** (`{colors.mute}` — `#505a63`): supporting text.
-- **Ash** (`{colors.ash}` — `#5c5e60`): tertiary text, footer copy.
-- **Stone** (`{colors.stone}` — `#8d969e`): metadata, subtle captions.
-- **Faint** (`{colors.faint}` — `#c9c9cd`): disabled foreground, hairline replacements.
-- **On-Dark** (`{colors.on-dark}` — `#ffffff`): primary text on `{colors.canvas-dark}`.
-- **On-Dark Mute** (`{colors.on-dark-mute}` — `rgba(255,255,255,0.72)`): secondary text in dark regions.
-
-### Semantic
-- **Accent Teal** (`{colors.accent-teal}` — `#00a87e`): used in product mockup illustrations.
-- **Accent Light Blue** (`{colors.accent-light-blue}` — `#007bc2`): inline link colour in dark photo headers.
-- **Accent Blue Link** (`{colors.accent-blue-link}` — `#376cd5`): default inline link colour on white surfaces.
-- **Accent Light Green** (`{colors.accent-light-green}` — `#428619`): success / positive product callouts.
-- **Accent Green Text** (`{colors.accent-green-text}` — `#006400`): inline success text.
-- **Accent Yellow** (`{colors.accent-yellow}` — `#b09000`): caution / pending state in product mockups.
-- **Accent Warning** (`{colors.accent-warning}` — `#ec7e00`): full-saturation orange used in warning illustrations.
-- **Accent Pink** (`{colors.accent-pink}` — `#e61e49`): deep pink — used inside product photography and category iconography.
-- **Accent Danger** (`{colors.accent-danger}` — `#e23b4a`): destructive / error state.
-- **Accent Deep Red** (`{colors.accent-deep-red}` — `#8b0000`): inline error text.
-- **Accent Brown** (`{colors.accent-brown}` — `#936d62`): a single warm-neutral used in metals tier card chrome.
-- **Link** (`{colors.link}` — `#376cd5`): default inline link colour. Same as `{colors.accent-blue-link}`.
-
-## Typography
-
-### Font Family
-
-Revolut ships a two-family stack:
-
-- **Aeonik Pro** — proprietary humanist sans-serif used for all display sizes (20px+) at weight 500. Carries the brand's editorial confidence; tightens dramatically with negative letter-spacing at large sizes.
-- **Inter** — open-source workhorse for body, button labels, captions, and metadata. Always at weight 400 or 600, with positive tracking (`0.16–0.24px`) on UI labels.
-
-When Aeonik Pro cannot be licensed, **Inter Display**, **General Sans**, or **Söhne** are credible substitutes — all share the warm geometric character. Apply -1% letter-spacing on display sizes to match the original tightness.
-
-### Hierarchy
-
-| Token | Size | Weight | Line Height | Letter Spacing | Use |
-|---|---|---|---|---|---|
-| `{typography.display-xxl}` | 136px | 500 | 1.0 | -2.72px | The flagship hero ("Banking & Beyond"). One per page. |
-| `{typography.display-xl}` | 80px | 500 | 1.0 | -0.8px | Section openers ("Join the 70+ million using Revolut"). |
-| `{typography.display-lg}` | 48px | 500 | 1.21 | -0.48px | Sub-section titles. |
-| `{typography.display-md}` | 40px | 500 | 1.2 | -0.4px | Feature card titles. |
-| `{typography.heading-lg}` | 32px | 500 | 1.19 | -0.32px | Plan card titles. |
-| `{typography.heading-md}` | 24px | 500 | 1.33 | 0 | Section sub-titles. |
-| `{typography.heading-sm}` | 20px | 500 | 1.4 | 0 | List headers, prominent labels. |
-| `{typography.body-lg}` | 18px | 400 | 1.56 | -0.09px | Marketing prose. |
-| `{typography.body-md}` | 16px | 400 | 1.5 | 0.24px | Default body. |
-| `{typography.body-md-bold}` | 16px | 600 | 1.5 | 0.16px | Emphatic body. |
-| `{typography.body-sm}` | 14px | 400 | 1.43 | 0 | Captions, metadata. |
-| `{typography.button-lg}` | 20px | 500 | 1.4 | 0 | Hero CTAs (Aeonik Pro). |
-| `{typography.button-md}` | 16px | 600 | 1.5 | 0.24px | Default button label. |
-| `{typography.button-sm}` | 14px | 600 | 1.43 | 0 | Pill chips, sub-nav. |
-| `{typography.caption}` | 13px | 400 | 1.4 | 0 | Footer disclosure, regulatory text. |
-| `{typography.link-emph}` | 16px | 700 | 1.5 | 0.24px | Emphatic inline link in dark mode. |
-
-### Principles
-- Display sizes always run at weight 500 with `lineHeight: 1.0` (or 1.19–1.21 below 48px). The negative letter-spacing scales with size — bigger types tighten more.
-- Body Inter sits at weight 400 with positive tracking (`0.24px`) — the small spacing nudge makes UI labels feel slightly mechanical, fitting fintech precision.
-- Hero CTAs use the Aeonik Pro `{typography.button-lg}` variant; everything below the hero uses the Inter `{typography.button-md}`.
-- Inline links inside dark photo regions step up to weight 700 (`{typography.link-emph}`) so they hold contrast against the canvas without using the cobalt accent.
-
-### Note on Font Substitutes
-
-When Aeonik Pro is unavailable, clamp display `lineHeight` to 1.0 explicitly and apply -1% letter-spacing on display sizes. Inter Display, General Sans, or Söhne will read closest to the original. Inter is open-source and should be used directly.
-
-## Layout
-
-### Spacing System
-- **Base unit**: 4px, with the working scale on multiples of 4 / 8 / 16.
-- **Tokens**: `{spacing.xxs}` 4px · `{spacing.xs}` 6px · `{spacing.sm}` 8px · `{spacing.md}` 14px · `{spacing.lg}` 16px · `{spacing.xl}` 24px · `{spacing.xxl}` 32px · `{spacing.xxxl}` 48px · `{spacing.block}` 80px · `{spacing.section}` 88px · `{spacing.band}` 120px.
-- Section padding: `{spacing.section}` (88px) vertical between bands; `{spacing.band}` (120px) on the hero band and the closing planning section.
-- Card internal padding: `{spacing.xxl}` (32px) on `{component.feature-card-light}`, `{component.plan-card}`, `{component.feature-card-dark}`.
-
-### Grid & Container
-- **Max content width** ≈ 1200px on body sections; hero bands run full-bleed.
-- **Plan grid**: 4-up plan cards on the home page, stacking 2-up at tablet and 1-up at small mobile.
-- **Feature grid**: 3-up at desktop, 2-up at tablet, 1-up at mobile.
-- **Product mockup bands**: a single full-width hero photo of a phone or card mockup, no surrounding chrome — the asset itself is the section.
-
-### Whitespace Philosophy
-- Whitespace is generous and editorial — sections breathe at 88–120px so display headlines have room to register at 80–136px without feeling cramped.
-- Inside cards, padding stays at 32px so feature copy and plan tiers have a consistent rhythm.
-- Hairline `{colors.hairline-light}` dividers replace shadow on white surfaces; `{colors.hairline-dark}` carries the corresponding role in dark regions.
-
-## Elevation & Depth
-
-| Level | Treatment | Use |
+| Uso | Tamaño | Peso |
 |---|---|---|
-| 0 — flat | No shadow, no border | Default canvas bands (light or dark), full-bleed hero. |
-| 1 — surface card | `{colors.surface-card}` (white) on `{colors.surface-soft}` band | Feature cards inside light bands. |
-| 2 — surface elevated dark | `{colors.surface-elevated}` (`#16181a`) on `{colors.canvas-dark}` | Plan cards inside the planning section. |
-| 3 — featured surface | `{colors.primary}` on `{colors.canvas-dark}` | Featured plan card (cobalt violet inversion). |
-| 4 — product mockup | Full-bleed photo asset | Hero phone / card / terminal mockup bands. |
+| Monto héroe (caja del tablero, campo de carga) | 32 a 36 px | 600, `tracking-tight` |
+| Saldo del cliente, resultado del arqueo | 24 a 36 px | 600 |
+| Título de pantalla (escritorio) | 30 px | 600 |
+| Título de hoja, barra de arriba | 18 px | 600 |
+| Cuerpo, filas | 15 a 16 px | 500 |
+| Etiqueta, detalle | 12 a 14 px | 500, `tinta-suave` |
 
-The system has **no traditional drop-shadow language**. Surfaces register depth via colour-blocking (light → dark band switches) and surface-luminance shifts (`{colors.canvas-dark}` → `{colors.surface-elevated}`). Photography mockups carry their own depth from the asset itself.
+- `h1` y `h2` con `text-wrap: balance`. Puntos suspensivos con "…", no "...".
+- Textos en castellano rioplatense y con las palabras del dominio (SPECS §2): fiado,
+  cobro, arqueo, caja chica, boletas, rendición.
 
-### Decorative Depth
-- **Product mockup hero bands** — the home page features a phone mockup full-bleed against `{colors.canvas-dark}`, with the device's own glow providing the only atmospheric depth. No additional gradients, no shadows.
-- **Featured plan card** — the cobalt-violet `{component.plan-card-featured}` sits inside the otherwise dark planning grid as a single saturated colour block, marking the recommended tier visually.
-- **Card metals tier** — the brand uses `{colors.accent-brown}` and a deep gradient on metals card mockups to signal premium without resorting to gold-on-black metallic effects.
+## 4. Forma, espacio y elevación
 
-## Shapes
+- **Radios:** pastilla (`rounded-full`) para botones, chips, segmentado y la barra
+  inferior; 16 px (`rounded-2xl`) para campos, filas y tarjetas chicas; 24 px
+  (`rounded-3xl`) para tarjetas de sección y hojas. Un radio interno nunca es mayor que
+  el del contenedor. (Pastillas y tarjetas de 20/24 px: de Revolut.)
+- **Toques:** todo lo tocable mide 44 px o más; los botones de acción, 48 px (`h-12`);
+  la acción del arqueo, 56 px.
+- **Espacio:** márgenes laterales de 16 px en el celular; grilla de 4 px de Tailwind.
+- **Elevación:** en claro, `shadow-tarjeta` (dos capas, azuladas, suaves) y
+  `shadow-flotante` para hojas. En oscuro no hay sombras: la elevación la da la superficie
+  más clara y un anillo de 1 px al 4 %.
+- **Capas (z-index):** barra inferior 30, hoja 40, toast 50. No hay otras.
 
-### Border Radius Scale
+## 5. Estructura y navegación
 
-| Token | Value | Use |
+- **Celular:** barra de arriba en `noche` (marca en Inicio, título en las demás), contenido,
+  y **barra inferior** con cuatro destinos: Inicio, Cargar, Arqueo, Fiados. El activo
+  lleva una pastilla dorada detrás del ícono que viaja de un destino a otro (`layoutId`).
+- **Escritorio (1024 px o más):** **barra lateral** en `noche` con la marca, los mismos
+  cuatro destinos, el usuario, tema y salir. El contenido va a un máximo de 1024 px.
+- Navegación por hash (`#arqueo`, `#carga-rapida`, `#cuenta-corriente`): el botón atrás
+  del celular funciona y cada pantalla tiene su URL. Al cambiar, vuelve arriba.
+- **Inicio** es un tablero: la noche con saludo, fecha, estado del día, las dos cajas con
+  el efectivo en grande y las cuatro cargas rápidas en círculos dorados. Debajo, una hoja
+  clara que sube sobre la noche (`-mt-6 rounded-t-3xl`, el gesto de las apps de banco)
+  con el estado del día y los fiados más grandes.
+
+## 6. Componentes compartidos
+
+Seis, el máximo del track B. Todo lo demás es local a su pantalla.
+
+| Componente | Dónde vive | Qué resuelve |
 |---|---|---|
-| `{rounded.none}` | 0px | Hero bands, full-bleed sections, footer. |
-| `{rounded.sm}` | 8px | Inline tags, small chips. |
-| `{rounded.md}` | 12px | Form inputs, download tiles. |
-| `{rounded.lg}` | 20px | Feature cards, plan cards. |
-| `{rounded.xl}` | 28px | Product mockup containers. |
-| `{rounded.full}` | 9999px | Buttons, pills, badges, tabs. |
+| `Boton` | `ui.tsx` | Primario (dorado), secundario, fantasma; `cargando` pone un spinner y lo bloquea. Deshabilitado primario: gris de superficie, no dorado apagado |
+| `Aviso` | `ui.tsx` | Mensaje en línea con ícono: error (`role=alert`), éxito, aviso, info (`role=status`); acepta una acción (Reintentar) |
+| `CampoMonto` | `ui.tsx` | Pesos enteros: teclado numérico, solo dígitos, separador de miles mientras se escribe, "$" adelante, anillo de foco en el contenedor |
+| `Segmentado` | `ui.tsx` | Elección entre 2 o 3 opciones (turno, orden) con una pastilla que viaja; opciones deshabilitadas con detalle |
+| `Hoja` | `ui.tsx` | Hoja desde abajo en el celular (se cierra arrastrando, con Escape o tocando afuera) y diálogo centrado en escritorio; bloquea el scroll y devuelve el foco |
+| `Carga` | `pantallas/CargaRapida.tsx` | El formulario de carga (fiado, cobro, pago, premio) en una hoja, con búsqueda de cliente y toast de guardado. Lo usan Inicio y Carga rápida |
 
-### Photography Geometry
-- Phone mockups: 9:19.5 (vertical) with `{rounded.xl}` corners on the device chrome.
-- Card mockups: 1.586:1 (credit-card aspect) with `{rounded.lg}` corners.
-- Terminal/POS mockups: 4:3 with `{rounded.xl}` corners and substantial padding around the device.
-- Lifestyle photography (rare): 16:9 with `{rounded.lg}` corners.
+Piezas que no son componentes compartidos: `TIPOS` (nombre, ícono y color de cada tipo de
+movimiento), `AVATAR` (clase de la inicial del cliente), y las utilidades CSS `presiona`,
+`esqueleto` y `vivo`.
 
-## Components
+Patrones:
 
-### Buttons
+- **Estados de toda consulta:** cargando (esqueleto con la forma de lo que reemplaza),
+  error (`Aviso` con Reintentar cuando se puede), vacío (una línea que dice qué hacer).
+- **Botón bloqueado = motivo a la vista.** El arqueo dice qué falta ("Para arquear,
+  completá la caja y el efectivo contado.") o por qué no se puede (turno sin ticket).
+  Cobrar sin caja chica abierta, lo mismo.
+- **Pago (D18):** tres opciones como tarjetas de radio, "MP / transferencia" elegida por
+  defecto, "Retiro del dueño" y "Gasto".
+- **Cuenta corriente:** la columna de días se ve siempre en el celular (el avatar se
+  esconde antes que los días). Saldo a favor: valor absoluto en verde con "a favor", nunca
+  "-$ a favor". El detalle abre en hoja en el celular y en un panel fijo en escritorio.
+- **Arqueo a ciegas:** el formulario no muestra el saldo esperado antes de contar; el
+  esperado aparece en el resultado.
 
-**`button-primary`** — white CTA on dark
-- Background `{colors.canvas-light}`, label `{colors.canvas-dark}`, type `{typography.button-md}`, padding `14px 28px`, `rounded: {rounded.full}`, height 48px.
-- The brand's primary CTA, used on every dark hero band ("Choose your subscription", "Get started").
-- Pressed state lives in `button-primary-pressed` (background `{colors.faint}`).
+## 7. Movimiento
 
-**`button-dark`** — dark CTA on light
-- Background `{colors.canvas-dark}`, label `{colors.on-dark}`, type `{typography.button-md}`, `rounded: {rounded.full}`.
-- The reverse-canvas equivalent of `{component.button-primary}` — used inside white catalogue bands.
+Librería: `motion` con `LazyMotion` + `m` y `MotionConfig reducedMotion="user"`.
+Presupuesto: nada que se vea decenas de veces por turno dura más de 200 ms.
 
-**`button-soft`** — soft surface CTA
-- Background `{colors.surface-soft}`, label `{colors.ink}`, type `{typography.button-md}`, `rounded: {rounded.full}`.
-- Tertiary action in white-canvas regions ("Learn more", "View FAQs").
+| Qué | Cómo | Duración | Por qué |
+|---|---|---|---|
+| Toque | `presiona`: escala 0,97 al apretar | 140 ms | Confirma el toque en todo lo tocable |
+| Cambio de pantalla | Solo opacidad | 160 ms | Se navega todo el tiempo: sin deslizar |
+| Pastilla activa (barra, segmentado) | `layoutId`, resorte sin rebote | 300 ms | Muestra de dónde a dónde |
+| Hoja (celular) | Sube desde abajo, curva de iOS; arrastre para cerrar | 280 ms / 200 ms salida | Gesto conocido de Mercado Pago y Revolut |
+| Diálogo (escritorio) | Opacidad y escala desde 0,96 | 200 ms / 150 ms | Nunca desde escala 0 |
+| Aviso | Opacidad y 4 px hacia abajo | 200 ms | Aparece sin empujar |
+| Toast de carga guardada | Baja desde arriba, se va a los 4 s | 250 ms | Confirma sin tapar la próxima carga |
+| Resultado del arqueo | Resorte con rebote leve; el tilde se dibuja | 450 ms | El momento del día: se ve cuatro veces |
+| Error de login | Sacudida con WAAPI | 300 ms | No remonta el formulario ni pierde el foco |
+| Cambio de tema | Fundido de toda la página (View Transitions) | 200 ms | Sin él, cada superficie cambia a destiempo |
+| Estado vivo | Onda que sale de un punto | 2 s en bucle | Solo para "abierto ahora" (día, turno) |
 
-**`button-outline-light`** — outlined CTA on light
-- Background `{colors.canvas-light}`, label `{colors.ink}`, 1px solid `{colors.hairline-strong}`, type `{typography.button-md}`, `rounded: {rounded.full}`.
-- Secondary action when paired with `{component.button-dark}`.
+Curvas: `--ease-salida` `cubic-bezier(0.23, 1, 0.32, 1)` para entrar y salir;
+`--ease-hoja` `cubic-bezier(0.32, 0.72, 0, 1)` para hojas (curvas de Emil Kowalski).
+Con `prefers-reduced-motion` se apagan el esqueleto, la onda, la escala del toque, la
+transición de tema, la sacudida y el scroll suave; motion reduce lo suyo a opacidad.
 
-**`button-outline-dark`** — outlined CTA on dark
-- Background `{colors.canvas-dark}`, label `{colors.on-dark}`, 1px solid `{colors.on-dark}`, type `{typography.button-md}`, `rounded: {rounded.full}`, padding `13px 27px`, height 48px.
-- Dark-canvas counterpart of `{component.button-outline-light}`; used inside dark hero bands as a tertiary action when paired with `{component.button-primary}`.
+Descartado a propósito: contar montos hacia arriba (un número de plata tiene que leerse
+ya), escalonar la entrada de listas y botones de carga (se ven decenas de veces), deslizar
+el contenido entre pantallas, y levantar tarjetas en hover.
 
-**`button-pill-sm`** — small pill chip
-- Background `{colors.surface-soft}`, label `{colors.ink}`, type `{typography.button-sm}`, `rounded: {rounded.full}`, padding `8px 16px`, height 36px.
-- Sub-nav chips, filter pills.
+## 8. Íconos
 
-### Cards & Containers
+`lucide-react`, trazo 2, 20 px en filas y botones, 24 px en tarjetas. Cada tipo de
+movimiento tiene su ícono y su color en `TIPOS` (fiado: libreta en naranja; cobro: mano
+con monedas en verde; MP, retiro y gasto en rojo; premio: trofeo dorado sobre la noche).
+Los íconos son decorativos (`aria-hidden`): el texto siempre está al lado. Los botones
+de solo ícono (tema, salir, cerrar) llevan `aria-label`.
 
-**`hero-band-dark`** — full-bleed dark hero
-- Background `{colors.canvas-dark}`, text `{colors.on-dark}`, type `{typography.display-xxl}` for the title, padding `{spacing.section}` (88px) vertical, `rounded: {rounded.none}`.
-- Used only on the home page hero band.
+## 9. Accesibilidad
 
-**`hero-band-photo`** — photo-led hero
-- Background `{colors.canvas-dark}` with full-bleed product photography, text `{colors.on-dark}`, type `{typography.display-xl}`, `rounded: {rounded.none}`.
-- Used on product pages — phone or card mockup as the full-band canvas.
+- Foco visible en todo (`:focus-visible`, 2 px, color `foco`; dorado sobre la noche).
+- Formularios con `<form>`: Enter guarda en todas las pantallas.
+- Hojas con `role=dialog`, `aria-modal`, título enlazado, Escape y foco devuelto.
+- Mensajes anunciados (`role=alert` para errores, `role=status` y `aria-live` para lo demás).
+- `color-scheme` por tema, para que los controles nativos y el scroll acompañen.
+- `touch-action: manipulation` y sin resaltado de toque del navegador.
 
-**`feature-card-light`** — feature card on white
-- Background `{colors.surface-card}`, text `{colors.ink}`, 1px solid `{colors.hairline-light}`, type `{typography.body-md}`, `rounded: {rounded.lg}`, padding `{spacing.xxl}` (32px).
-- Used in white catalogue bands for feature comparisons.
+## 10. Referencias
 
-**`feature-card-dark`** — feature card on dark
-- Background `{colors.surface-elevated}`, text `{colors.on-dark}`, type `{typography.body-md}`, `rounded: {rounded.lg}`, padding `{spacing.xxl}`.
-- Used inside dark storytelling sections.
-
-**`plan-card`** — subscription plan card
-- Background `{colors.surface-elevated}`, text `{colors.on-dark}`, type `{typography.body-md}`, `rounded: {rounded.lg}`, padding `{spacing.xxl}` (32px).
-- Plan name in `{typography.heading-lg}` ("Standard", "Plus", "Premium", "Metal", "Ultra").
-
-**`plan-card-featured`** — featured plan card
-- Background `{colors.primary}`, text `{colors.on-primary}`, type `{typography.body-md}`, `rounded: {rounded.lg}`, padding `{spacing.xxl}`.
-- Cobalt-violet inversion of `{component.plan-card}` — used on the recommended tier.
-
-**`product-mockup`** — full-bleed product asset
-- Background `{colors.canvas-dark}`, the asset itself fills the band, `rounded: {rounded.xl}` on the device chrome.
-- Phone, card, and terminal mockups — no caption overlay, no surrounding chrome.
-
-**`download-tile`** — app store download tile
-- Background `{colors.surface-soft}`, text `{colors.ink}`, type `{typography.body-sm}`, `rounded: {rounded.md}`, padding `12px 20px`, height 56px.
-- App Store + Google Play download buttons, side-by-side.
-
-### Inputs & Forms
-
-**`text-input`** — default input
-- Background `{colors.canvas-light}`, text `{colors.ink}`, type `{typography.body-md}`, 1px solid `{colors.hairline-light}`, `rounded: {rounded.md}`, padding `14px 16px`, height 56px.
-- Generous height for fintech accessibility — comfortably exceeds WCAG AAA touch target.
-
-### Navigation
-
-**`nav-bar`** — top nav (desktop)
-- Background `{colors.canvas-dark}`, text `{colors.on-dark}`, type `{typography.button-md}`, height 64px.
-- Left: wordmark logo. Centre: top-level nav ("Personal", "Business", "Company"). Right: language switcher + "Log in" + `{component.button-primary}`.
-
-**`nav-bar`** (mobile)
-- Same height 64px, collapses centre nav into a hamburger icon. Logo stays left, sign-in CTA stays right.
-
-**`sub-nav-pill`** — sub-nav chip
-- Pill chips set in a horizontal row inside dark sections (e.g. "Personal", "Business", "Premium"), `{component.sub-nav-pill}` styling.
-
-### Signature Components
-
-**`badge-tag`** — neutral tag
-- Background `{colors.surface-soft}`, text `{colors.ink}`, type `{typography.caption}`, `rounded: {rounded.full}`, padding `4px 12px`.
-- Inline tags inside feature cards.
-
-**`badge-feature`** — feature highlight badge
-- Background `{colors.primary}`, text `{colors.on-primary}`, type `{typography.caption}`, `rounded: {rounded.full}`, padding `4px 12px`.
-- "New", "Most popular" badges anchored on plan cards.
-
-**`footer`** — global footer
-- Background `{colors.canvas-dark}`, text `{colors.on-dark-mute}`, type `{typography.body-sm}`, `rounded: {rounded.none}`, padding `80px 24px`.
-- Multi-column quick-links grid above a copyright + regulatory disclosure block separated by `{colors.divider-soft}`.
-
-## Do's and Don'ts
-
-### Do
-- Switch full bands between `{colors.canvas-dark}` (storytelling) and `{colors.canvas-light}` (catalogue). The two-mode rhythm is core.
-- Use `{component.button-primary}` (white pill on dark) as the primary CTA on every dark hero band. It's the brand's loudest action.
-- Reserve `{colors.primary}` for the featured plan card and the brand wordmark — the cobalt should feel like a deliberate stamp, not a colour theme.
-- Set hero headlines in **Aeonik Pro 500** at 80–136px with `lineHeight: 1.0` and large negative letter-spacing.
-- Use **Inter** for body, button labels, captions — never substitute Aeonik Pro for body type.
-- Apply `{rounded.full}` to every button and pill; `{rounded.lg}` (20px) to feature and plan cards; `{rounded.md}` (12px) to inputs.
-- Show product mockups full-bleed inside dark sections — the asset IS the section.
-- Use the wide accent palette (`{colors.accent-teal}`, `{colors.accent-pink}`, `{colors.accent-light-green}`, etc.) inside product illustrations and iconography only.
-
-### Don't
-- Don't use accent colours (`{colors.accent-teal}`, `{colors.accent-pink}`, etc.) as button surfaces. They live inside illustrations only.
-- Don't use a near-black canvas. The brand is `#000000`, not `#0a0a0a`.
-- Don't pair white text with cobalt violet inside body content — `{colors.primary}` is for the featured plan card surface, not large prose.
-- Don't add drop shadows on cards. Elevation is canvas + surface-luminance shifts.
-- Don't introduce a secondary brand colour. Cobalt violet is the only brand stamp.
-- Don't loosen Aeonik Pro `lineHeight` past 1.0 on display sizes. Tight stacking is structural.
-- Don't bump body Inter to weight 500. Use 400 (default) or 600 (emphatic) — never the in-between.
-- Don't pair `{colors.canvas-dark}` with another dark surface beyond `{colors.surface-elevated}`. The surface ladder has only two dark steps.
-
-## Responsive Behavior
-
-### Breakpoints
-
-| Name | Width | Key Changes |
-|---|---|---|
-| Desktop XL | ≥ 1440px | 4-up plan grid, full-bleed product mockup bands, max content 1200. |
-| Desktop | 1280–1439px | Container shrinks; xl side padding. |
-| Tablet Large | 1024–1279px | Plan grid 4-up; feature grid 3-up. |
-| Tablet | 768–1023px | Plan grid 2-up; feature grid 2-up. |
-| Mobile Large | 426–767px | Plan grid 1-up; feature grid 1-up; nav collapses to hamburger; hero `display-xxl` clamps to 64px. |
-| Mobile | ≤ 425px | All grids 1-up; hero clamps to 48px; section padding `{spacing.section}` collapses to 64px. |
-
-### Touch Targets
-- All buttons ship at minimum 48px tall — comfortably exceeds WCAG AAA (44px). Default `{component.button-primary}` is 48px.
-- `{component.text-input}` is 56px tall — fintech-grade accessibility.
-- `{component.button-pill-sm}` (36px) is bumped to 44px on mobile via padding adjustment.
-
-### Collapsing Strategy
-- Top-level nav collapses to hamburger at < 1024px; the wordmark and `{component.button-primary}` stay anchored.
-- Hero `{typography.display-xxl}` clamps: 136px → 80px → 64px → 48px across the breakpoint ladder.
-- Plan grid steps from 4-up to 2-up at < 1024px to 1-up at < 768px.
-- Product mockup bands maintain full-bleed at every breakpoint; the asset crops inward rather than letterboxing.
-- Sub-nav pills convert from a wrap row to a horizontal scroll-rail at < 768px.
-
-### Image Behavior
-- Phone and card mockups are served at 1.5× and 2× DPR; below 768px the system swaps to a smaller hero crop.
-- Product photography retains its own atmospheric lighting at every breakpoint — no responsive variant assets.
-
-## Iteration Guide
-
-1. Focus on ONE component at a time. Most surfaces share the `{colors.canvas-dark}` / `{colors.canvas-light}` pair with `{rounded.full}` for buttons and `{rounded.lg}` for cards.
-2. Reference component names and tokens directly (`{colors.primary}`, `{component.plan-card-featured}`, `{rounded.lg}`) — do not paraphrase.
-3. Run `npx @google/design.md lint DESIGN.md` after edits; orphaned-tokens warnings will catch unused entries.
-4. Add new variants as separate entries (`-pressed`, `-featured`, `-disabled`) — do not bury them in prose.
-5. Default body type to `{typography.body-md}` (Inter 400 with positive tracking); reach for `{typography.body-md-bold}` only on emphasis.
-6. Keep `{colors.primary}` scarce — if more than one cobalt-violet element appears per viewport, ask whether one should drop to `{component.plan-card}` (`{colors.surface-elevated}`) instead.
-
-## Known Gaps
-
-- Pressed/active visual states are documented for `button-primary-pressed` only; other components rely on focus-ring (browser default) for interactive feedback.
-- Logged-in app surfaces (transactions, transfers, account settings) are out of scope — only the public marketing canvas is documented.
-- The wide accent palette (`{colors.accent-teal}` through `{colors.accent-brown}`) is captured from the extracted token set, but exact usage inside product illustrations varies per market and product line; document per-illustration rather than as system buttons.
-- Mobile-app screenshot art direction (phone bezels, status bars) is product-photography territory and not standardised as design tokens.
+- **Revolut** (el análisis que ocupaba este archivo antes): pastillas para botones,
+  tarjetas de 20 a 24 px, fondo oscuro con un acento saturado, números grandes con
+  tracking cerrado. Se tomó la actitud, no la paleta: el violeta de Revolut se cambió por
+  la noche y la estrella de este negocio.
+- **Mercado Pago y Ualá:** el tablero de saldo arriba con accesos circulares, la hoja
+  clara que sube sobre el color, la hoja inferior para cargar.
+- **Emil Kowalski** (animations.dev): curvas, duraciones cortas, `scale(0.97)` al tocar,
+  nunca animar desde escala 0, sin animación en acciones de alta frecuencia.

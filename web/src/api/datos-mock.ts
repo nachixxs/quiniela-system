@@ -30,7 +30,11 @@ export const diaActualMock: DiaActualOut = {
 export const clientesMock: ClienteBusqueda[] = [
   { id: 14, nombre: "Roberto Pérez", saldo: 30000 },
   { id: 15, nombre: "Susana Gómez", saldo: 12500 },
-  { id: 16, nombre: "Kiosco Don Aldo", saldo: 0 },
+  { id: 16, nombre: "Kiosco Don Aldo", saldo: -5000 },
+  { id: 17, nombre: "Norma Villalba", saldo: 48000 },
+  { id: 18, nombre: "Chiqui Benítez", saldo: 6500 },
+  { id: 19, nombre: "Taller Ramírez", saldo: 21000 },
+  { id: 20, nombre: "Elsa Correa", saldo: 3000 },
 ];
 
 function mov(id: number, tipo: MovimientoCrear["tipo"], monto: number, cliente_id: number, cuando: string, nota: string | null = null) {
@@ -54,12 +58,29 @@ export const clientesDetalleMock: Record<number, ClienteDetalle> = {
     id: 16, nombre: "Kiosco Don Aldo", saldo: -5000,
     movimientos: [mov(204, "cobro_fiado", 5000, 16, "2026-09-22", "Pagó de más")],
   },
+  17: {
+    id: 17, nombre: "Norma Villalba", saldo: 48000,
+    movimientos: [mov(205, "fiado", 30000, 17, "2026-09-08"), mov(206, "fiado", 25000, 17, "2026-09-16"), mov(207, "cobro_fiado", 7000, 17, "2026-09-20", "Pagó una parte")],
+  },
+  18: { id: 18, nombre: "Chiqui Benítez", saldo: 6500, movimientos: [mov(208, "fiado", 6500, 18, "2026-09-19")] },
+  19: {
+    id: 19, nombre: "Taller Ramírez", saldo: 21000,
+    movimientos: [mov(209, "fiado", 12000, 19, "2026-09-17"), mov(210, "fiado", 9000, 19, "2026-09-22")],
+  },
+  20: {
+    id: 20, nombre: "Elsa Correa", saldo: 3000,
+    movimientos: [mov(211, "fiado", 5000, 20, "2026-09-22"), mov(212, "cobro_fiado", 2000, 20, "2026-09-23")],
+  },
 };
 
 export const deudoresMock: DeudorOut[] = [
   { id: 14, nombre: "Roberto Pérez", saldo: 30000, dias_deuda_mas_vieja: 2 },
   { id: 15, nombre: "Susana Gómez", saldo: 12500, dias_deuda_mas_vieja: 9 },
   { id: 16, nombre: "Kiosco Don Aldo", saldo: -5000, dias_deuda_mas_vieja: 0 },
+  { id: 17, nombre: "Norma Villalba", saldo: 48000, dias_deuda_mas_vieja: 15 },
+  { id: 18, nombre: "Chiqui Benítez", saldo: 6500, dias_deuda_mas_vieja: 4 },
+  { id: 19, nombre: "Taller Ramírez", saldo: 21000, dias_deuda_mas_vieja: 6 },
+  { id: 20, nombre: "Elsa Correa", saldo: 3000, dias_deuda_mas_vieja: 1 },
 ];
 
 // Handlers de las rutas mockeadas sin parámetro dinámico (esas van aparte en cliente.ts)

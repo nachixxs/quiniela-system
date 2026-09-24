@@ -23,6 +23,8 @@ async function pedir<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise
 }
 
 async function pedirMock<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
+  // Latencia simulada para ver los estados de carga; sessionStorage "mock_demora" la cambia.
+  await new Promise((r) => setTimeout(r, Number(sessionStorage.getItem("mock_demora") ?? 250)));
   const [path, query] = ruta.split("?");
   if (metodo === "GET" && path === "/clientes/deudores") {
     const orden = new URLSearchParams(query).get("orden");
