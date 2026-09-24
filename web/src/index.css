@@ -1,134 +1,178 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tokens del sistema (ver DESIGN.md). Los colores son roles: el tema oscuro reasigna los mismos nombres. */
 @theme {
-  --font-sans: "Inter", system-ui, sans-serif;
-  --color-fondo: #f4f4f4;
-  --color-tarjeta: #ffffff;
-  --color-tinta: #191c1f;
-  --color-tinta-suave: #505a63;
-  --color-borde: #e2e2e7;
-  --color-marca: #494fdf;
-  --color-marca-fuerte: #3a40c4;
-  --color-peligro: #e23b4a;
-  --color-exito: #428619;
-  --color-aviso: #b09000;
-  --color-barra: #000000;
-  --color-en-barra: #ffffff;
-  /* Curva fuerte de Emil Kowalski: más punch que el ease-out por defecto del navegador. */
-  --ease-fuerte: cubic-bezier(0.23, 1, 0.32, 1);
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+
+  --color-lienzo: #f2f3f7;
+  --color-superficie: #ffffff;
+  --color-superficie-2: #eceef3;
+  --color-tinta: #121826;
+  --color-tinta-suave: #525b6e;
+  --color-borde: #dfe2ea;
+  --color-noche: #101a33;
+  --color-noche-2: #1d2a4d;
+  --color-en-noche: #ffffff;
+  --color-en-noche-suave: #b7bac2;
+  --color-estrella: #f4b73f;
+  --color-estrella-fuerte: #e9a521;
+  --color-en-estrella: #101a33;
+  --color-foco: #101a33;
+  --color-exito: #13794b;
+  --color-exito-suave: #e3f4ec;
+  --color-peligro: #c42b2b;
+  --color-peligro-suave: #fbe7e6;
+  --color-aviso: #b54708;
+  --color-aviso-suave: #fdf0da;
+
+  --shadow-tarjeta: 0 1px 2px rgb(16 26 51 / 0.06), 0 12px 32px -16px rgb(16 26 51 / 0.22);
+  --shadow-flotante: 0 -1px 0 rgb(16 26 51 / 0.06), 0 -12px 40px -20px rgb(16 26 51 / 0.35);
+
+  /* Curvas de Emil Kowalski: salida fuerte para entrar/salir, la de iOS para hojas. */
+  --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-hoja: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .dark {
-  --color-fondo: #000000;
-  --color-tarjeta: #16181a;
-  --color-tinta: #ffffff;
-  --color-tinta-suave: rgba(255, 255, 255, 0.72);
-  --color-borde: rgba(255, 255, 255, 0.12);
-  --color-barra: #16181a;
-  --color-en-barra: #ffffff;
+  --color-lienzo: #0b1020;
+  --color-superficie: #141b2e;
+  --color-superficie-2: #1c2438;
+  --color-tinta: #eef0f6;
+  --color-tinta-suave: #a3abbd;
+  --color-borde: #262f45;
+  --color-noche: #151f3c;
+  --color-noche-2: #22305a;
+  --color-estrella: #f6c14f;
+  --color-estrella-fuerte: #f8cd6e;
+  --color-foco: #f6c14f;
+  --color-exito: #4cc98a;
+  --color-exito-suave: #10291f;
+  --color-peligro: #ff7a70;
+  --color-peligro-suave: #33161a;
+  --color-aviso: #ff9d4d;
+  --color-aviso-suave: #2e2210;
+  /* En oscuro la elevación la da la superficie más clara, no la sombra. */
+  --shadow-tarjeta: 0 0 0 1px rgb(255 255 255 / 0.04);
+  --shadow-flotante: 0 -1px 0 rgb(255 255 255 / 0.06);
 }
 
-html {
-  background-color: var(--color-fondo);
-  color-scheme: light;
-}
-
-.dark {
-  color-scheme: dark;
-}
-
-body {
-  font-family: var(--font-sans);
-  background-color: var(--color-fondo);
-  color: var(--color-tinta);
-  /* Los montos son el dato protagonista: alineados y con el mismo ancho por dígito. */
-  font-variant-numeric: tabular-nums;
-}
-
-.dark body {
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Selección de texto e input: mismo acento de marca en vez del azul por defecto del navegador. */
-::selection {
-  background-color: color-mix(in srgb, var(--color-marca) 30%, transparent);
-  color: var(--color-tinta);
-}
-input,
-select {
-  caret-color: var(--color-marca);
-}
-
-/* Cambio de tema sin salto brusco: las superficies y el texto cambian de color con una
-   transición corta en vez de saltar de golpe entre claro y oscuro. */
-html,
-body,
-.bg-fondo,
-.bg-tarjeta,
-.bg-barra,
-.border-borde,
-.text-tinta,
-.text-tinta-suave,
-.text-en-barra {
-  transition:
-    background-color 160ms var(--ease-fuerte),
-    color 160ms var(--ease-fuerte),
-    border-color 160ms var(--ease-fuerte);
-}
-
-/* Foco visible coherente en los dos temas: un aro de dos colores, siempre con el fondo
-   de por medio, así el contraste no depende de qué superficie tenga el elemento debajo. */
-:focus {
-  outline: none;
-}
-:focus-visible {
-  box-shadow:
-    0 0 0 2px var(--color-fondo),
-    0 0 0 4px var(--color-marca);
-}
-
-@keyframes entrada {
-  from {
-    opacity: 0;
+/* Base en su capa, para que las utilidades de Tailwind puedan pisarla. */
+@layer base {
+  html {
+    background-color: var(--color-lienzo);
+    color-scheme: light;
+    scrollbar-color: var(--color-borde) transparent;
   }
-}
-@keyframes aparicion {
-  from {
-    opacity: 0;
-    transform: scale(0.97);
+  .dark {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-lienzo);
+    color: var(--color-tinta);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-estrella) 45%, transparent);
+    color: var(--color-tinta);
+  }
+  input {
+    caret-color: var(--color-foco);
+  }
+  input::placeholder {
+    color: var(--color-tinta-suave);
+    opacity: 1;
+  }
+
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-foco);
+    outline-offset: 2px;
+  }
+  /* Sobre la noche el foco va en dorado para que se vea. */
+  .sobre-noche :focus-visible {
+    outline-color: var(--color-estrella);
   }
 }
 
-/* Entrada al cambiar de pantalla o al listar tarjetas: solo opacidad, sin desplazamiento,
-   porque estas pantallas se ven decenas de veces por día (evita animar de más). */
-@utility entrada {
-  animation: entrada 140ms var(--ease-fuerte) both;
+/* Cambio de tema: fundido corto de toda la página con View Transitions (App.tsx). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: var(--ease-salida);
 }
 
-/* Aparición de resultados, confirmaciones y errores: momentos ocasionales, se puede notar
-   un poco más el movimiento. */
-@utility aparicion {
-  animation: aparicion 200ms var(--ease-fuerte) both;
-}
-
-/* Feedback de press: todo elemento pulsable lo usa, incluidos los botones compartidos. */
+/* Todo lo que se toca se hunde apenas: el feedback que confirma el toque. */
 @utility presiona {
-  transition: transform 140ms var(--ease-fuerte);
-  &:active {
+  transition:
+    transform 140ms var(--ease-salida),
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+  &:active:not(:disabled) {
     transform: scale(0.97);
+  }
+}
+
+/* Esqueleto de carga con la forma de lo que reemplaza. */
+@utility esqueleto {
+  border-radius: 12px;
+  background-color: var(--color-superficie-2);
+  animation: latido 1.4s ease-in-out infinite;
+}
+@keyframes latido {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Punto vivo: solo para un estado que está ocurriendo ahora (turno o día abierto). */
+@utility vivo {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: inherit;
+    animation: onda 2s var(--ease-salida) infinite;
+  }
+}
+@keyframes onda {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .entrada,
-  .aparicion,
-  .animate-pulse {
+  .esqueleto,
+  .vivo::after {
     animation: none;
   }
-  .presiona {
-    transition: none;
-  }
-  .presiona:active {
+  .presiona:active:not(:disabled) {
     transform: none;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
 }

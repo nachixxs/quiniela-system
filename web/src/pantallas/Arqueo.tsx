@@ -1,17 +1,79 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { AnimatePresence, m } from "motion/react";
+import { Info, Landmark, Sparkles, Store, TriangleAlert } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
 import type { ArqueoOut } from "../api/tipos";
-import { pesos, type Tema } from "../util";
-import { BotonPrimario, Encabezado } from "../ui";
+import { pesos } from "../util";
+import { Aviso, Boton, CampoMonto, EASE_SALIDA, Segmentado } from "../ui";
 
-export function Arqueo({ onVolver, tema, onTema }: { onVolver: () => void; tema: Tema; onTema: () => void }) {
+const Dato = ({ nombre, valor }: { nombre: string; valor: string }) => (
+  <div className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
+    <span className="opacity-80">{nombre}</span>
+    <span className="font-semibold">{valor}</span>
+  </div>
+);
+
+// El resultado es el momento del arqueo: se ve una vez por conteo, cuatro veces por día.
+// El tilde es el Check de lucide, dibujado de izquierda a derecha.
+function Resultado({ r }: { r: ArqueoOut }) {
+  const cierra = r.estado === "cuadra";
+  return (
+    <m.div
+      ref={(el) => el?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.12 } }}
+      transition={{ type: "spring", duration: 0.45, bounce: 0.2 }}
+      role="status"
+      className={`rounded-3xl p-5 ${cierra ? "bg-exito-suave text-exito" : "bg-aviso-suave text-aviso"}`}
+    >
+      <div className="flex items-center gap-3">
+        <span className={`grid size-12 shrink-0 place-items-center rounded-full ${cierra ? "bg-exito" : "bg-aviso"} text-superficie`}>
+          {cierra ? (
+            <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <m.path d="M4 12l5 5L20 6" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.35, delay: 0.1, ease: EASE_SALIDA }} />
+            </svg>
+          ) : (
+            <TriangleAlert className="size-6" aria-hidden />
+          )}
+        </span>
+        <p className="text-2xl font-semibold tracking-tight">
+          {cierra ? "Cierra" : `Diferencia de ${pesos(r.diferencia_efectivo + r.diferencia_boletas)}`}
+        </p>
+      </div>
+      <div className="mt-4 divide-y divide-current/15">
+        <Dato nombre="Efectivo esperado" valor={pesos(r.efectivo_esperado)} />
+        <Dato nombre="Diferencia de efectivo" valor={pesos(r.diferencia_efectivo)} />
+        <Dato nombre="Boletas esperadas" valor={pesos(r.boletas_esperadas)} />
+        <Dato nombre="Diferencia de boletas" valor={pesos(r.diferencia_boletas)} />
+      </div>
+      {!cierra && (
+        <button type="button" disabled className="mt-4 flex min-h-11 w-full items-center gap-2 rounded-2xl bg-superficie px-4 py-2 text-left text-sm font-medium text-tinta-suave">
+          <Sparkles className="size-4 shrink-0" aria-hidden />
+          <span className="flex-1">Preguntarle al asistente</span>
+          <span className="text-xs">(Próximamente)</span>
+        </button>
+      )}
+    </m.div>
+  );
+}
+
+export function Arqueo() {
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const [cajaId, setCajaId] = useState<number | null>(null);
-  const [turnoId, setTurnoId] = useState<number | null>(null);
+  const [turnoElegido, setTurnoId] = useState<number | null>(null);
   const [efectivo, setEfectivo] = useState("");
   const [boletas, setBoletas] = useState("");
   const [resultado, setResultado] = useState<ArqueoOut | null>(null);
+
+  const cajas = dia.data?.cajas ?? [];
+  const turnos = dia.data?.turnos ?? [];
+  // Con un solo turno abierto, ya queda elegido.
+  const abiertos = turnos.filter((t) => t.estado === "abierto");
+  const turnoId = turnoElegido ?? (abiertos.length === 1 ? abiertos[0].id : null);
+  const caja = cajas.find((c) => c.id === cajaId);
+  const turno = turnos.find((t) => t.id === turnoId);
 
   const guardar = useMutation({
     mutationFn: () => api.arqueo({
@@ -21,98 +83,88 @@ export function Arqueo({ onVolver, tema, onTema }: { onVolver: () => void; tema:
     onSuccess: setResultado,
   });
 
-  const cajas = dia.data?.cajas ?? [];
-  const turnos = dia.data?.turnos ?? [];
+  // Todo cambio invalida el resultado a la vista: nunca queda un resultado viejo con datos nuevos.
+  const cambiar = <T,>(set: (v: T) => void) => (v: T) => {
+    set(v);
+    setResultado(null);
+    guardar.reset();
+  };
+
+  const sinTicket = caja?.tipo === "operativa" && !!turno && !turno.tiene_ticket;
+  const faltan = [!cajaId && "la caja", !turnoId && "el turno", !efectivo && "el efectivo contado", !boletas && "las boletas (0 si no hay)"].filter(Boolean);
 
   return (
-    <div className="entrada mx-auto min-h-screen max-w-md bg-fondo px-4 pb-10 pt-6 lg:max-w-lg">
-      <Encabezado etiqueta="Inicio" onVolver={onVolver} tema={tema} onTema={onTema} />
-      <h1 className="mb-4 text-lg font-semibold tracking-tight text-tinta">Arqueo</h1>
-
-      <label className="mb-3 block">
-        <span className="mb-1 block text-sm text-tinta-suave">Caja</span>
-        <select
-          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-base text-tinta transition-colors"
-          value={cajaId ?? ""}
-          onChange={(e) => { setCajaId(Number(e.target.value)); setResultado(null); }}
-        >
-          <option value="" disabled>Elegir...</option>
-          {cajas.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-        </select>
-      </label>
-
-      <label className="mb-3 block">
-        <span className="mb-1 block text-sm text-tinta-suave">Turno</span>
-        <select
-          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-base text-tinta transition-colors"
-          value={turnoId ?? ""}
-          onChange={(e) => { setTurnoId(Number(e.target.value)); setResultado(null); }}
-        >
-          <option value="" disabled>Elegir...</option>
-          {turnos.map((t) => (
-            <option key={t.id} value={t.id} disabled={t.estado !== "abierto"}>{t.nombre} ({t.estado})</option>
-          ))}
-        </select>
-      </label>
-
-      <label className="mb-3 block">
-        <span className="mb-1 block text-sm text-tinta-suave">Efectivo contado</span>
-        <input
-          type="number" inputMode="numeric"
-          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-xl text-tinta transition-colors"
-          value={efectivo} onChange={(e) => setEfectivo(e.target.value)}
-        />
-      </label>
-
-      <label className="mb-4 block">
-        <span className="mb-1 block text-sm text-tinta-suave">Boletas contadas</span>
-        <input
-          type="number" inputMode="numeric"
-          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-xl text-tinta transition-colors"
-          value={boletas} onChange={(e) => setBoletas(e.target.value)}
-        />
-      </label>
-
-      {guardar.isError && (
-        <p className="aparicion mb-4 text-sm text-peligro">
-          {guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo arquear."}
-        </p>
-      )}
-
-      {resultado && (
-        <div className={`aparicion mb-4 rounded-[20px] p-4 ${resultado.estado === "cuadra" ? "bg-exito/10" : "bg-aviso/10"}`}>
-          {resultado.estado === "cuadra" ? (
-            <p className="flex items-center gap-2 text-lg font-semibold text-exito">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path d="M4 10.5 8 14l8-8.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Cierra
-            </p>
-          ) : (
-            <>
-              <p className="text-lg font-semibold text-aviso">
-                Diferencia de {pesos(resultado.diferencia_efectivo + resultado.diferencia_boletas)}
-              </p>
-              <p className="text-sm text-aviso">Efectivo: {pesos(resultado.diferencia_efectivo)}</p>
-              <p className="text-sm text-aviso">Boletas: {pesos(resultado.diferencia_boletas)}</p>
-              <button disabled className="mt-3 rounded-full bg-tarjeta px-4 py-2 text-sm text-tinta-suave">
-                Preguntarle al asistente (Próximamente)
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      <BotonPrimario
-        onClick={() => guardar.mutate()}
-        disabled={guardar.isPending || !cajaId || !turnoId || !efectivo || !boletas}
-        className="w-full text-lg"
+    <div className="px-4 pt-5 lg:grid lg:grid-cols-[1fr_minmax(0,24rem)] lg:gap-8 lg:px-0 lg:pt-0">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!faltan.length && !sinTicket) guardar.mutate();
+        }}
+        className="flex flex-col gap-6"
       >
-        {guardar.isPending ? "Arqueando..." : "Arquear"}
-      </BotonPrimario>
-      {(!cajaId || !turnoId || !efectivo || !boletas) && (
-        <p className="text-center text-sm text-tinta-suave">Completá caja, turno, efectivo y boletas (0 si no hay)</p>
-      )}
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-tinta-suave">Caja</legend>
+          {dia.isLoading && <div className="esqueleto h-24" />}
+          {dia.isError && <Aviso tono="error">No se pudo traer el día. Revisá la conexión.</Aviso>}
+          <div className="grid grid-cols-2 gap-3">
+            {cajas.map((c) => {
+              const Icono = c.tipo === "operativa" ? Store : Landmark;
+              const elegida = c.id === cajaId;
+              return (
+                <label
+                  key={c.id}
+                  className={`presiona flex cursor-pointer flex-col gap-3 rounded-2xl border-2 p-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${elegida ? "border-estrella bg-estrella/15" : "border-transparent bg-superficie shadow-tarjeta"}`}
+                >
+                  <input type="radio" name="caja" className="sr-only" checked={elegida} onChange={() => cambiar(setCajaId)(c.id)} />
+                  <Icono className="size-6" aria-hidden />
+                  <span className="font-semibold">{c.nombre}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        {turnos.length > 0 && (
+          <div>
+            <p className="mb-2 text-sm font-medium text-tinta-suave">Turno</p>
+            <Segmentado
+              etiqueta="Turno"
+              valor={turnoId}
+              onCambio={cambiar(setTurnoId)}
+              opciones={turnos.map((t) => ({ valor: t.id, texto: t.nombre.charAt(0).toUpperCase() + t.nombre.slice(1), detalle: t.estado, deshabilitada: t.estado !== "abierto" }))}
+            />
+          </div>
+        )}
+
+        {sinTicket && (
+          <Aviso tono="aviso">El turno {turno.nombre} todavía no tiene el ticket cargado: sin ticket, la caja chica no se puede arquear.</Aviso>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <CampoMonto etiqueta="Efectivo contado" valor={efectivo} onValor={cambiar(setEfectivo)} enterKeyHint="next" />
+          <CampoMonto etiqueta="Boletas contadas" valor={boletas} onValor={cambiar(setBoletas)} enterKeyHint="done" />
+        </div>
+
+        {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo arquear."}</Aviso>}
+
+        <div>
+          <Boton type="submit" cargando={guardar.isPending} disabled={faltan.length > 0 || sinTicket} className="h-14 w-full text-base">
+            {guardar.isPending ? "Arqueando…" : "Arquear"}
+          </Boton>
+          <p aria-live="polite" className="mt-3 flex min-h-5 items-start justify-center gap-1.5 text-center text-sm text-tinta-suave">
+            {faltan.length > 0 && (
+              <>
+                <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                Para arquear, completá {faltan.join(", ").replace(/, ([^,]*)$/, " y $1")}.
+              </>
+            )}
+          </p>
+        </div>
+      </form>
+
+      <div className="mt-6 lg:mt-7">
+        <AnimatePresence mode="wait">{resultado && <Resultado key={resultado.id} r={resultado} />}</AnimatePresence>
+      </div>
     </div>
   );
 }

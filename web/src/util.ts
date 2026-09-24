@@ -1,8 +1,16 @@
+import { useEffect, useState } from "react";
+
 const formato = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
 export function pesos(monto: number): string {
   return formato.format(monto);
 }
+
+// "2026-09-23" → "martes 23 de septiembre". Mediodía para que la zona horaria no corra el día.
+const formatoFecha = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long" });
+const formatoCorto = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short" });
+export const fechaLarga = (f: string) => formatoFecha.format(new Date(`${f}T12:00:00`)).replace(",", "");
+export const fechaCorta = (f: string) => formatoCorto.format(new Date(`${f}T12:00:00`)).replace(".", "");
 
 const CLAVE_TEMA = "quiniela-tema";
 export type Tema = "claro" | "oscuro";
@@ -19,11 +27,26 @@ export function temaInicial(): Tema {
 
 export function aplicarTema(tema: Tema): void {
   document.documentElement.classList.toggle("dark", tema === "oscuro");
+  // La barra del navegador en el celular sigue al tema (el mismo azul noche de la barra de arriba).
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", tema === "oscuro" ? "#151f3c" : "#101a33");
   try {
     localStorage.setItem(CLAVE_TEMA, tema);
   } catch {
     // sin guardado persistente, el tema vuelve a la preferencia del sistema al recargar.
   }
+}
+
+// Escritorio: barra lateral, hojas como diálogo centrado y detalle al costado de la lista.
+const CONSULTA_ESCRITORIO = "(min-width: 1024px)";
+export function useEscritorio(): boolean {
+  const [es, setEs] = useState(() => matchMedia(CONSULTA_ESCRITORIO).matches);
+  useEffect(() => {
+    const mq = matchMedia(CONSULTA_ESCRITORIO);
+    const cambio = () => setEs(mq.matches);
+    mq.addEventListener("change", cambio);
+    return () => mq.removeEventListener("change", cambio);
+  }, []);
+  return es;
 }
 
 // crypto.randomUUID solo existe en contextos seguros (HTTPS o localhost); fuera de eso, armamos un UUID v4 a mano.

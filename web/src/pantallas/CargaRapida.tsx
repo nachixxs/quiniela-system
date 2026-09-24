@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, m } from "motion/react";
+import { Banknote, Check, CircleCheck, Info, Search, X } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
 import type { ClienteBusqueda, MovimientoCrear } from "../api/tipos";
-import { uuid, type Tema } from "../util";
-import { BotonPrimario, Encabezado } from "../ui";
+import { pesos, uuid } from "../util";
+import { AVATAR, Aviso, Boton, CampoMonto, EASE_SALIDA, Hoja, TIPOS } from "../ui";
 
 // D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja.
 const OPCIONES_PAGO: { etiqueta: string; tipo: MovimientoCrear["tipo"] }[] = [
@@ -12,25 +14,28 @@ const OPCIONES_PAGO: { etiqueta: string; tipo: MovimientoCrear["tipo"] }[] = [
   { etiqueta: "Gasto", tipo: "gasto" },
 ];
 
-const BOTONES: { etiqueta: string; tipo: MovimientoCrear["tipo"] | null; requiereCliente: boolean }[] = [
-  { etiqueta: "Fiado", tipo: "fiado", requiereCliente: true },
-  { etiqueta: "Cobro", tipo: "cobro_fiado", requiereCliente: true },
-  { etiqueta: "Pago", tipo: null, requiereCliente: false },
-  { etiqueta: "Premio", tipo: "pago_premio", requiereCliente: false },
-];
+export const BOTONES = [
+  { etiqueta: "Fiado", tipo: "fiado", requiereCliente: true, ayuda: "Suma a la cuenta del cliente", icono: TIPOS.fiado.icono, tono: TIPOS.fiado.tono },
+  { etiqueta: "Cobro", tipo: "cobro_fiado", requiereCliente: true, ayuda: "El cliente paga su fiado", icono: TIPOS.cobro_fiado.icono, tono: TIPOS.cobro_fiado.tono },
+  { etiqueta: "Pago", tipo: null, requiereCliente: false, ayuda: "MP, retiro del dueño o gasto", icono: Banknote, tono: TIPOS.gasto.tono },
+  { etiqueta: "Premio", tipo: "pago_premio", requiereCliente: false, ayuda: "Sale efectivo, entra la boleta", icono: TIPOS.pago_premio.icono, tono: TIPOS.pago_premio.tono },
+] as const;
+export type BotonCarga = (typeof BOTONES)[number];
 
-export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; tema: Tema; onTema: () => void }) {
-  const [seleccion, setSeleccion] = useState<(typeof BOTONES)[number] | null>(null);
+const CAJA = "flex h-14 items-center gap-3 rounded-2xl bg-superficie-2 px-4";
+
+// La hoja de carga y su confirmación. La usan la pantalla de carga rápida y los accesos del tablero.
+export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null; onSeleccion: (b: BotonCarga | null) => void }) {
   const [monto, setMonto] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [cliente, setCliente] = useState<ClienteBusqueda | null>(null);
   const [refCliente, setRefCliente] = useState(() => uuid());
-  const [confirmacion, setConfirmacion] = useState("");
   const [tipoPago, setTipoPago] = useState(OPCIONES_PAGO[0].tipo);
+  const [confirmacion, setConfirmacion] = useState<{ id: number; texto: string } | null>(null);
+  const queryClient = useQueryClient();
 
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const cajaChica = dia.data?.cajas.find((c) => c.tipo === "operativa");
-
   const clientes = useQuery({
     queryKey: ["clientes-busqueda", busqueda],
     queryFn: () => api.clientes(busqueda),
@@ -40,118 +45,206 @@ export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; 
   const guardar = useMutation({
     mutationFn: () => {
       if (!cajaChica) throw new ApiError("sin_caja", "No hay caja chica abierta.");
-      const m: MovimientoCrear = {
+      const mov: MovimientoCrear = {
         ref_cliente: refCliente, tipo: seleccion!.tipo ?? tipoPago, monto: Number(monto),
         caja_id: cajaChica.id, cliente_id: cliente?.id ?? null,
       };
-      return api.crearMovimiento(m);
+      return api.crearMovimiento(mov);
     },
     onSuccess: (mov) => {
-      setConfirmacion(`Guardado: ${seleccion?.etiqueta} $${mov.monto.toLocaleString("es-AR")}`);
+      const etiqueta = seleccion?.tipo ? seleccion.etiqueta : TIPOS[mov.tipo].etiqueta;
+      setConfirmacion({ id: Date.now(), texto: `${etiqueta} ${pesos(mov.monto)}${cliente ? ` · ${cliente.nombre}` : ""}` });
       setRefCliente(uuid());
-      setSeleccion(null);
-      setMonto("");
-      setBusqueda("");
-      setCliente(null);
+      cerrar();
+      // El tablero y los fiados muestran el saldo nuevo que calcula el servidor.
+      for (const clave of ["dia-actual", "cajas", "deudores"]) queryClient.invalidateQueries({ queryKey: [clave] });
     },
   });
 
-  if (!seleccion) {
-    return (
-      <div className="entrada mx-auto min-h-screen max-w-md bg-fondo px-4 pb-10 pt-6 lg:max-w-lg">
-        <Encabezado etiqueta="Inicio" onVolver={onVolver} tema={tema} onTema={onTema} />
-        <h1 className="mb-1 text-lg font-semibold tracking-tight text-tinta">Carga rápida</h1>
-        <p className="mb-4 text-sm text-tinta-suave">
-          Las ventas en efectivo no se cargan acá: salen del ticket al cierre.
-        </p>
-        {confirmacion && (
-          <p className="aparicion mb-4 rounded-xl bg-exito/10 p-3 text-sm text-exito">{confirmacion}</p>
-        )}
-        <div className="grid grid-cols-2 gap-4">
-          {BOTONES.map((b) => (
-            <button
-              key={b.etiqueta}
-              onClick={() => { setConfirmacion(""); setSeleccion(b); }}
-              disabled={!cajaChica}
-              className="presiona rounded-[20px] border border-borde bg-tarjeta p-8 text-lg font-semibold text-tinta transition-colors hover:bg-fondo active:bg-fondo disabled:opacity-50"
-            >
-              {b.etiqueta}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
+  function cerrar() {
+    onSeleccion(null);
+    setMonto("");
+    setBusqueda("");
+    setCliente(null);
+    setTipoPago(OPCIONES_PAGO[0].tipo);
+    guardar.reset();
   }
 
+  useEffect(() => {
+    if (!confirmacion) return;
+    const t = setTimeout(() => setConfirmacion(null), 4000);
+    return () => clearTimeout(t);
+  }, [confirmacion]);
+
+  const listo = !!cajaChica && Number(monto) > 0 && (!seleccion?.requiereCliente || !!cliente);
+
   return (
-    <div className="entrada mx-auto min-h-screen max-w-md bg-fondo px-4 pb-10 pt-6 lg:max-w-lg">
-      <Encabezado etiqueta="Volver" onVolver={() => setSeleccion(null)} tema={tema} onTema={onTema} />
-      <h1 className="mb-4 text-lg font-semibold tracking-tight text-tinta">{seleccion.etiqueta}</h1>
-
-      {seleccion.tipo === null && (
-        <div className="mb-4 flex flex-col gap-2">
-          {OPCIONES_PAGO.map((o) => (
-            <button
-              key={o.tipo}
-              onClick={() => setTipoPago(o.tipo)}
-              className={`rounded-xl border px-4 py-3 text-left text-base transition-colors ${
-                tipoPago === o.tipo ? "border-marca bg-marca/10 font-semibold text-marca" : "border-borde text-tinta hover:bg-fondo"
-              }`}
+    <>
+      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex justify-center lg:inset-x-auto lg:right-8 lg:top-8">
+        <AnimatePresence>
+          {confirmacion && (
+            <m.button
+              key={confirmacion.id}
+              type="button"
+              onClick={() => setConfirmacion(null)}
+              initial={{ opacity: 0, transform: "translateY(-120%)" }}
+              animate={{ opacity: 1, transform: "translateY(0%)" }}
+              exit={{ opacity: 0, transform: "translateY(-120%)", transition: { duration: 0.18 } }}
+              transition={{ duration: 0.25, ease: EASE_SALIDA }}
+              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl bg-tinta p-3 pr-4 text-left text-lienzo shadow-tarjeta"
             >
-              {o.etiqueta}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <label className="mb-4 block">
-        <span className="mb-1 block text-sm text-tinta-suave">Monto</span>
-        <input
-          type="number" inputMode="numeric" autoFocus
-          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-2xl text-tinta transition-colors"
-          value={monto} onChange={(e) => setMonto(e.target.value)}
-        />
-      </label>
-
-      {seleccion.requiereCliente && (
-        <div className="relative mb-4">
-          <span className="mb-1 block text-sm text-tinta-suave">Cliente</span>
-          <input
-            className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-base text-tinta transition-colors"
-            value={cliente ? cliente.nombre : busqueda}
-            onChange={(e) => { setCliente(null); setBusqueda(e.target.value); }}
-            placeholder="Buscar por nombre..."
-          />
-          {!cliente && !!clientes.data?.length && (
-            <ul className="aparicion origin-top absolute z-10 mt-1 w-full rounded-xl border border-borde bg-tarjeta">
-              {clientes.data.map((c) => (
-                <li key={c.id}>
-                  <button
-                    onClick={() => { setCliente(c); setBusqueda(""); }}
-                    className="block w-full px-4 py-3 text-left text-tinta transition-colors hover:bg-fondo active:bg-fondo"
-                  >
-                    {c.nombre}
-                  </button>
-                </li>
-              ))}
-            </ul>
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-exito text-superficie">
+                <Check className="size-5" strokeWidth={3} aria-hidden />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-semibold">Guardado</span>
+                <span className="block truncate text-sm opacity-80">{confirmacion.texto}</span>
+              </span>
+            </m.button>
           )}
-        </div>
-      )}
+        </AnimatePresence>
+      </div>
 
-      {guardar.isError && (
-        <p className="aparicion mb-4 text-sm text-peligro">
-          {guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo guardar."}
-        </p>
-      )}
+      <AnimatePresence>
+        {seleccion && (
+          <Hoja
+            key="carga"
+            titulo={seleccion.etiqueta}
+            onCerrar={cerrar}
+            icono={
+              <span className={`grid size-10 place-items-center rounded-full ${seleccion.tono}`}>
+                <seleccion.icono className="size-5" aria-hidden />
+              </span>
+            }
+          >
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (listo) guardar.mutate();
+              }}
+              className="flex flex-col gap-5"
+            >
+              {seleccion.tipo === null && (
+                <fieldset className="grid gap-2">
+                  <legend className="mb-1.5 text-sm font-medium text-tinta-suave">Qué fue</legend>
+                  {OPCIONES_PAGO.map((o) => {
+                    const Icono = TIPOS[o.tipo].icono;
+                    const elegida = tipoPago === o.tipo;
+                    return (
+                      <label
+                        key={o.tipo}
+                        className={`presiona flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${elegida ? "border-estrella bg-estrella/15" : "border-transparent bg-superficie-2"}`}
+                      >
+                        <input type="radio" name="tipo-pago" className="sr-only" checked={elegida} onChange={() => setTipoPago(o.tipo)} />
+                        <Icono className="size-5 text-tinta-suave" aria-hidden />
+                        <span className="flex-1 font-medium">{o.etiqueta}</span>
+                        {elegida && <CircleCheck className="size-5" aria-hidden />}
+                      </label>
+                    );
+                  })}
+                </fieldset>
+              )}
 
-      <BotonPrimario
-        onClick={() => guardar.mutate()}
-        disabled={guardar.isPending || !monto || (seleccion.requiereCliente && !cliente)}
-        className="w-full text-lg"
-      >
-        {guardar.isPending ? "Guardando..." : "Guardar"}
-      </BotonPrimario>
+              <CampoMonto etiqueta="Monto" valor={monto} onValor={setMonto} grande autoFocus enterKeyHint={seleccion.requiereCliente ? "next" : "done"} />
+
+              {seleccion.requiereCliente && (
+                <div>
+                  <label htmlFor="carga-cliente" className="mb-1.5 block text-sm font-medium text-tinta-suave">Cliente</label>
+                  {cliente ? (
+                    <div className={`${CAJA} pl-2 pr-1`}>
+                      <span className={AVATAR} aria-hidden>{cliente.nombre.charAt(0)}</span>
+                      <span className="flex-1 truncate font-semibold">{cliente.nombre}</span>
+                      <button type="button" onClick={() => setCliente(null)} aria-label="Cambiar cliente" className="presiona grid size-11 place-items-center rounded-full text-tinta-suave hover:bg-borde">
+                        <X className="size-5" aria-hidden />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={`${CAJA} ring-foco focus-within:ring-2`}>
+                      <Search className="size-5 shrink-0 text-tinta-suave" aria-hidden />
+                      <input
+                        id="carga-cliente"
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        placeholder="Buscar por nombre…"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        className="h-full min-w-0 flex-1 bg-transparent text-base focus-visible:outline-none"
+                      />
+                    </div>
+                  )}
+                  {!cliente && busqueda && (
+                    <div className="mt-2" aria-live="polite">
+                      {clientes.isLoading ? (
+                        <div className="esqueleto h-14" aria-label="Buscando…" />
+                      ) : clientes.isError ? (
+                        <p className="px-1 text-sm text-peligro">No se pudo buscar. Probá de nuevo.</p>
+                      ) : clientes.data?.length === 0 ? (
+                        <p className="px-1 text-sm text-tinta-suave">Nadie con “{busqueda}”.</p>
+                      ) : (
+                        <ul className="overflow-hidden rounded-2xl ring-1 ring-borde">
+                          {clientes.data?.map((c) => (
+                            <li key={c.id}>
+                              <button
+                                type="button"
+                                onClick={() => { setCliente(c); setBusqueda(""); }}
+                                className="flex min-h-14 w-full items-center gap-3 px-3 text-left transition-colors hover:bg-superficie-2 active:bg-superficie-2"
+                              >
+                                <span className={AVATAR} aria-hidden>{c.nombre.charAt(0)}</span>
+                                <span className="flex-1 truncate font-medium">{c.nombre}</span>
+                                {c.saldo !== 0 && <span className={`text-sm ${c.saldo < 0 ? "text-exito" : "text-tinta-suave"}`}>{c.saldo < 0 ? "A favor " : "Debe "}{pesos(Math.abs(c.saldo))}</span>}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {dia.isError && <Aviso tono="error">No se pudo traer el día. Revisá la conexión.</Aviso>}
+              {dia.isSuccess && !cajaChica && <Aviso tono="aviso">No hay caja chica abierta: hasta que se abra el día no se puede cargar.</Aviso>}
+              {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo guardar."}</Aviso>}
+
+              <Boton type="submit" cargando={guardar.isPending} disabled={!listo} className="h-14 w-full text-base">
+                {guardar.isPending ? "Guardando…" : `Guardar ${seleccion.etiqueta.toLowerCase()}`}
+              </Boton>
+            </form>
+          </Hoja>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+export function CargaRapida() {
+  const [seleccion, setSeleccion] = useState<BotonCarga | null>(null);
+  return (
+    <div className="px-4 pt-5 lg:px-0 lg:pt-0">
+      <p className="mb-5 flex items-center gap-2 text-sm text-tinta-suave">
+        <Info className="size-4 shrink-0" aria-hidden />
+        Las ventas en efectivo no se cargan acá: salen del ticket al cierre.
+      </p>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+        {BOTONES.map((b) => (
+          <button
+            key={b.etiqueta}
+            type="button"
+            onClick={() => setSeleccion(b)}
+            className="presiona flex aspect-square flex-col justify-between rounded-3xl bg-superficie p-4 text-left shadow-tarjeta hover:bg-superficie-2 lg:aspect-[4/5] lg:p-6"
+          >
+            <span className={`grid size-12 place-items-center rounded-2xl ${b.tono}`}>
+              <b.icono className="size-6" aria-hidden />
+            </span>
+            <span>
+              <span className="block text-xl font-semibold tracking-tight">{b.etiqueta}</span>
+              <span className="mt-0.5 block text-sm text-tinta-suave">{b.ayuda}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+      <Carga seleccion={seleccion} onSeleccion={setSeleccion} />
     </div>
   );
 }
