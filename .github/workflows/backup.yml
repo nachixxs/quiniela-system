@@ -9,6 +9,7 @@ permissions: {}
 jobs:
   backup:
     runs-on: ubuntu-latest
+    environment: backup
     steps:
       - name: Dump y subida cifrada a B2
         env:
