@@ -13,7 +13,6 @@ from app.routers import asistente, auth, caja, catalogos, dia, movimientos, repo
 ERROR_NEGOCIO_ID = {"error": "negocio_id_no_permitido", "detalle": "negocio_id sale de la sesión, no viaja en el request."}
 ERROR_BODY_GRANDE = {"error": "cuerpo_muy_grande", "detalle": "El cuerpo del request supera el límite permitido."}
 LIMITE_BODY = 65_536  # 64 KB (auditoría 3.C2)
-CON_BODY = ("POST", "PUT", "PATCH", "DELETE")
 PRODUCCION = os.environ.get("PRODUCCION") == "1"
 CODIGOS_ERROR_DOMINIO = {NoEncontrado: 404, Invalido: 400, Conflicto: 409}
 
@@ -29,29 +28,12 @@ app.include_router(reportes.router, prefix="/api", tags=["reportes"])
 app.include_router(asistente.router, prefix="/api", tags=["asistente"])
 
 
-async def _leer_acotado(request: Request) -> bytes:
-    """Lee el body cortando apenas se pasa de LIMITE_BODY, sin acumular todo un cuerpo enorme."""
-    partes, total = [], 0
-    async for chunk in request.stream():
-        partes.append(chunk)
-        total += len(chunk)
-        if total > LIMITE_BODY:
-            break
-    return b"".join(partes)
-
-
 @app.middleware("http")
 async def bloquear_negocio_id(request: Request, call_next):
-    if request.method in CON_BODY:
-        largo = request.headers.get("content-length")
-        if largo is not None and int(largo) > LIMITE_BODY:
-            return JSONResponse(ERROR_BODY_GRANDE, 413)
-        cuerpo = await _leer_acotado(request)
-        if len(cuerpo) > LIMITE_BODY or (largo is None and cuerpo):
-            return JSONResponse(ERROR_BODY_GRANDE, 413)
-        request._body = cuerpo  # el stream ya se consumió: los handlers releen desde acá
-    else:
-        cuerpo = await request.body()
+    largo = request.headers.get("content-length")
+    if request.headers.get("transfer-encoding") or int(largo or 0) > LIMITE_BODY:
+        return JSONResponse(ERROR_BODY_GRANDE, 413)
+    cuerpo = await request.body()  # el server no entrega más bytes que el Content-Length
     if "negocio_id" in request.query_params or b'"negocio_id"' in cuerpo:
         return JSONResponse(ERROR_NEGOCIO_ID, 400)
     return await call_next(request)
