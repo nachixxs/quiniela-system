@@ -3,12 +3,17 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "../api/cliente";
 import type { ClienteBusqueda, MovimientoCrear } from "../api/tipos";
 
-const TIPO_PAGO: MovimientoCrear["tipo"] = "gasto"; // pendiente: confirmar con Nacho
+// D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja.
+const OPCIONES_PAGO: { etiqueta: string; tipo: MovimientoCrear["tipo"] }[] = [
+  { etiqueta: "MP / transferencia", tipo: "cobro_mercado_pago" },
+  { etiqueta: "Retiro del dueño", tipo: "retiro_dueno" },
+  { etiqueta: "Gasto", tipo: "gasto" },
+];
 
-const BOTONES: { etiqueta: string; tipo: MovimientoCrear["tipo"]; requiereCliente: boolean }[] = [
+const BOTONES: { etiqueta: string; tipo: MovimientoCrear["tipo"] | null; requiereCliente: boolean }[] = [
   { etiqueta: "Fiado", tipo: "fiado", requiereCliente: true },
   { etiqueta: "Cobro", tipo: "cobro_fiado", requiereCliente: true },
-  { etiqueta: "Pago", tipo: TIPO_PAGO, requiereCliente: false },
+  { etiqueta: "Pago", tipo: null, requiereCliente: false },
   { etiqueta: "Premio", tipo: "pago_premio", requiereCliente: false },
 ];
 
@@ -19,6 +24,7 @@ export function CargaRapida({ onVolver }: { onVolver: () => void }) {
   const [cliente, setCliente] = useState<ClienteBusqueda | null>(null);
   const [refCliente, setRefCliente] = useState(() => crypto.randomUUID());
   const [confirmacion, setConfirmacion] = useState("");
+  const [tipoPago, setTipoPago] = useState(OPCIONES_PAGO[0].tipo);
 
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const cajaChica = dia.data?.cajas.find((c) => c.tipo === "operativa");
@@ -33,7 +39,7 @@ export function CargaRapida({ onVolver }: { onVolver: () => void }) {
     mutationFn: () => {
       if (!cajaChica) throw new ApiError("sin_caja", "No hay caja chica abierta.");
       const m: MovimientoCrear = {
-        ref_cliente: refCliente, tipo: seleccion!.tipo, monto: Number(monto),
+        ref_cliente: refCliente, tipo: seleccion!.tipo ?? tipoPago, monto: Number(monto),
         caja_id: cajaChica.id, cliente_id: cliente?.id ?? null,
       };
       return api.crearMovimiento(m);
@@ -79,6 +85,22 @@ export function CargaRapida({ onVolver }: { onVolver: () => void }) {
     <div className="mx-auto min-h-screen max-w-md bg-slate-100 px-4 pb-10 pt-6 lg:max-w-lg">
       <button onClick={() => setSeleccion(null)} className="mb-4 text-sm text-slate-500">← Volver</button>
       <h1 className="mb-4 text-lg font-bold text-slate-800">{seleccion.etiqueta}</h1>
+
+      {seleccion.tipo === null && (
+        <div className="mb-4 flex flex-col gap-2">
+          {OPCIONES_PAGO.map((o) => (
+            <button
+              key={o.tipo}
+              onClick={() => setTipoPago(o.tipo)}
+              className={`rounded-lg border px-4 py-3 text-left text-base ${
+                tipoPago === o.tipo ? "border-blue-600 bg-blue-50 font-semibold text-blue-700" : "border-slate-300 text-slate-700"
+              }`}
+            >
+              {o.etiqueta}
+            </button>
+          ))}
+        </div>
+      )}
 
       <label className="mb-4 block">
         <span className="mb-1 block text-sm font-medium text-slate-700">Monto</span>
