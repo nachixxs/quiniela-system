@@ -32,7 +32,7 @@ export function Inicio({ onCargaRapida, onArqueo, onCuentaCorriente, tema, onTem
           <p className="text-sm text-en-barra/72">Hola, {usuario?.nombre}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <BotonTema tema={tema} onClick={onTema} />
+          <BotonTema tema={tema} onClick={onTema} enBarra />
           <button
             onClick={cerrarSesion}
             className="h-9 rounded-full border border-en-barra/30 px-3 text-sm text-en-barra active:bg-en-barra/10"

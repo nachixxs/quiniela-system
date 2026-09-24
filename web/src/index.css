@@ -26,6 +26,12 @@
   --color-en-barra: #ffffff;
 }
 
+html {
+  background-color: var(--color-fondo);
+}
+
 body {
   font-family: var(--font-sans);
+  background-color: var(--color-fondo);
+  color: var(--color-tinta);
 }
