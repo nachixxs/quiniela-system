@@ -14,6 +14,8 @@
   --color-aviso: #b09000;
   --color-barra: #000000;
   --color-en-barra: #ffffff;
+  /* Curva fuerte de Emil Kowalski: más punch que el ease-out por defecto del navegador. */
+  --ease-fuerte: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .dark {
@@ -28,10 +30,105 @@
 
 html {
   background-color: var(--color-fondo);
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 body {
   font-family: var(--font-sans);
   background-color: var(--color-fondo);
   color: var(--color-tinta);
+  /* Los montos son el dato protagonista: alineados y con el mismo ancho por dígito. */
+  font-variant-numeric: tabular-nums;
+}
+
+.dark body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Selección de texto e input: mismo acento de marca en vez del azul por defecto del navegador. */
+::selection {
+  background-color: color-mix(in srgb, var(--color-marca) 30%, transparent);
+  color: var(--color-tinta);
+}
+input,
+select {
+  caret-color: var(--color-marca);
+}
+
+/* Cambio de tema sin salto brusco: las superficies y el texto cambian de color con una
+   transición corta en vez de saltar de golpe entre claro y oscuro. */
+html,
+body,
+.bg-fondo,
+.bg-tarjeta,
+.bg-barra,
+.border-borde,
+.text-tinta,
+.text-tinta-suave,
+.text-en-barra {
+  transition:
+    background-color 160ms var(--ease-fuerte),
+    color 160ms var(--ease-fuerte),
+    border-color 160ms var(--ease-fuerte);
+}
+
+/* Foco visible coherente en los dos temas: un aro de dos colores, siempre con el fondo
+   de por medio, así el contraste no depende de qué superficie tenga el elemento debajo. */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--color-fondo),
+    0 0 0 4px var(--color-marca);
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes aparicion {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+/* Entrada al cambiar de pantalla o al listar tarjetas: solo opacidad, sin desplazamiento,
+   porque estas pantallas se ven decenas de veces por día (evita animar de más). */
+@utility entrada {
+  animation: entrada 140ms var(--ease-fuerte) both;
+}
+
+/* Aparición de resultados, confirmaciones y errores: momentos ocasionales, se puede notar
+   un poco más el movimiento. */
+@utility aparicion {
+  animation: aparicion 200ms var(--ease-fuerte) both;
+}
+
+/* Feedback de press: todo elemento pulsable lo usa, incluidos los botones compartidos. */
+@utility presiona {
+  transition: transform 140ms var(--ease-fuerte);
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrada,
+  .aparicion,
+  .animate-pulse {
+    animation: none;
+  }
+  .presiona {
+    transition: none;
+  }
+  .presiona:active {
+    transform: none;
+  }
 }

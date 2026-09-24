@@ -13,22 +13,6 @@ const pantallaDeHash = (): Pantalla => {
   return h === "carga-rapida" || h === "arqueo" || h === "cuenta-corriente" ? h : "inicio";
 };
 
-// Botón chico para alternar entre tema claro y oscuro; se usa en el encabezado de cada pantalla.
-// enBarra: true cuando el botón va sobre la barra negra (bg-barra), para usar colores con contraste ahí.
-export function BotonTema({ tema, onClick, enBarra }: { tema: Tema; onClick: () => void; enBarra?: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={tema === "oscuro" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
-      className={`h-9 shrink-0 rounded-full border px-3 text-sm ${
-        enBarra ? "border-en-barra/30 text-en-barra" : "border-borde text-tinta-suave"
-      }`}
-    >
-      {tema === "oscuro" ? "Claro" : "Oscuro"}
-    </button>
-  );
-}
-
 export function App() {
   const { usuario, cargando } = useUsuario();
   const [pantalla, setPantalla] = useState<Pantalla>(pantallaDeHash);
