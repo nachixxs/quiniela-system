@@ -1,10 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/cliente";
 import { useUsuario } from "../contexto/usuario";
+import { pesos } from "../util";
 
-const formatoPesos = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+interface Props {
+  onCargaRapida: () => void;
+  onArqueo: () => void;
+  onCuentaCorriente: () => void;
+}
 
-export function Inicio({ onCargaRapida }: { onCargaRapida: () => void }) {
+export function Inicio({ onCargaRapida, onArqueo, onCuentaCorriente }: Props) {
   const { usuario, setUsuario } = useUsuario();
   const queryClient = useQueryClient();
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
@@ -53,8 +58,8 @@ export function Inicio({ onCargaRapida }: { onCargaRapida: () => void }) {
         {cajas.data?.map((c) => (
           <div key={c.id} className="rounded-xl bg-white p-4 shadow">
             <p className="text-sm font-medium text-slate-500">{c.nombre}</p>
-            <p className="mt-1 text-2xl font-bold text-slate-800">{formatoPesos.format(c.efectivo)}</p>
-            <p className="text-sm text-slate-500">Boletas: {formatoPesos.format(c.boletas)}</p>
+            <p className="mt-1 text-2xl font-bold text-slate-800">{pesos(c.efectivo)}</p>
+            <p className="text-sm text-slate-500">Boletas: {pesos(c.boletas)}</p>
           </div>
         ))}
       </section>
@@ -66,21 +71,19 @@ export function Inicio({ onCargaRapida }: { onCargaRapida: () => void }) {
         >
           Carga rápida
         </button>
-        <BotonProximamente etiqueta="Arqueo" />
-        <BotonProximamente etiqueta="Cuenta corriente" />
+        <button
+          onClick={onArqueo}
+          className="rounded-xl bg-white p-5 text-base font-semibold text-slate-800 shadow active:bg-slate-200"
+        >
+          Arqueo
+        </button>
+        <button
+          onClick={onCuentaCorriente}
+          className="rounded-xl bg-white p-5 text-base font-semibold text-slate-800 shadow active:bg-slate-200"
+        >
+          Cuenta corriente
+        </button>
       </section>
     </div>
-  );
-}
-
-function BotonProximamente({ etiqueta }: { etiqueta: string }) {
-  return (
-    <button
-      disabled
-      className="rounded-xl bg-white p-5 text-base font-semibold text-slate-400 shadow disabled:opacity-70"
-    >
-      {etiqueta}
-      <span className="block text-xs font-normal">Próximamente</span>
-    </button>
   );
 }
