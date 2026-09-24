@@ -13,5 +13,7 @@ COPY app/ app/
 COPY alembic/ alembic/
 COPY alembic.ini .
 COPY --from=frontend /web/dist web/dist
+RUN useradd --system --uid 10001 app
+USER app
 ENV PORT=8000
 CMD alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}

@@ -4,11 +4,10 @@ services:
     runtime: docker
     plan: free
     region: virginia
+    branch: main
     healthCheckPath: /api/salud
     envVars:
       - key: PRODUCCION
         value: "1"
       - key: DATABASE_URL
-        sync: false
-      - key: SEED_PASSWORD
         sync: false
