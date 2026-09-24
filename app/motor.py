@@ -26,7 +26,6 @@ EFECTOS = {
 
 @dataclass
 class Mov:
-    """Contra-asiento (§7.1): copia tipo, monto, caja_id, destino_id, cliente_id, es_ajuste y explica_arqueo_id, más anula_id y motivo."""
     tipo: str
     monto: int  # siempre positivo: el signo lo pone el tipo
     caja_id: int
@@ -74,11 +73,9 @@ def estado(diferencia: tuple[int, int], caja_id: int = 0, ajustes: list[Mov] | N
     return "explicada" if saldo(caja_id, ajustes or [], con_ajustes=True) == diferencia else "con_diferencia"
 
 
-def arqueo(esperado_: tuple[int, int] | None, contado: tuple[int, int]) -> dict:
+def arqueo(esperado_: tuple[int, int], contado: tuple[int, int]) -> dict:
     """Resultado de un arqueo (§6), con los nombres de columna de `Arqueo`. Se guarda siempre, cuadre
     o no (§7.2): el motor no ajusta ningún número. El próximo control parte de `contado` (re-anclaje)."""
-    if esperado_ is None:
-        raise ValueError("La caja no tiene esperado hasta cargar el ticket de la terminal (§7.3)")
     dif = (contado[0] - esperado_[0], contado[1] - esperado_[1])
     return {"efectivo_esperado": esperado_[0], "boletas_esperadas": esperado_[1],
             "efectivo_contado": contado[0], "boletas_contadas": contado[1],

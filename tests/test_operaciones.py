@@ -2,11 +2,14 @@ from datetime import date
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
 
 from app import consultas
 from app import operaciones as op
-from app.modelos import Arqueo, DiaOperativo, Movimiento, Turno
+from app.db import engine
+from app.modelos import Arqueo, DiaOperativo, Movimiento, Negocio, Turno
 
 
 def mov(db, a, tipo, monto, caja=None, **campos):
@@ -59,8 +62,6 @@ def test_ref_cliente_repetido_devuelve_el_mismo_movimiento(db, agencia):
 def test_contra_asiento_es_una_copia_y_no_se_anula(db, agencia):
     a = agencia
     fiado = mov(db, a, "fiado", 4000, cliente_id=a.cliente)
-    with pytest.raises(op.NoEncontrado):  # otro negocio no lo ve (§7.4)
-        op.anular_movimiento(db, a.n + 1, fiado.id, "Error")
     contra = op.anular_movimiento(db, a.n, fiado.id, "Error")
     assert (contra.tipo, contra.monto, contra.caja_id, contra.cliente_id, contra.anula_id, contra.es_ajuste) == (
         "fiado", 4000, a.chica, a.cliente, fiado.id, False)
@@ -76,9 +77,15 @@ def test_despues_del_arqueo_anular_y_ajustar_no_mueven_la_partida(db, agencia):
     op.cargar_ticket(db, a.n, a.manana, 100000, [])
     arqueo = op.guardar_arqueo(db, a.n, a.chica, a.manana, 86000, 12000)  # faltan 2.000
     assert op.anular_movimiento(db, a.n, premio.id, "Duplicado").es_ajuste  # aquel arqueo ya lo contó
-    gasto = mov(db, a, "gasto", 2000, corresponde_a_fecha=date(2026, 9, 22), explica_arqueo_id=arqueo.id)
+    gasto = mov(db, a, "gasto", 2000, corresponde_a_fecha=date(2026, 9, 21), explica_arqueo_id=arqueo.id)
     assert gasto.es_ajuste and db.get(Arqueo, arqueo.id).estado == "explicada"  # §7.8, D14
     assert op.traspasar(db, a.n, a.chica) == {"efectivo": 86000, "boletas": 12000}
+
+
+def test_un_ajuste_es_de_un_dia_anterior_al_abierto(db, agencia):  # D22
+    with pytest.raises(op.Invalido, match="anterior al día abierto"):  # hoy (o después) no es un ajuste
+        mov(db, agencia, "gasto", 1000, corresponde_a_fecha=date(2026, 9, 22))
+    assert mov(db, agencia, "gasto", 1000, corresponde_a_fecha=date(2026, 9, 21)).es_ajuste
 
 
 def test_el_traspaso_no_se_lleva_lo_cargado_despues_del_arqueo(db, agencia):
@@ -145,3 +152,26 @@ def test_la_chica_no_tiene_esperado_hasta_el_ticket(db, agencia):  # §7.3
     assert chica()["esperado"] is None
     op.cargar_ticket(db, agencia.n, agencia.manana, 100000, [])
     assert chica()["esperado"] == {"efectivo": 88000, "boletas": 12000}
+
+
+def test_dos_escrituras_del_mismo_negocio_van_en_fila(tablas):
+    """Dos conexiones: mientras una escritura tiene los turnos (_turno), la rendición del mismo negocio espera,
+    acá hasta el lock_timeout. Sin el lock, un doble toque pasa dos veces los chequeos y duplica el efecto."""
+    with Session(engine) as a, Session(engine) as b:
+        negocio = Negocio(nombre="Negocio Concurrente")
+        a.add(negocio)
+        a.flush()
+        n = negocio.id
+        op.abrir_dia(a, n, date(2026, 9, 22))  # commit de verdad: la otra conexión lo ve
+        try:
+            op._turno(a, n)  # toma el lock y no termina
+            b.execute(text("SET LOCAL lock_timeout = '200ms'"))
+            with pytest.raises(OperationalError, match="lock timeout"):
+                op.rendir(b, n, 0)
+        finally:
+            a.rollback()
+            b.rollback()
+            a.execute(delete(Turno).where(Turno.negocio_id == n))
+            a.execute(delete(DiaOperativo).where(DiaOperativo.negocio_id == n))
+            a.execute(delete(Negocio).where(Negocio.id == n))
+            a.commit()

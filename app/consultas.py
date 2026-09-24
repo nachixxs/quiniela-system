@@ -72,7 +72,6 @@ def juegos(db: Session, negocio_id: int) -> list[Juego]:
 
 
 def _por_cliente(db: Session, negocio_id: int, *condiciones) -> dict[int, list[Movimiento]]:
-    """Los movimientos con cliente, por cliente, del más viejo al más nuevo."""
     por_cliente = defaultdict(list)
     consulta = select(Movimiento).where(Movimiento.negocio_id == negocio_id, Movimiento.cliente_id.is_not(None),
                                         *condiciones)
@@ -141,7 +140,6 @@ def movimientos(db: Session, negocio_id: int, *, turno_id: int | None = None, ca
 
 # --- Reportes (§8.6): campos provisorios hasta la pantalla del CP4 (D13) ---
 def _arqueos_por_dia(negocio_id: int, *condiciones):
-    """Los arqueos con su turno y su día, para filtrar por fecha o por nombre de turno."""
     return (select(Arqueo).join(Turno, Arqueo.turno_id == Turno.id).join(DiaOperativo, Turno.dia_id == DiaOperativo.id)
             .where(Arqueo.negocio_id == negocio_id, *condiciones))
 
