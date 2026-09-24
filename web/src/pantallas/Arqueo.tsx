@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "../api/cliente";
 import type { ArqueoOut } from "../api/tipos";
-import { pesos } from "../util";
+import { pesos, type Tema } from "../util";
+import { BotonTema } from "../App";
 
-export function Arqueo({ onVolver }: { onVolver: () => void }) {
+export function Arqueo({ onVolver, tema, onTema }: { onVolver: () => void; tema: Tema; onTema: () => void }) {
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const [cajaId, setCajaId] = useState<number | null>(null);
   const [turnoId, setTurnoId] = useState<number | null>(null);
@@ -24,14 +25,17 @@ export function Arqueo({ onVolver }: { onVolver: () => void }) {
   const turnos = dia.data?.turnos ?? [];
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-slate-100 px-4 pb-10 pt-6 lg:max-w-lg">
-      <button onClick={onVolver} className="mb-4 text-sm text-slate-500">← Inicio</button>
-      <h1 className="mb-4 text-lg font-bold text-slate-800">Arqueo</h1>
+    <div className="mx-auto min-h-screen max-w-md bg-fondo px-4 pb-10 pt-6 lg:max-w-lg">
+      <div className="mb-4 flex items-center justify-between">
+        <button onClick={onVolver} className="text-sm text-tinta-suave">← Inicio</button>
+        <BotonTema tema={tema} onClick={onTema} />
+      </div>
+      <h1 className="mb-4 text-lg font-semibold text-tinta">Arqueo</h1>
 
       <label className="mb-3 block">
-        <span className="mb-1 block text-sm font-medium text-slate-700">Caja</span>
+        <span className="mb-1 block text-sm text-tinta-suave">Caja</span>
         <select
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-base"
+          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-base text-tinta"
           value={cajaId ?? ""}
           onChange={(e) => { setCajaId(Number(e.target.value)); setResultado(null); }}
         >
@@ -41,9 +45,9 @@ export function Arqueo({ onVolver }: { onVolver: () => void }) {
       </label>
 
       <label className="mb-3 block">
-        <span className="mb-1 block text-sm font-medium text-slate-700">Turno</span>
+        <span className="mb-1 block text-sm text-tinta-suave">Turno</span>
         <select
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-base"
+          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-base text-tinta"
           value={turnoId ?? ""}
           onChange={(e) => { setTurnoId(Number(e.target.value)); setResultado(null); }}
         >
@@ -55,41 +59,41 @@ export function Arqueo({ onVolver }: { onVolver: () => void }) {
       </label>
 
       <label className="mb-3 block">
-        <span className="mb-1 block text-sm font-medium text-slate-700">Efectivo contado</span>
+        <span className="mb-1 block text-sm text-tinta-suave">Efectivo contado</span>
         <input
           type="number" inputMode="numeric"
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-xl"
+          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-xl text-tinta"
           value={efectivo} onChange={(e) => setEfectivo(e.target.value)}
         />
       </label>
 
       <label className="mb-4 block">
-        <span className="mb-1 block text-sm font-medium text-slate-700">Boletas contadas</span>
+        <span className="mb-1 block text-sm text-tinta-suave">Boletas contadas</span>
         <input
           type="number" inputMode="numeric"
-          className="w-full rounded-lg border border-slate-300 px-4 py-3 text-xl"
+          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-xl text-tinta"
           value={boletas} onChange={(e) => setBoletas(e.target.value)}
         />
       </label>
 
       {guardar.isError && (
-        <p className="mb-4 text-sm text-red-600">
+        <p className="mb-4 text-sm text-peligro">
           {guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo arquear."}
         </p>
       )}
 
       {resultado && (
-        <div className={`mb-4 rounded-lg p-4 ${resultado.estado === "cuadra" ? "bg-green-100" : "bg-amber-100"}`}>
+        <div className={`mb-4 rounded-[20px] p-4 ${resultado.estado === "cuadra" ? "bg-exito/10" : "bg-aviso/10"}`}>
           {resultado.estado === "cuadra" ? (
-            <p className="text-lg font-bold text-green-700">Cierra</p>
+            <p className="text-lg font-semibold text-exito">Cierra</p>
           ) : (
             <>
-              <p className="text-lg font-bold text-amber-700">
+              <p className="text-lg font-semibold text-aviso">
                 Diferencia de {pesos(resultado.diferencia_efectivo + resultado.diferencia_boletas)}
               </p>
-              <p className="text-sm text-amber-700">Efectivo: {pesos(resultado.diferencia_efectivo)}</p>
-              <p className="text-sm text-amber-700">Boletas: {pesos(resultado.diferencia_boletas)}</p>
-              <button disabled className="mt-3 rounded-lg bg-white px-4 py-2 text-sm text-slate-400">
+              <p className="text-sm text-aviso">Efectivo: {pesos(resultado.diferencia_efectivo)}</p>
+              <p className="text-sm text-aviso">Boletas: {pesos(resultado.diferencia_boletas)}</p>
+              <button disabled className="mt-3 rounded-full bg-tarjeta px-4 py-2 text-sm text-tinta-suave">
                 Preguntarle al asistente (Próximamente)
               </button>
             </>
@@ -100,12 +104,12 @@ export function Arqueo({ onVolver }: { onVolver: () => void }) {
       <button
         onClick={() => guardar.mutate()}
         disabled={guardar.isPending || !cajaId || !turnoId || !efectivo || !boletas}
-        className="w-full rounded-lg bg-blue-600 py-4 text-lg font-semibold text-white active:bg-blue-700 disabled:opacity-60"
+        className="h-12 w-full rounded-full bg-marca text-lg font-semibold text-white active:bg-marca-fuerte disabled:opacity-60"
       >
         {guardar.isPending ? "Arqueando..." : "Arquear"}
       </button>
       {(!cajaId || !turnoId || !efectivo || !boletas) && (
-        <p className="text-center text-sm text-slate-500">Completá caja, turno, efectivo y boletas (0 si no hay)</p>
+        <p className="text-center text-sm text-tinta-suave">Completá caja, turno, efectivo y boletas (0 si no hay)</p>
       )}
     </div>
   );

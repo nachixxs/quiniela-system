@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../api/cliente";
-import { pesos, uuid } from "../util";
+import { pesos, uuid, type Tema } from "../util";
+import { BotonTema } from "../App";
 
-export function CuentaCorriente({ onVolver }: { onVolver: () => void }) {
+export function CuentaCorriente({ onVolver, tema, onTema }: { onVolver: () => void; tema: Tema; onTema: () => void }) {
   const [orden, setOrden] = useState<"monto" | "antiguedad">("monto");
   const [clienteId, setClienteId] = useState<number | null>(null);
   const [monto, setMonto] = useState("");
@@ -36,29 +37,32 @@ export function CuentaCorriente({ onVolver }: { onVolver: () => void }) {
   });
 
   return (
-    <div className="mx-auto min-h-screen max-w-4xl bg-slate-100 px-4 pb-10 pt-6">
-      <button onClick={onVolver} className="mb-4 text-sm text-slate-500">← Inicio</button>
-      <h1 className="mb-4 text-lg font-bold text-slate-800">Cuenta corriente</h1>
+    <div className="mx-auto min-h-screen max-w-4xl bg-fondo px-4 pb-10 pt-6">
+      <div className="mb-4 flex items-center justify-between">
+        <button onClick={onVolver} className="text-sm text-tinta-suave">← Inicio</button>
+        <BotonTema tema={tema} onClick={onTema} />
+      </div>
+      <h1 className="mb-4 text-lg font-semibold text-tinta">Cuenta corriente</h1>
 
       <div className="mb-4 flex gap-2">
         <button
           onClick={() => setOrden("monto")}
-          className={`rounded-lg px-3 py-2 text-sm ${orden === "monto" ? "bg-blue-600 text-white" : "bg-white text-slate-600"}`}
+          className={`h-9 rounded-full px-3 text-sm ${orden === "monto" ? "bg-marca text-white" : "border border-borde text-tinta-suave"}`}
         >
           Por monto
         </button>
         <button
           onClick={() => setOrden("antiguedad")}
-          className={`rounded-lg px-3 py-2 text-sm ${orden === "antiguedad" ? "bg-blue-600 text-white" : "bg-white text-slate-600"}`}
+          className={`h-9 rounded-full px-3 text-sm ${orden === "antiguedad" ? "bg-marca text-white" : "border border-borde text-tinta-suave"}`}
         >
           Por antigüedad
         </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <table className="w-full rounded-xl bg-white text-sm shadow">
+        <table className="w-full overflow-hidden rounded-[20px] bg-tarjeta text-sm">
           <thead>
-            <tr className="border-b text-left text-slate-500">
+            <tr className="border-b border-borde text-left text-tinta-suave">
               <th className="p-3">Cliente</th>
               <th className="p-3">Saldo</th>
               <th className="p-3">Días</th>
@@ -69,49 +73,49 @@ export function CuentaCorriente({ onVolver }: { onVolver: () => void }) {
               <tr
                 key={d.id}
                 onClick={() => setClienteId(d.id)}
-                className={`cursor-pointer border-b active:bg-slate-100 ${clienteId === d.id ? "bg-blue-50" : ""}`}
+                className={`cursor-pointer border-b border-borde active:bg-fondo ${clienteId === d.id ? "bg-marca/10" : ""}`}
               >
-                <td className="p-3">{d.nombre}</td>
-                <td className={`p-3 ${d.saldo < 0 ? "text-green-600" : "text-slate-800"}`}>{pesos(d.saldo)}</td>
-                <td className="p-3">{d.dias_deuda_mas_vieja}</td>
+                <td className="p-3 text-tinta">{d.nombre}</td>
+                <td className={`p-3 ${d.saldo < 0 ? "text-exito" : "text-tinta"}`}>{pesos(d.saldo)}</td>
+                <td className="p-3 text-tinta">{d.dias_deuda_mas_vieja}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         {detalle.data && (
-          <div className="rounded-xl bg-white p-4 shadow">
-            <h2 className="text-base font-bold text-slate-800">{detalle.data.nombre}</h2>
-            <p className={`mb-3 text-2xl font-bold ${detalle.data.saldo < 0 ? "text-green-600" : "text-slate-800"}`}>
+          <div className="rounded-[20px] bg-tarjeta p-4">
+            <h2 className="text-base font-semibold text-tinta">{detalle.data.nombre}</h2>
+            <p className={`mb-3 text-2xl font-semibold ${detalle.data.saldo < 0 ? "text-exito" : "text-tinta"}`}>
               {pesos(detalle.data.saldo)}{detalle.data.saldo < 0 ? " (a favor)" : ""}
             </p>
-            <ul className="mb-4 max-h-40 overflow-auto text-sm text-slate-600">
+            <ul className="mb-4 max-h-40 overflow-auto text-sm text-tinta-suave">
               {detalle.data.movimientos.map((m) => (
-                <li key={m.id} className="border-b py-1">{m.tipo}: {pesos(m.monto)}</li>
+                <li key={m.id} className="border-b border-borde py-1">{m.tipo}: {pesos(m.monto)}</li>
               ))}
             </ul>
 
             {detalle.data.saldo > 0 && (
               <>
                 <label className="mb-2 block">
-                  <span className="mb-1 block text-sm font-medium text-slate-700">Cobrar</span>
+                  <span className="mb-1 block text-sm text-tinta-suave">Cobrar</span>
                   <input
                     type="number" inputMode="numeric"
-                    className="w-full rounded-lg border border-slate-300 px-4 py-3 text-xl"
+                    className="h-14 w-full rounded-xl border border-borde bg-fondo px-4 text-xl text-tinta"
                     value={monto} onChange={(e) => setMonto(e.target.value)}
                   />
                 </label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setMonto(String(detalle.data!.saldo))}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-600"
+                    className="h-9 rounded-full border border-borde px-3 text-sm text-tinta-suave"
                   >
                     Todo ({pesos(detalle.data.saldo)})
                   </button>
                   <button
                     onClick={() => cobrar.mutate()}
                     disabled={cobrar.isPending || !monto || !cajaChica}
-                    className="flex-1 rounded-lg bg-blue-600 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                    className="h-9 flex-1 rounded-full bg-marca text-sm font-semibold text-white disabled:opacity-60"
                   >
                     {cobrar.isPending ? "Cobrando..." : "Cobrar"}
                   </button>
@@ -119,7 +123,7 @@ export function CuentaCorriente({ onVolver }: { onVolver: () => void }) {
               </>
             )}
             {cobrar.isError && (
-              <p className="mt-2 text-sm text-red-600">
+              <p className="mt-2 text-sm text-peligro">
                 {cobrar.error instanceof ApiError ? cobrar.error.detalle : "No se pudo cobrar."}
               </p>
             )}

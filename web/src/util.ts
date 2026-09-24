@@ -4,6 +4,28 @@ export function pesos(monto: number): string {
   return formato.format(monto);
 }
 
+const CLAVE_TEMA = "quiniela-tema";
+export type Tema = "claro" | "oscuro";
+
+export function temaInicial(): Tema {
+  try {
+    const guardado = localStorage.getItem(CLAVE_TEMA);
+    if (guardado === "claro" || guardado === "oscuro") return guardado;
+  } catch {
+    // localStorage no disponible: seguimos con la preferencia del sistema.
+  }
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro";
+}
+
+export function aplicarTema(tema: Tema): void {
+  document.documentElement.classList.toggle("dark", tema === "oscuro");
+  try {
+    localStorage.setItem(CLAVE_TEMA, tema);
+  } catch {
+    // sin guardado persistente, el tema vuelve a la preferencia del sistema al recargar.
+  }
+}
+
 // crypto.randomUUID solo existe en contextos seguros (HTTPS o localhost); fuera de eso, armamos un UUID v4 a mano.
 export function uuid(): string {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
