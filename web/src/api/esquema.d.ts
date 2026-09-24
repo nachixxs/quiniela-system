@@ -528,6 +528,8 @@ export interface components {
             mercado_pago: number;
             /** Premios */
             premios: number;
+            /** Otros Pagos */
+            otros_pagos: number;
         };
         /** DeudorOut */
         DeudorOut: {
@@ -700,6 +702,13 @@ export interface components {
             /** Pagina */
             pagina: number;
         };
+        /** NegocioOut */
+        NegocioOut: {
+            /** Id */
+            id: number;
+            /** Nombre */
+            nombre: string;
+        };
         /** RendicionItem */
         RendicionItem: {
             /** Id */
@@ -798,6 +807,14 @@ export interface components {
             estado: "abierto" | "cerrado";
             /** Tiene Ticket */
             tiene_ticket: boolean;
+        };
+        /** UsuarioOut */
+        UsuarioOut: {
+            /** Id */
+            id: number;
+            /** Nombre */
+            nombre: string;
+            negocio: components["schemas"]["NegocioOut"];
         };
         /** ValidationError */
         ValidationError: {
@@ -907,9 +924,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["UsuarioOut"];
                 };
             };
             /** @description Validation Error */

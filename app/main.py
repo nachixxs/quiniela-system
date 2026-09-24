@@ -28,10 +28,6 @@ app.include_router(catalogos.router, prefix="/api", tags=["catalogos"])
 app.include_router(reportes.router, prefix="/api", tags=["reportes"])
 app.include_router(asistente.router, prefix="/api", tags=["asistente"])
 
-DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
-if DIST.is_dir():  # D12: FastAPI sirve el build de React, en un solo dominio sin CORS
-    app.mount("/", StaticFiles(directory=DIST, html=True), name="frontend")
-
 
 async def _leer_acotado(request: Request) -> bytes:
     """Lee el body cortando apenas se pasa de LIMITE_BODY, sin acumular todo un cuerpo enorme."""
@@ -83,3 +79,9 @@ async def manejar_validacion(request: Request, exc: RequestValidationError) -> J
 @app.get("/api/salud")
 def salud() -> dict:
     return {"ok": True}
+
+
+# Al final: el mount en "/" se traga toda ruta que se declare después (/api/salud daba 404)
+DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
+if DIST.is_dir():  # D12: FastAPI sirve el build de React, en un solo dominio sin CORS
+    app.mount("/", StaticFiles(directory=DIST, html=True), name="frontend")
