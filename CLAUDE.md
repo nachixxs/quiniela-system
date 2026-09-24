@@ -50,6 +50,6 @@ Está por encima de todo lo demás (SPECS §0).
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest          # tests
-docker compose up -d --build                  # api, db, caddy
-docker compose exec api alembic upgrade head  # migraciones
+docker compose up -d --build                  # api (127.0.0.1:8000) y db (127.0.0.1:5433)
+docker compose exec api alembic upgrade head  # migraciones (el contenedor ya las corre al arrancar)
 ```
