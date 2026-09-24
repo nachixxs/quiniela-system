@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "../api/cliente";
 import type { ClienteBusqueda, MovimientoCrear } from "../api/tipos";
 import { uuid, type Tema } from "../util";
-import { BotonTema } from "../App";
+import { BotonPrimario, Encabezado } from "../ui";
 
 // D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja.
 const OPCIONES_PAGO: { etiqueta: string; tipo: MovimientoCrear["tipo"] }[] = [
@@ -58,17 +58,14 @@ export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; 
 
   if (!seleccion) {
     return (
-      <div className="mx-auto min-h-screen max-w-md bg-fondo px-4 pb-10 pt-6 lg:max-w-lg">
-        <div className="mb-4 flex items-center justify-between">
-          <button onClick={onVolver} className="text-sm text-tinta-suave">← Inicio</button>
-          <BotonTema tema={tema} onClick={onTema} />
-        </div>
-        <h1 className="mb-1 text-lg font-semibold text-tinta">Carga rápida</h1>
+      <div className="entrada mx-auto min-h-screen max-w-md bg-fondo px-4 pb-10 pt-6 lg:max-w-lg">
+        <Encabezado etiqueta="Inicio" onVolver={onVolver} tema={tema} onTema={onTema} />
+        <h1 className="mb-1 text-lg font-semibold tracking-tight text-tinta">Carga rápida</h1>
         <p className="mb-4 text-sm text-tinta-suave">
           Las ventas en efectivo no se cargan acá: salen del ticket al cierre.
         </p>
         {confirmacion && (
-          <p className="mb-4 rounded-xl bg-exito/10 p-3 text-sm text-exito">{confirmacion}</p>
+          <p className="aparicion mb-4 rounded-xl bg-exito/10 p-3 text-sm text-exito">{confirmacion}</p>
         )}
         <div className="grid grid-cols-2 gap-4">
           {BOTONES.map((b) => (
@@ -76,7 +73,7 @@ export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; 
               key={b.etiqueta}
               onClick={() => { setConfirmacion(""); setSeleccion(b); }}
               disabled={!cajaChica}
-              className="rounded-[20px] border border-borde bg-tarjeta p-8 text-lg font-semibold text-tinta active:bg-fondo disabled:opacity-50"
+              className="presiona rounded-[20px] border border-borde bg-tarjeta p-8 text-lg font-semibold text-tinta transition-colors hover:bg-fondo active:bg-fondo disabled:opacity-50"
             >
               {b.etiqueta}
             </button>
@@ -87,12 +84,9 @@ export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; 
   }
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-fondo px-4 pb-10 pt-6 lg:max-w-lg">
-      <div className="mb-4 flex items-center justify-between">
-        <button onClick={() => setSeleccion(null)} className="text-sm text-tinta-suave">← Volver</button>
-        <BotonTema tema={tema} onClick={onTema} />
-      </div>
-      <h1 className="mb-4 text-lg font-semibold text-tinta">{seleccion.etiqueta}</h1>
+    <div className="entrada mx-auto min-h-screen max-w-md bg-fondo px-4 pb-10 pt-6 lg:max-w-lg">
+      <Encabezado etiqueta="Volver" onVolver={() => setSeleccion(null)} tema={tema} onTema={onTema} />
+      <h1 className="mb-4 text-lg font-semibold tracking-tight text-tinta">{seleccion.etiqueta}</h1>
 
       {seleccion.tipo === null && (
         <div className="mb-4 flex flex-col gap-2">
@@ -100,8 +94,8 @@ export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; 
             <button
               key={o.tipo}
               onClick={() => setTipoPago(o.tipo)}
-              className={`rounded-xl border px-4 py-3 text-left text-base ${
-                tipoPago === o.tipo ? "border-marca bg-marca/10 font-semibold text-marca" : "border-borde text-tinta"
+              className={`rounded-xl border px-4 py-3 text-left text-base transition-colors ${
+                tipoPago === o.tipo ? "border-marca bg-marca/10 font-semibold text-marca" : "border-borde text-tinta hover:bg-fondo"
               }`}
             >
               {o.etiqueta}
@@ -114,7 +108,7 @@ export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; 
         <span className="mb-1 block text-sm text-tinta-suave">Monto</span>
         <input
           type="number" inputMode="numeric" autoFocus
-          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-2xl text-tinta"
+          className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-2xl text-tinta transition-colors"
           value={monto} onChange={(e) => setMonto(e.target.value)}
         />
       </label>
@@ -123,18 +117,18 @@ export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; 
         <div className="relative mb-4">
           <span className="mb-1 block text-sm text-tinta-suave">Cliente</span>
           <input
-            className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-base text-tinta"
+            className="h-14 w-full rounded-xl border border-borde bg-tarjeta px-4 text-base text-tinta transition-colors"
             value={cliente ? cliente.nombre : busqueda}
             onChange={(e) => { setCliente(null); setBusqueda(e.target.value); }}
             placeholder="Buscar por nombre..."
           />
           {!cliente && !!clientes.data?.length && (
-            <ul className="absolute z-10 mt-1 w-full rounded-xl border border-borde bg-tarjeta">
+            <ul className="aparicion origin-top absolute z-10 mt-1 w-full rounded-xl border border-borde bg-tarjeta">
               {clientes.data.map((c) => (
                 <li key={c.id}>
                   <button
                     onClick={() => { setCliente(c); setBusqueda(""); }}
-                    className="block w-full px-4 py-3 text-left text-tinta active:bg-fondo"
+                    className="block w-full px-4 py-3 text-left text-tinta transition-colors hover:bg-fondo active:bg-fondo"
                   >
                     {c.nombre}
                   </button>
@@ -146,18 +140,18 @@ export function CargaRapida({ onVolver, tema, onTema }: { onVolver: () => void; 
       )}
 
       {guardar.isError && (
-        <p className="mb-4 text-sm text-peligro">
+        <p className="aparicion mb-4 text-sm text-peligro">
           {guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo guardar."}
         </p>
       )}
 
-      <button
+      <BotonPrimario
         onClick={() => guardar.mutate()}
         disabled={guardar.isPending || !monto || (seleccion.requiereCliente && !cliente)}
-        className="h-12 w-full rounded-full bg-marca text-lg font-semibold text-white active:bg-marca-fuerte disabled:opacity-60"
+        className="w-full text-lg"
       >
         {guardar.isPending ? "Guardando..." : "Guardar"}
-      </button>
+      </BotonPrimario>
     </div>
   );
 }
