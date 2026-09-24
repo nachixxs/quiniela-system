@@ -61,7 +61,7 @@ export function CuentaCorriente({ onVolver }: { onVolver: () => void }) {
             <tr className="border-b text-left text-slate-500">
               <th className="p-3">Cliente</th>
               <th className="p-3">Saldo</th>
-              <th className="hidden p-3 md:table-cell">Días</th>
+              <th className="p-3">Días</th>
             </tr>
           </thead>
           <tbody>
@@ -73,7 +73,7 @@ export function CuentaCorriente({ onVolver }: { onVolver: () => void }) {
               >
                 <td className="p-3">{d.nombre}</td>
                 <td className={`p-3 ${d.saldo < 0 ? "text-green-600" : "text-slate-800"}`}>{pesos(d.saldo)}</td>
-                <td className="hidden p-3 md:table-cell">{d.dias_deuda_mas_vieja}</td>
+                <td className="p-3">{d.dias_deuda_mas_vieja}</td>
               </tr>
             ))}
           </tbody>
