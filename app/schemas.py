@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.modelos import Estado, TipoMovimiento
 
@@ -14,7 +14,12 @@ TipoMovimientoCarga = Literal[
 EstadoArqueo = Literal["cuadra", "con_diferencia", "explicada"]
 
 
-class DiaOut(BaseModel):
+class OrmModel(BaseModel):
+    """Base para schemas de salida armados directo desde un objeto del ORM, no un dict."""
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DiaOut(OrmModel):
     id: int
     fecha: date
     estado: Estado
@@ -71,6 +76,7 @@ class Desglose(BaseModel):
     fiados: int
     mercado_pago: int
     premios: int
+    otros_pagos: int  # D20: gastos, retiros, sueldos y pago al banco del turno, aditivo
 
 
 class TicketOut(BaseModel):
@@ -90,7 +96,7 @@ class MovimientoCrear(BaseModel):
     explica_arqueo_id: int | None = None
 
 
-class MovimientoOut(BaseModel):
+class MovimientoOut(OrmModel):
     id: int
     tipo: TipoMovimiento
     monto: int
@@ -130,7 +136,7 @@ class ArqueoRequest(BaseModel):
     nota: str | None = None
 
 
-class ArqueoOut(BaseModel):
+class ArqueoOut(OrmModel):
     id: int
     efectivo_esperado: int
     boletas_esperadas: int
@@ -143,7 +149,7 @@ class RendicionRequest(BaseModel):
     boletas_contadas: int
 
 
-class RendicionOut(BaseModel):
+class RendicionOut(OrmModel):
     id: int
     total_esperado: int
     total_contado: int
@@ -151,7 +157,7 @@ class RendicionOut(BaseModel):
     cantidad_boletas: int
 
 
-class JuegoOut(BaseModel):
+class JuegoOut(OrmModel):
     id: int
     nombre: str
 
@@ -185,7 +191,7 @@ class ReporteDia(BaseModel):
     arqueos: list[ArqueoOut]
 
 
-class DiferenciaItem(BaseModel):
+class DiferenciaItem(OrmModel):
     id: int
     caja_id: int
     turno_id: int
@@ -206,7 +212,7 @@ class VentaJuegoItem(BaseModel):
     total: int
 
 
-class RendicionItem(BaseModel):
+class RendicionItem(OrmModel):
     id: int
     fecha: date
     total_esperado: int
@@ -223,3 +229,14 @@ class AsistenteRequest(BaseModel):
 class AsistenteOut(BaseModel):
     respuesta: str
     tools_usadas: list[str]
+
+
+class NegocioOut(BaseModel):
+    id: int
+    nombre: str
+
+
+class UsuarioOut(BaseModel):
+    id: int
+    nombre: str
+    negocio: NegocioOut
