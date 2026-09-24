@@ -5,7 +5,7 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import DATABASE_URL
 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, hide_parameters=True)  # los errores no llevan datos al log (auditoría 3.C2)
 SessionLocal = sessionmaker(engine)
 
 

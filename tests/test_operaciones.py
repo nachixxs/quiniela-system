@@ -4,6 +4,7 @@ from uuid import uuid4
 import pytest
 from sqlalchemy import func, select
 
+from app import consultas
 from app import operaciones as op
 from app.modelos import Arqueo, DiaOperativo, Movimiento, Turno
 
@@ -120,3 +121,27 @@ def test_el_dia_no_cierra_con_turnos_abiertos(db, agencia):  # §7.7
     with pytest.raises(op.Conflicto):
         op.cerrar_dia(db, agencia.n, agencia.dia)
     assert db.get(DiaOperativo, agencia.dia).estado == "abierto"
+
+
+def test_saldo_del_cliente_sin_anulados_y_a_favor(db, agencia):  # §5.6
+    a = agencia
+    fiado = mov(db, a, "fiado", 4000, cliente_id=a.cliente)
+    mov(db, a, "fiado", 3000, cliente_id=a.cliente)
+    op.anular_movimiento(db, a.n, fiado.id, "Era de otro cliente")
+    assert consultas.buscar_clientes(db, a.n, "rub") == [{"id": a.cliente, "nombre": "Rubén Ficticio", "saldo": 3000}]
+    assert [d["saldo"] for d in consultas.deudores(db, a.n)] == [3000]
+    mov(db, a, "cobro_fiado", 5000, cliente_id=a.cliente)  # pagó de más: queda a favor
+    detalle = consultas.cliente(db, a.n, a.cliente)
+    assert detalle["saldo"] == -2000 and len(detalle["movimientos"]) == 4
+    assert consultas.deudores(db, a.n) == []
+
+
+def test_la_chica_no_tiene_esperado_hasta_el_ticket(db, agencia):  # §7.3
+    mov(db, agencia, "pago_premio", 12000)
+
+    def chica():
+        return next(c for c in consultas.cajas(db, agencia.n) if c["id"] == agencia.chica)
+
+    assert chica()["esperado"] is None
+    op.cargar_ticket(db, agencia.n, agencia.manana, 100000, [])
+    assert chica()["esperado"] == {"efectivo": 88000, "boletas": 12000}

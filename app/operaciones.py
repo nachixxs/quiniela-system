@@ -20,6 +20,7 @@ DESGLOSE = {"quiniela": ("apuesta_quiniela",), "otros_juegos": ("venta_otro_jueg
             "otros_pagos": ("gasto", "retiro_dueno", "sueldo", "pago_banco")}  # suma el esperado del ticket (D20)
 COPIA = ("negocio_id", "dia_id", "turno_id", "caja_id", "tipo", "monto", "juego_id", "cliente_id", "contraparte",
          "nota", "corresponde_a_fecha", "explica_arqueo_id")  # lo que el contra-asiento copia del original
+ARGENTINA = timezone(timedelta(hours=-3))  # la fecha del local, no la del servidor
 
 
 class ErrorDominio(Exception):
@@ -98,7 +99,7 @@ def _reexplicar(db: Session, negocio_id: int, arqueo_id: int) -> None:
 
 def abrir_dia(db: Session, negocio_id: int, fecha: date | None = None) -> tuple[DiaOperativo, list[Turno]]:
     """POST /dia/abrir: hoy (o `fecha`) con sus dos turnos abiertos (D3b). Un día abierto por vez."""
-    fecha = fecha or datetime.now(timezone(timedelta(hours=-3))).date()  # la fecha del local
+    fecha = fecha or datetime.now(ARGENTINA).date()
     if db.scalar(select(DiaOperativo.id).where(DiaOperativo.negocio_id == negocio_id,
                                                or_(DiaOperativo.estado == "abierto", DiaOperativo.fecha == fecha))):
         raise Conflicto("dia_existente", "Hay un día abierto, o ese día ya se abrió: un día cerrado no se reabre.")
@@ -153,6 +154,17 @@ def crear_movimiento(db: Session, negocio_id: int, *, ref_cliente: UUID, tipo: s
         _reexplicar(db, negocio_id, explica_arqueo_id)
     db.commit()
     return m
+
+
+def crear_cliente(db: Session, negocio_id: int, nombre: str, alias: str | None = None,
+                  telefono: str | None = None) -> Cliente:
+    """POST /clientes. Nace con saldo 0: el saldo no se guarda, se calcula (§5.6)."""
+    if not nombre.strip():
+        raise Invalido("falta_nombre", "El cliente lleva nombre.")
+    cliente = Cliente(negocio_id=negocio_id, nombre=nombre.strip(), alias=alias, telefono=telefono)
+    db.add(cliente)
+    db.commit()
+    return cliente
 
 
 def anular_movimiento(db: Session, negocio_id: int, movimiento_id: int, motivo: str) -> Movimiento:
