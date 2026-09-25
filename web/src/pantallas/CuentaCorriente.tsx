@@ -19,13 +19,10 @@ function Detalle({ clienteId }: { clienteId: number }) {
   const detalle = useQuery({ queryKey: ["cliente", clienteId], queryFn: () => api.cliente(clienteId) });
 
   const cobrar = useMutation({
-    mutationFn: () => {
-      if (!cajaChica) throw new ApiError("sin_caja", "No hay caja chica abierta.");
-      return api.crearMovimiento({
-        ref_cliente: refCliente, tipo: "cobro_fiado", monto: Number(monto),
-        caja_id: cajaChica.id, cliente_id: clienteId,
-      });
-    },
+    mutationFn: () => api.crearMovimiento({
+      ref_cliente: refCliente, tipo: "cobro_fiado", monto: Number(monto),
+      caja_id: cajaChica!.id, cliente_id: clienteId,
+    }),
     onSuccess: (mov) => {
       setRefCliente(uuid());
       setMonto("");
