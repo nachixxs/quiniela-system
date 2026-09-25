@@ -136,6 +136,24 @@ def test_recorrido_feliz_http(db):
     app.dependency_overrides.clear()
 
 
+def test_reporte_mes(db, usuario_test):
+    negocio, usuario, password = usuario_test
+    app.dependency_overrides[get_db] = lambda: db
+    cliente = TestClient(app, base_url="https://testserver")
+    cliente.cookies.set("sesion", _sesion(db, negocio.id))
+
+    resp = cliente.get("/api/reportes/mes/2026-01")
+    assert resp.status_code == 200
+    cuerpo = resp.json()
+    claves = {"total_vendido", "arqueos_hechos", "diferencia_total", "ventas_por_juego"}
+    assert claves <= cuerpo["actual"].keys() == cuerpo["anterior"].keys()
+    assert len(cuerpo["ventas_por_dia"]) == 31
+
+    assert cliente.get("/api/reportes/mes/2026-13").status_code == 422
+
+    app.dependency_overrides.clear()
+
+
 def test_413_body_grande(db):
     app.dependency_overrides[get_db] = lambda: db
     cliente = TestClient(app, base_url="https://testserver")
