@@ -224,6 +224,47 @@ class AsistenteOut(BaseModel):
     tools_usadas: list[str]
 
 
+class VentaJuegoMes(BaseModel):
+    juego_id: int
+    nombre: str
+    total: int
+
+
+class ResumenMes(BaseModel):
+    ventas_por_juego: list[VentaJuegoMes]
+    total_vendido: int
+    cobros_fiado: int
+    cobros_subagente: int
+    ingresos_del_dueno: int
+    premios_pagados: int
+    cobros_mercado_pago: int
+    pagos_banco: int
+    sueldos: int
+    gastos: int
+    retiros_dueno: int
+    fiado: int
+    arqueos_hechos: int
+    arqueos_cuadran: int
+    arqueos_con_diferencia: int
+    arqueos_explicados: int
+    diferencia_efectivo: int
+    diferencia_boletas: int
+    diferencia_total: int
+
+
+class VentaDia(BaseModel):
+    fecha: date
+    total: int
+
+
+class ReporteMes(BaseModel):
+    mes: str
+    actual: ResumenMes
+    anterior: ResumenMes
+    deuda_total_hoy: int
+    ventas_por_dia: list[VentaDia]
+
+
 class NegocioOut(BaseModel):
     id: int
     nombre: str
