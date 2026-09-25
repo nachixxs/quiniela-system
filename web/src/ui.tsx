@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { m } from "motion/react";
 import {
-  CircleAlert, CircleCheck, HandCoins, LoaderCircle, NotebookPen, ReceiptText, ShoppingBag,
-  Smartphone, TriangleAlert, Trophy, Wallet, X, type LucideIcon,
+  Banknote, CircleAlert, CircleCheck, HandCoins, Landmark, LoaderCircle, NotebookPen, PiggyBank,
+  ReceiptText, ShoppingBag, Smartphone, TriangleAlert, Trophy, Users, Wallet, X, type LucideIcon,
 } from "lucide-react";
 import type { MovimientoOut } from "./api/tipos";
 
@@ -36,10 +36,11 @@ export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   pago_premio: T("Premio", Trophy, "text-premio"),
   apuesta_quiniela: T("Apuesta de quiniela"),
   venta_otro_juego: T("Venta de otro juego"),
-  cobro_subagente: T("Cobro de subagente"),
-  ingreso_del_dueno: T("Ingreso del dueño"),
-  pago_banco: T("Pago al banco"),
-  sueldo: T("Sueldo"),
+  // D42: cobro_subagente e ingreso_del_dueno van a la caja grande, junto con pago_banco y sueldo.
+  cobro_subagente: T("Subagente", Users, "text-exito"),
+  ingreso_del_dueno: T("Lo trae el dueño", PiggyBank, "text-exito"),
+  pago_banco: T("Banco", Landmark, "text-peligro"),
+  sueldo: T("Sueldo", Banknote, "text-peligro"),
   traspaso: T("Traspaso"),
   traspaso_boletas: T("Traspaso de boletas"),
   rendicion_boletas: T("Rendición de boletas"),
