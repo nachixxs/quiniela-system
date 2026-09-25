@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
 import { Banknote, CircleCheck, Search, UserPlus, X } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
@@ -29,7 +29,6 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
   const [refCliente, setRefCliente] = useState(() => uuid());
   const [tipoPago, setTipoPago] = useState(TIPOS_PAGO[0]);
   const [confirmacion, setConfirmacion] = useState<{ id: number; titulo: string; texto: string } | null>(null);
-  const queryClient = useQueryClient();
 
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
@@ -57,8 +56,6 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
       const etiqueta = seleccion?.tipo ? seleccion.etiqueta : TIPOS[mov.tipo].etiqueta;
       setConfirmacion({ id: Date.now(), titulo: `${etiqueta} guardado`, texto: `${pesos(mov.monto)}${cliente ? ` · ${cliente.nombre}` : ""}` });
       cerrar();
-      // El inicio y los fiados muestran el saldo nuevo que calcula el servidor.
-      for (const clave of ["dia-actual", "cajas", "deudores"]) queryClient.invalidateQueries({ queryKey: [clave] });
     },
   });
 

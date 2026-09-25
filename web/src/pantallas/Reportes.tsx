@@ -138,11 +138,13 @@ function GraficoVentas({ dias, total }: { dias: { fecha: string; total: number }
   );
 }
 
-function estadoInsignia(estado: "cuadra" | "con_diferencia" | "explicada") {
-  if (estado === "cuadra") return { texto: "Cuadra", clase: TONOS.exito };
-  if (estado === "explicada") return { texto: "Explicada", clase: TONOS.aviso };
-  return { texto: "No cuadra", clase: "bg-peligro/8 text-peligro" };
+// Ya sin "cuadra": esa lista solo trae lo que no cuadró o quedó explicado.
+function estadoInsignia(estado: "con_diferencia" | "explicada") {
+  return estado === "explicada" ? { texto: "Explicada", clase: TONOS.aviso } : { texto: "No cuadra", clase: "bg-peligro/8 text-peligro" };
 }
+const horaFormato = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" });
+// Ya van aparte (Ventas y Premios pagados) o son internos que el cierre del mes deja afuera (D39).
+const FUERA_DE_LISTA_POR_TIPO = new Set(["apuesta_quiniela", "venta_otro_juego", "pago_premio", "traspaso", "traspaso_boletas", "rendicion_boletas"]);
 
 export function Reportes() {
   const [mes, setMes] = useState(() => new Date().toISOString().slice(0, 7));
@@ -156,6 +158,7 @@ export function Reportes() {
   const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
   const nombreCaja = (id: number) => cajas.data?.find((c) => c.id === id)?.nombre ?? `Caja #${id}`;
   const grupos = cierre.data ? construirGrupos(cierre.data.actual, cierre.data.anterior, cierre.data.deuda_total_hoy) : null;
+  const sinCuadrar = diferencias.data?.filter((d) => d.estado !== "cuadra");
 
   return (
     <div className="flex flex-col gap-4 lg:gap-5">
@@ -211,14 +214,14 @@ export function Reportes() {
         {dia.data && (
           <ul className="mt-3 divide-y text-sm">
             <li className="flex items-center justify-between gap-3 py-2">
-              <span className="text-muted-foreground">Apuestas</span>
+              <span className="text-muted-foreground">Ventas</span>
               <span className="monto font-medium">{pesos(dia.data.apuestas)}</span>
             </li>
             <li className="flex items-center justify-between gap-3 py-2">
               <span className="text-muted-foreground">Premios pagados</span>
               <span className="monto font-medium">{pesos(dia.data.boletas)}</span>
             </li>
-            {Object.entries(dia.data.totales_por_tipo).map(([tipo, monto]) => (
+            {Object.entries(dia.data.totales_por_tipo).filter(([tipo]) => !FUERA_DE_LISTA_POR_TIPO.has(tipo)).map(([tipo, monto]) => (
               <li key={tipo} className="flex items-center justify-between gap-3 py-2">
                 <span className="text-muted-foreground">{TIPOS[tipo as MovimientoOut["tipo"]]?.etiqueta ?? tipo}</span>
                 <span className="monto font-medium">{pesos(monto)}</span>
@@ -241,15 +244,15 @@ export function Reportes() {
         </div>
         {diferencias.isLoading && <div className="esqueleto m-4 h-24" />}
         {diferencias.isError && <div className="p-4"><Aviso tono="error" accion={<Reintentar onClick={() => diferencias.refetch()} />}>No se pudieron traer las diferencias.</Aviso></div>}
-        {diferencias.data?.length === 0 && <p className="px-4 pb-4 text-sm text-muted-foreground">Sin diferencias en {mesLabel(mes)}.</p>}
-        {!!diferencias.data?.length && (
+        {sinCuadrar?.length === 0 && <p className="px-4 pb-4 text-sm text-muted-foreground">Sin diferencias en {mesLabel(mes)}.</p>}
+        {!!sinCuadrar?.length && (
           <ul className="divide-y">
-            {diferencias.data.map((d) => {
-              const e = estadoInsignia(d.estado);
+            {sinCuadrar.map((d) => {
+              const e = estadoInsignia(d.estado as "con_diferencia" | "explicada");
               return (
                 <li key={d.id} className="flex items-center gap-3 px-4 py-2.5 text-sm lg:px-5">
                   <span className="min-w-0 flex-1">
-                    <span className="block font-medium">{nombreCaja(d.caja_id)} · Turno {d.turno_id}</span>
+                    <span className="block font-medium">{nombreCaja(d.caja_id)} · {horaFormato.format(new Date(d.momento))}</span>
                     <span className="block text-xs text-muted-foreground">{fechaCorta(d.momento.slice(0, 10))}</span>
                   </span>
                   <span className="monto text-right text-xs text-muted-foreground">

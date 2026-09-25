@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { api, ApiError } from "../api/cliente";
 import type { MovimientoOut } from "../api/tipos";
@@ -23,17 +23,9 @@ const Reintentar = ({ onClick }: { onClick: () => void }) => (
 // Hoja de confirmación: qué se anula, el motivo (obligatorio) y el botón primario sin vuelta atrás.
 function HojaAnular({ mov, onCerrar, onExito }: { mov: MovimientoOut; onCerrar: () => void; onExito: () => void }) {
   const [motivo, setMotivo] = useState("");
-  const queryClient = useQueryClient();
   const t = TIPOS[mov.tipo];
 
-  const anular = useMutation({
-    mutationFn: () => api.anular(mov.id, motivo),
-    onSuccess: () => {
-      for (const clave of ["cajas", "dia-actual", "deudores", "movimientos"]) queryClient.invalidateQueries({ queryKey: [clave] });
-      if (mov.cliente_id) queryClient.invalidateQueries({ queryKey: ["cliente", mov.cliente_id] });
-      onExito();
-    },
-  });
+  const anular = useMutation({ mutationFn: () => api.anular(mov.id, motivo), onSuccess: onExito });
 
   return (
     <Hoja titulo="Anular movimiento" descripcion="Queda un contra-asiento con el motivo: no se puede deshacer." onCerrar={onCerrar}>
@@ -122,7 +114,9 @@ export function TarjetaMovimientos() {
             <li key={mov.id} className={FILA}>
               <t.icono className={`size-4 shrink-0 ${t.tono}`} aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className={`block text-sm font-medium ${anulado ? "text-muted-foreground line-through" : ""}`}>{t.etiqueta}</span>
+                <span className={`block text-sm font-medium ${anulado ? "text-muted-foreground line-through" : ""}`}>
+                  {esContraAsiento ? `Anulación · ${t.etiqueta}` : t.etiqueta}
+                </span>
                 <span className="block truncate text-xs text-muted-foreground">
                   {hora(mov.creado_en)}
                   {quien(mov) ? ` · ${quien(mov)}` : ""}
@@ -131,7 +125,7 @@ export function TarjetaMovimientos() {
                 </span>
               </span>
               {anulado && <span className={`${INSIGNIA} ${TONOS.neutro}`}>Anulado</span>}
-              <span className={`monto text-sm font-medium ${anulado ? "text-muted-foreground line-through" : ""}`}>{pesos(mov.monto)}</span>
+              <span className={`monto text-sm font-medium ${anulado ? "text-muted-foreground line-through" : ""}`}>{pesos(esContraAsiento ? -mov.monto : mov.monto)}</span>
               {anulable && (
                 <button type="button" onClick={() => setAAnular(mov)} className="presiona -my-1 h-11 shrink-0 rounded-md px-2 text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground lg:h-8">
                   Anular

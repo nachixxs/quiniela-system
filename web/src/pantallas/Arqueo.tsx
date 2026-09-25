@@ -88,10 +88,12 @@ export function Arqueo() {
 
   const cajas = dia.data?.cajas ?? [];
   const turnos = dia.data?.turnos ?? [];
-  // Con un solo turno abierto, ya queda elegido.
-  const abiertos = turnos.filter((t) => t.estado === "abierto");
-  const turnoId = turnoElegido ?? (abiertos.length === 1 ? abiertos[0].id : null);
   const caja = cajas.find((c) => c.id === cajaId);
+  // La caja grande acepta cualquier turno, abierto o cerrado (D5); la chica solo el abierto, porque lo cierra.
+  const esChica = caja?.tipo === "operativa";
+  const abiertos = turnos.filter((t) => t.estado === "abierto");
+  // Con un solo turno abierto ya queda elegido; en la grande, sin elección, el último turno (noche si mañana ya cerró).
+  const turnoId = turnoElegido ?? (esChica ? (abiertos.length === 1 ? abiertos[0].id : null) : (turnos[turnos.length - 1]?.id ?? null));
   const turno = turnos.find((t) => t.id === turnoId);
 
   const guardar = useMutation({
@@ -149,7 +151,7 @@ export function Arqueo() {
               etiqueta="Turno"
               valor={turnoId}
               onCambio={cambiar(setTurnoId)}
-              opciones={turnos.map((t) => ({ valor: t.id, texto: t.nombre.charAt(0).toUpperCase() + t.nombre.slice(1), detalle: t.estado, deshabilitada: t.estado !== "abierto" }))}
+              opciones={turnos.map((t) => ({ valor: t.id, texto: t.nombre.charAt(0).toUpperCase() + t.nombre.slice(1), detalle: t.estado, deshabilitada: esChica && t.estado !== "abierto" }))}
             />
           </div>
         )}

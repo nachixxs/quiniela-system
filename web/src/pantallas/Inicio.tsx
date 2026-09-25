@@ -45,8 +45,9 @@ const Dato = ({ rotulo, valor, esperado }: { rotulo: string; valor: ReactNode; e
 const Monto = ({ v }: { v: number }) => <span className="monto text-2xl font-semibold">{pesos(v)}</span>;
 
 // D27: antes del ticket la caja chica no tiene esperado (SPECS §7.3) y su efectivo es parcial: solo se muestran las boletas.
-function TarjetaCaja({ c }: { c: CajaEstado }) {
-  const sinTicket = c.tipo === "operativa" && !c.esperado;
+// Sin turno abierto (los dos cerrados) ya no hay ticket por cargar: se muestra como la caja grande.
+function TarjetaCaja({ c, hayTurnoAbierto }: { c: CajaEstado; hayTurnoAbierto: boolean }) {
+  const sinTicket = c.tipo === "operativa" && !c.esperado && hayTurnoAbierto;
   return (
     <Indicador titulo={c.nombre} icono={c.tipo === "operativa" ? Store : Landmark} className="col-span-2 sm:col-span-1"
       extra={sinTicket && <span className={`${INSIGNIA} ${TONOS.aviso}`}>Sin ticket</span>}>
@@ -105,7 +106,7 @@ export function Inicio() {
 
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-[2fr_2fr_1fr_1fr] lg:gap-4">
         {cajas.isLoading && [0, 1].map((i) => <div key={i} className="esqueleto col-span-2 h-[146px] sm:col-span-1" />)}
-        {cajas.data?.map((c) => <TarjetaCaja key={c.id} c={c} />)}
+        {cajas.data?.map((c) => <TarjetaCaja key={c.id} c={c} hayTurnoAbierto={turnosAbiertos} />)}
         {cajas.isError && (
           <div className="col-span-2">
             <Aviso tono="error" accion={<Reintentar onClick={() => cajas.refetch()} />}>No se pudieron traer las cajas.</Aviso>

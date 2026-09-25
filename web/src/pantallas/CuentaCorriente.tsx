@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { BookUser, ChevronRight, MousePointerClick } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
@@ -15,7 +15,6 @@ function Detalle({ clienteId }: { clienteId: number }) {
   const [monto, setMonto] = useState("");
   const [refCliente, setRefCliente] = useState(() => uuid());
   const [cobrado, setCobrado] = useState<number | null>(null);
-  const queryClient = useQueryClient();
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
   const cajaChica = dia.data?.cajas.find((c) => c.tipo === "operativa");
@@ -30,8 +29,6 @@ function Detalle({ clienteId }: { clienteId: number }) {
       setRefCliente(uuid());
       setMonto("");
       setCobrado(mov.monto);
-      queryClient.invalidateQueries({ queryKey: ["deudores"] });
-      queryClient.invalidateQueries({ queryKey: ["cliente", clienteId] });
     },
   });
 
