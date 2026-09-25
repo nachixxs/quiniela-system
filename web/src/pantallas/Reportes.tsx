@@ -147,7 +147,7 @@ const horaFormato = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: 
 const FUERA_DE_LISTA_POR_TIPO = new Set(["apuesta_quiniela", "venta_otro_juego", "pago_premio", "traspaso", "traspaso_boletas", "rendicion_boletas"]);
 
 export function Reportes() {
-  const [mes, setMes] = useState(() => new Date().toISOString().slice(0, 7));
+  const [mes, setMes] = useState(() => fechaHoy().slice(0, 7));
   const { desde, hasta } = rangoMes(mes);
   const cierre = useQuery({ queryKey: ["reportes-mes", mes], queryFn: () => api.reportesMes(mes) });
   const mp = useQuery({ queryKey: ["reportes-mp"], queryFn: api.reportesMercadoPago });
@@ -230,7 +230,7 @@ export function Reportes() {
             <li className="flex items-center justify-between gap-3 py-2">
               <span className="text-muted-foreground">Arqueos: cuadran / no cuadran</span>
               <span className="font-medium">
-                {dia.data.arqueos.filter((a) => a.estado === "cuadra").length} / {dia.data.arqueos.filter((a) => a.estado !== "cuadra").length}
+                {dia.data.arqueos.filter((a) => a.estado === "cuadra").length} / {dia.data.arqueos.filter((a) => a.estado === "con_diferencia").length}
               </span>
             </li>
           </ul>
