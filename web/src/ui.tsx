@@ -1,11 +1,10 @@
 import { useEffect, useId, useRef, type ComponentPropsWithoutRef, type ReactNode } from "react";
-import { m, useDragControls } from "motion/react";
+import { m } from "motion/react";
 import {
   CircleAlert, CircleCheck, HandCoins, LoaderCircle, NotebookPen, ReceiptText, ShoppingBag,
   Smartphone, TriangleAlert, Trophy, Wallet, X, type LucideIcon,
 } from "lucide-react";
 import type { MovimientoOut } from "./api/tipos";
-import { useEscritorio } from "./util";
 
 export const EASE_SALIDA = [0.23, 1, 0.32, 1] as const;
 
@@ -94,9 +93,15 @@ export function Aviso({ tono, children, accion }: { tono: keyof typeof AVISOS; c
 
 // Monto en pesos enteros: teclado numérico, solo dígitos, separador de miles mientras se escribe, en mono.
 export function CampoMonto({
-  etiqueta, valor, onValor, grande = false, ...props
+  etiqueta, valor, onValor, grande = false, autoFocus, ...props
 }: { etiqueta: string; valor: string; onValor: (v: string) => void; grande?: boolean } & Omit<ComponentPropsWithoutRef<"input">, "value" | "onChange">) {
   const id = useId();
+  const ref = useRef<HTMLInputElement>(null);
+  // Autofocus propio (no el atributo nativo): entra con preventScroll para que la página no
+  // salte mientras la hoja todavía está animando su entrada.
+  useEffect(() => {
+    if (autoFocus) ref.current?.focus({ preventScroll: true });
+  }, [autoFocus]);
   return (
     <div>
       <label htmlFor={id} className="mb-2 block text-sm font-medium">{etiqueta}</label>
@@ -104,6 +109,7 @@ export function CampoMonto({
         <span className={`monto text-muted-foreground ${grande ? "text-2xl" : "text-lg"}`} aria-hidden>$</span>
         <input
           id={id}
+          ref={ref}
           type="text"
           inputMode="numeric"
           autoComplete="off"
@@ -136,7 +142,7 @@ export function Segmentado<V extends string | number>({
           className="presiona relative flex min-h-11 flex-1 flex-col items-center justify-center rounded-md px-3 py-1 text-sm font-medium disabled:opacity-50 lg:min-h-8"
         >
           {o.valor === valor && (
-            <m.span layoutId={id} className="absolute inset-0 rounded-md bg-background shadow-xs dark:bg-input" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />
+            <m.span layoutId={id} className="absolute inset-0 rounded-md bg-card shadow-xs dark:bg-input" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />
           )}
           <span className={`relative ${o.valor === valor ? "text-foreground" : "text-muted-foreground"}`}>{o.texto}</span>
           {o.detalle && <span className="relative text-xs text-muted-foreground">{o.detalle}</span>}
@@ -146,13 +152,12 @@ export function Segmentado<V extends string | number>({
   );
 }
 
-// Hoja: sube desde abajo con un resorte en el celular (y se cierra arrastrándola o con un tirón) y es un diálogo
-// centrado en escritorio. Se monta dentro de <AnimatePresence> para que la salida se anime.
+// Hoja: diálogo centrado, con margen a los costados y alto máximo en dvh (para no tapar el
+// teclado del celular). Mismo trato en todos los tamaños: opacidad y escala corta, sin arrastre.
+// Se monta dentro de <AnimatePresence> para que la salida se anime.
 export function Hoja({
   titulo, descripcion, icono, onCerrar, children,
 }: { titulo: string; descripcion?: string; icono?: ReactNode; onCerrar: () => void; children: ReactNode }) {
-  const escritorio = useEscritorio();
-  const arrastre = useDragControls();
   const idTitulo = useId();
   const panel = useRef<HTMLDivElement>(null);
   const cerrar = useRef(onCerrar);
@@ -160,21 +165,34 @@ export function Hoja({
 
   useEffect(() => {
     const previo = document.activeElement as HTMLElement | null;
-    if (!panel.current?.contains(document.activeElement)) panel.current?.focus();
+    panel.current?.focus({ preventScroll: true });
     const tecla = (e: KeyboardEvent) => e.key === "Escape" && cerrar.current();
     document.addEventListener("keydown", tecla);
-    document.body.style.overflow = "hidden";
+
+    // Bloqueo de scroll que funciona también en iOS Safari y Chrome Android, donde
+    // overflow:hidden en el body no alcanza: fija el body donde estaba y lo devuelve al cerrar.
+    const scrollY = window.scrollY;
+    const { style } = document.body;
+    const previoPosicion = style.position, previoTop = style.top, previoAncho = style.width;
+    const previoOverflowHtml = document.documentElement.style.overflow;
+    style.position = "fixed";
+    style.top = `-${scrollY}px`;
+    style.width = "100%";
+    document.documentElement.style.overflow = "hidden";
+
     return () => {
       document.removeEventListener("keydown", tecla);
-      document.body.style.overflow = "";
+      style.position = previoPosicion;
+      style.top = previoTop;
+      style.width = previoAncho;
+      document.documentElement.style.overflow = previoOverflowHtml;
+      window.scrollTo(0, scrollY);
       previo?.focus();
     };
   }, []);
 
-  // En el celular la hoja se mueve con "y" porque el arrastre necesita ese valor; en escritorio, transform.
-  const fuera = escritorio ? { opacity: 0, transform: "scale(0.96)" } : { y: "100%" };
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center lg:items-center lg:p-6">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 lg:p-6">
       <m.div
         className="absolute inset-0 bg-black/50 dark:bg-black/70"
         initial={{ opacity: 0 }}
@@ -189,21 +207,13 @@ export function Hoja({
         aria-modal="true"
         aria-labelledby={idTitulo}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full flex-col rounded-t-xl border-t bg-card shadow-lg lg:max-w-md lg:rounded-xl lg:border"
-        initial={fuera}
-        animate={escritorio ? { opacity: 1, transform: "scale(1)" } : { y: 0 }}
-        // Al soltarla, la salida es un resorte que hereda la velocidad del dedo: sin costura entre arrastre y animación.
-        exit={{ ...fuera, transition: escritorio ? { duration: 0.15, ease: EASE_SALIDA } : { type: "spring", bounce: 0, duration: 0.25 } }}
-        transition={escritorio ? { duration: 0.2, ease: EASE_SALIDA } : { type: "spring", duration: 0.4, bounce: 0.12 }}
-        drag={escritorio ? false : "y"}
-        dragControls={arrastre}
-        dragListener={false}
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0.05, bottom: 0.8 }}
-        onDragEnd={(_, i) => (i.offset.y > 110 || i.velocity.y > 300) && onCerrar()}
+        className="relative flex max-h-[92dvh] w-full max-w-md flex-col overscroll-contain rounded-xl border bg-card shadow-lg"
+        initial={{ opacity: 0, transform: "scale(0.96)" }}
+        animate={{ opacity: 1, transform: "scale(1)" }}
+        exit={{ opacity: 0, transform: "scale(0.96)", transition: { duration: 0.15, ease: EASE_SALIDA } }}
+        transition={{ duration: 0.2, ease: EASE_SALIDA }}
       >
-        <div className="touch-none px-5 pb-3 pt-2.5 lg:px-6 lg:pt-6" onPointerDown={(e) => arrastre.start(e)}>
-          <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-input lg:hidden" aria-hidden />
+        <div className="px-5 pb-3 pt-5 lg:px-6 lg:pt-6">
           <div className="flex items-start gap-3">
             {icono}
             <div className="min-w-0 flex-1">

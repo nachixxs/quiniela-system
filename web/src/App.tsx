@@ -136,7 +136,7 @@ export function App() {
 
         {/* Cambio de pantalla: solo un fundido corto, porque se navega decenas de veces por turno. */}
         <m.main key={pantalla} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: EASE_SALIDA }}
-          className="mx-auto w-full max-w-6xl px-4 pb-8 pt-5 lg:px-8 lg:pb-12 lg:pt-8">
+          className="mx-auto w-full max-w-6xl px-4 pb-8 pt-5 lg:mx-0 lg:max-w-[1600px] lg:px-8 lg:pb-12 lg:pt-8">
           {actual.detalle && (
             <div className="mb-6">
               <h1 className="text-[22px] font-semibold tracking-tight lg:text-2xl">{actual.texto}</h1>

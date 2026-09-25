@@ -31,7 +31,7 @@ export function temaInicial(): Tema {
 export function aplicarTema(tema: Tema): void {
   document.documentElement.classList.toggle("dark", tema === "oscuro");
   // La barra del navegador en el celular sigue al tema elegido, aunque no coincida con el del sistema.
-  for (const meta of document.querySelectorAll('meta[name="theme-color"]')) meta.setAttribute("content", tema === "oscuro" ? "#0a0a0a" : "#ffffff");
+  for (const meta of document.querySelectorAll('meta[name="theme-color"]')) meta.setAttribute("content", tema === "oscuro" ? "#0a0a0a" : "#f5f5f5");
   try {
     localStorage.setItem(CLAVE_TEMA, tema);
   } catch {
