@@ -168,7 +168,7 @@ export function Arqueo() {
             {guardar.isPending ? "Arqueando…" : "Arquear"}
           </Boton>
           <p aria-live="polite" className="mt-3 flex min-h-5 items-start justify-center gap-1.5 text-center text-sm text-muted-foreground empty:mt-0 empty:min-h-0">
-            {faltan.length > 0 && (
+            {faltan.length > 0 && !sinTicket && (
               <>
                 <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
                 Para arquear, completá {faltan.join(", ").replace(/, ([^,]*)$/, " y $1")}.
