@@ -1,0 +1,8 @@
+# Configuración de Orca: https://www.onorca.dev/docs/model/worktrees
+# Al crear cada worktree arma su propio .venv y node_modules (no se comparten).
+scripts:
+  setup: |
+    python -m venv .venv
+    .venv\Scripts\python.exe -m pip install -q -r requirements.txt
+    npm ci --prefix web
+setupAgentStartupPolicy: wait-for-setup
