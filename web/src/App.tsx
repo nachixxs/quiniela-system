@@ -29,14 +29,6 @@ const PANTALLAS = { inicio: Inicio, "carga-rapida": CargaRapida, arqueo: Arqueo,
 
 // Botones sobre la noche (barra de arriba, barra lateral y login): tema y salir.
 const BOTON_NOCHE = "presiona grid size-11 shrink-0 place-items-center rounded-full text-en-noche-suave hover:bg-white/10 hover:text-en-noche";
-function BotonTema({ tema, onClick }: { tema: Tema; onClick: () => void }) {
-  const Icono = tema === "oscuro" ? Sun : Moon;
-  return (
-    <button type="button" onClick={onClick} aria-label={tema === "oscuro" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"} className={BOTON_NOCHE}>
-      <Icono className="size-5" aria-hidden />
-    </button>
-  );
-}
 
 function Marca({ nombre }: { nombre: string }) {
   return (
@@ -81,7 +73,12 @@ export function App() {
     setUsuario(null);
   }
 
-  const botonTema = <BotonTema tema={tema} onClick={alternarTema} />;
+  const IconoTema = tema === "oscuro" ? Sun : Moon;
+  const botonTema = (
+    <button type="button" onClick={alternarTema} aria-label={tema === "oscuro" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"} className={BOTON_NOCHE}>
+      <IconoTema className="size-5" aria-hidden />
+    </button>
+  );
   const botonSalir = (
     <button type="button" onClick={cerrarSesion} aria-label="Salir" className={BOTON_NOCHE}>
       <LogOut className="size-5" aria-hidden />

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { m, useDragControls } from "motion/react";
 import {
-  CircleAlert, CircleCheck, HandCoins, Info, LoaderCircle, NotebookPen, ReceiptText, ShoppingBag,
+  CircleAlert, CircleCheck, HandCoins, LoaderCircle, NotebookPen, ReceiptText, ShoppingBag,
   Smartphone, TriangleAlert, Trophy, Wallet, X, type LucideIcon,
 } from "lucide-react";
 import type { MovimientoOut } from "./api/tipos";
@@ -31,15 +31,14 @@ export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   rendicion_boletas: T("Rendición de boletas"),
 };
 
-// Botón de toda la app: primario en dorado (una acción principal por vista), secundario y fantasma.
+// Botón de toda la app: primario en dorado (una acción principal por vista) y secundario.
 const VARIANTES = {
   primario: "bg-estrella text-en-estrella hover:bg-estrella-fuerte disabled:bg-superficie-2 disabled:text-tinta-suave",
   secundario: "bg-superficie-2 text-tinta hover:bg-borde disabled:opacity-50",
-  fantasma: "text-tinta-suave hover:bg-superficie-2 hover:text-tinta disabled:opacity-50",
 };
 export function Boton({
-  variante = "primario", cargando = false, icono: Icono, className = "", children, disabled, ...props
-}: { variante?: keyof typeof VARIANTES; cargando?: boolean; icono?: LucideIcon } & ComponentPropsWithoutRef<"button">) {
+  variante = "primario", cargando = false, className = "", children, disabled, ...props
+}: { variante?: keyof typeof VARIANTES; cargando?: boolean } & ComponentPropsWithoutRef<"button">) {
   return (
     <button
       {...props}
@@ -47,18 +46,17 @@ export function Boton({
       aria-busy={cargando || undefined}
       className={`presiona inline-flex h-12 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold whitespace-nowrap ${VARIANTES[variante]} ${className}`}
     >
-      {cargando ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : Icono && <Icono className="size-5" aria-hidden />}
+      {cargando && <LoaderCircle className="size-5 animate-spin" aria-hidden />}
       {children}
     </button>
   );
 }
 
-// Mensaje en línea: error (alerta), éxito, aviso o info, siempre con ícono y anunciado al lector.
+// Mensaje en línea: error (alerta), éxito o aviso, siempre con ícono y anunciado al lector.
 const TONOS = {
   error: [CircleAlert, "bg-peligro-suave text-peligro"],
   exito: [CircleCheck, "bg-exito-suave text-exito"],
   aviso: [TriangleAlert, "bg-aviso-suave text-aviso"],
-  info: [Info, "bg-superficie-2 text-tinta-suave"],
 } as const;
 export function Aviso({ tono, children, accion }: { tono: keyof typeof TONOS; children: ReactNode; accion?: ReactNode }) {
   const [Icono, clases] = TONOS[tono];

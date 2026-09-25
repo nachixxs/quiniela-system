@@ -6,8 +6,6 @@ import { api, ApiError } from "../api/cliente";
 import { fechaCorta, pesos, useEscritorio, uuid } from "../util";
 import { AVATAR, Aviso, Boton, CampoMonto, Hoja, Segmentado, TIPOS } from "../ui";
 
-const dias = (n: number) => (n === 0 ? "Hoy" : `${n} ${n === 1 ? "día" : "días"}`);
-
 // Saldo, movimientos que lo componen y cobro total o parcial de un cliente.
 function Detalle({ clienteId }: { clienteId: number }) {
   const [monto, setMonto] = useState("");
@@ -54,9 +52,9 @@ function Detalle({ clienteId }: { clienteId: number }) {
           }}
           className="flex flex-col gap-3"
         >
-          <CampoMonto etiqueta="Cobrar" valor={monto} onValor={(v) => { setMonto(v); setCobrado(null); }} enterKeyHint="done" />
+          <CampoMonto etiqueta="Cobrar" valor={monto} onValor={(v) => { setMonto(v); setCobrado(null); setRefCliente(uuid()); }} enterKeyHint="done" />
           <div className="flex gap-2">
-            <Boton type="button" variante="secundario" onClick={() => setMonto(String(c.saldo))} className="shrink-0">
+            <Boton type="button" variante="secundario" onClick={() => { setMonto(String(c.saldo)); setRefCliente(uuid()); }} className="shrink-0">
               Todo ({pesos(c.saldo)})
             </Boton>
             <Boton type="submit" cargando={cobrar.isPending} disabled={!Number(monto) || !cajaChica} className="flex-1">
@@ -138,7 +136,9 @@ export function CuentaCorriente() {
                     <span className={`${AVATAR} max-sm:hidden`} aria-hidden>{d.nombre.charAt(0)}</span>
                     <span className="truncate font-medium">{d.nombre}</span>
                   </span>
-                  <span className="text-right text-sm text-tinta-suave">{dias(d.dias_deuda_mas_vieja)}</span>
+                  <span className="text-right text-sm text-tinta-suave">
+                    {d.dias_deuda_mas_vieja === 0 ? "Hoy" : `${d.dias_deuda_mas_vieja} ${d.dias_deuda_mas_vieja === 1 ? "día" : "días"}`}
+                  </span>
                   <span className={`text-right font-semibold ${d.saldo < 0 ? "text-exito" : ""}`}>
                     {pesos(Math.abs(d.saldo))}
                     {d.saldo < 0 && <span className="block text-xs font-medium">a favor</span>}

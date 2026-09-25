@@ -8,11 +8,7 @@ import { pesos, uuid } from "../util";
 import { AVATAR, Aviso, Boton, CampoMonto, EASE_SALIDA, Hoja, TIPOS } from "../ui";
 
 // D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja.
-const OPCIONES_PAGO: { etiqueta: string; tipo: MovimientoCrear["tipo"] }[] = [
-  { etiqueta: "MP / transferencia", tipo: "cobro_mercado_pago" },
-  { etiqueta: "Retiro del dueño", tipo: "retiro_dueno" },
-  { etiqueta: "Gasto", tipo: "gasto" },
-];
+const TIPOS_PAGO: MovimientoCrear["tipo"][] = ["cobro_mercado_pago", "retiro_dueno", "gasto"];
 
 export const BOTONES = [
   { etiqueta: "Fiado", tipo: "fiado", requiereCliente: true, ayuda: "Suma a la cuenta del cliente", icono: TIPOS.fiado.icono, tono: TIPOS.fiado.tono },
@@ -30,7 +26,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
   const [busqueda, setBusqueda] = useState("");
   const [cliente, setCliente] = useState<ClienteBusqueda | null>(null);
   const [refCliente, setRefCliente] = useState(() => uuid());
-  const [tipoPago, setTipoPago] = useState(OPCIONES_PAGO[0].tipo);
+  const [tipoPago, setTipoPago] = useState(TIPOS_PAGO[0]);
   const [confirmacion, setConfirmacion] = useState<{ id: number; texto: string } | null>(null);
   const queryClient = useQueryClient();
 
@@ -39,7 +35,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
   const clientes = useQuery({
     queryKey: ["clientes-busqueda", busqueda],
     queryFn: () => api.clientes(busqueda),
-    enabled: busqueda.length > 0 && !cliente,
+    enabled: busqueda.length > 0,
   });
 
   const guardar = useMutation({
@@ -54,7 +50,6 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
     onSuccess: (mov) => {
       const etiqueta = seleccion?.tipo ? seleccion.etiqueta : TIPOS[mov.tipo].etiqueta;
       setConfirmacion({ id: Date.now(), texto: `${etiqueta} ${pesos(mov.monto)}${cliente ? ` · ${cliente.nombre}` : ""}` });
-      setRefCliente(uuid());
       cerrar();
       // El tablero y los fiados muestran el saldo nuevo que calcula el servidor.
       for (const clave of ["dia-actual", "cajas", "deudores"]) queryClient.invalidateQueries({ queryKey: [clave] });
@@ -66,7 +61,8 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
     setMonto("");
     setBusqueda("");
     setCliente(null);
-    setTipoPago(OPCIONES_PAGO[0].tipo);
+    setTipoPago(TIPOS_PAGO[0]);
+    setRefCliente(uuid());
     guardar.reset();
   }
 
@@ -127,17 +123,17 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
               {seleccion.tipo === null && (
                 <fieldset className="grid gap-2">
                   <legend className="mb-1.5 text-sm font-medium text-tinta-suave">Qué fue</legend>
-                  {OPCIONES_PAGO.map((o) => {
-                    const Icono = TIPOS[o.tipo].icono;
-                    const elegida = tipoPago === o.tipo;
+                  {TIPOS_PAGO.map((tipo) => {
+                    const t = TIPOS[tipo];
+                    const elegida = tipoPago === tipo;
                     return (
                       <label
-                        key={o.tipo}
+                        key={tipo}
                         className={`presiona flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${elegida ? "border-estrella bg-estrella/15" : "border-transparent bg-superficie-2"}`}
                       >
-                        <input type="radio" name="tipo-pago" className="sr-only" checked={elegida} onChange={() => setTipoPago(o.tipo)} />
-                        <Icono className="size-5 text-tinta-suave" aria-hidden />
-                        <span className="flex-1 font-medium">{o.etiqueta}</span>
+                        <input type="radio" name="tipo-pago" className="sr-only" checked={elegida} onChange={() => { setTipoPago(tipo); setRefCliente(uuid()); }} />
+                        <t.icono className="size-5 text-tinta-suave" aria-hidden />
+                        <span className="flex-1 font-medium">{t.etiqueta}</span>
                         {elegida && <CircleCheck className="size-5" aria-hidden />}
                       </label>
                     );
@@ -145,7 +141,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                 </fieldset>
               )}
 
-              <CampoMonto etiqueta="Monto" valor={monto} onValor={setMonto} grande autoFocus enterKeyHint={seleccion.requiereCliente ? "next" : "done"} />
+              <CampoMonto etiqueta="Monto" valor={monto} onValor={(v) => { setMonto(v); setRefCliente(uuid()); }} grande autoFocus enterKeyHint={seleccion.requiereCliente ? "next" : "done"} />
 
               {seleccion.requiereCliente && (
                 <div>
@@ -154,7 +150,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                     <div className={`${CAJA} pl-2 pr-1`}>
                       <span className={AVATAR} aria-hidden>{cliente.nombre.charAt(0)}</span>
                       <span className="flex-1 truncate font-semibold">{cliente.nombre}</span>
-                      <button type="button" onClick={() => setCliente(null)} aria-label="Cambiar cliente" className="presiona grid size-11 place-items-center rounded-full text-tinta-suave hover:bg-borde">
+                      <button type="button" onClick={() => { setCliente(null); setRefCliente(uuid()); }} aria-label="Cambiar cliente" className="presiona grid size-11 place-items-center rounded-full text-tinta-suave hover:bg-borde">
                         <X className="size-5" aria-hidden />
                       </button>
                     </div>
@@ -187,7 +183,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                             <li key={c.id}>
                               <button
                                 type="button"
-                                onClick={() => { setCliente(c); setBusqueda(""); }}
+                                onClick={() => { setCliente(c); setBusqueda(""); setRefCliente(uuid()); }}
                                 className="flex min-h-14 w-full items-center gap-3 px-3 text-left transition-colors hover:bg-superficie-2 active:bg-superficie-2"
                               >
                                 <span className={AVATAR} aria-hidden>{c.nombre.charAt(0)}</span>

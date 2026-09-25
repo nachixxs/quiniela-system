@@ -30,12 +30,12 @@
   --shadow-tarjeta: 0 1px 2px rgb(16 26 51 / 0.06), 0 12px 32px -16px rgb(16 26 51 / 0.22);
   --shadow-flotante: 0 -1px 0 rgb(16 26 51 / 0.06), 0 -12px 40px -20px rgb(16 26 51 / 0.35);
 
-  /* Curvas de Emil Kowalski: salida fuerte para entrar/salir, la de iOS para hojas. */
+  /* Curva de Emil Kowalski: salida fuerte para entrar/salir. */
   --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-hoja: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .dark {
+  color-scheme: dark;
   --color-lienzo: #0b1020;
   --color-superficie: #141b2e;
   --color-superficie-2: #1c2438;
@@ -65,13 +65,9 @@
     color-scheme: light;
     scrollbar-color: var(--color-borde) transparent;
   }
-  .dark {
-    color-scheme: dark;
-  }
 
   body {
     font-family: var(--font-sans);
-    background-color: var(--color-lienzo);
     color: var(--color-tinta);
     font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
@@ -93,7 +89,6 @@
   }
   input::placeholder {
     color: var(--color-tinta-suave);
-    opacity: 1;
   }
 
   :focus {
