@@ -2,79 +2,79 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Tokens del sistema (ver DESIGN.md). Los colores son roles: el tema oscuro reasigna los mismos nombres. */
+/* Tokens (ver DESIGN.md): la escala neutra de shadcn/ui, sin tinte, y color solo con significado.
+   El tema oscuro reasigna los mismos nombres; ningún componente escribe un color a mano. */
 @theme {
   --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 
-  --color-lienzo: #f4f5f7;
-  --color-superficie: #ffffff;
-  --color-superficie-2: #eef0f3;
-  --color-tinta: #14171d;
-  --color-tinta-suave: #5a6170;
-  --color-borde: #e1e4e9;
-  --color-noche: #171a21;
-  --color-noche-2: #242832;
-  --color-en-noche: #f5f6f8;
-  --color-en-noche-suave: #a9afbb;
-  --color-acento: #2b55c4;
-  --color-acento-fuerte: #2147ab;
-  --color-acento-texto: #2b55c4;
-  --color-en-acento: #ffffff;
-  --color-marca: #d9a93f;
-  --color-en-marca: #171a21;
-  --color-exito: #177245;
-  --color-exito-suave: #e3f2e9;
-  --color-peligro: #b93229;
-  --color-peligro-suave: #fae8e6;
-  --color-aviso: #9c4a07;
-  --color-aviso-suave: #fbefdc;
+  --color-background: #ffffff;
+  --color-foreground: #0a0a0a;
+  --color-card: #ffffff;
+  --color-sidebar: #fafafa;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #6e6e6e;
+  --color-border: #e5e5e5;
+  --color-input: #e5e5e5;
+  --color-ring: #737373;
+  --color-primary: #171717;
+  --color-primary-foreground: #fafafa;
 
-  /* Elevación declarada una sola vez: un filo de 1 px y una sombra corta, con offset. */
-  --shadow-tarjeta: 0 0 0 1px var(--color-borde), 0 1px 2px rgb(20 23 29 / 0.05);
-  --shadow-flotante: 0 -1px 0 var(--color-borde), 0 -16px 40px -24px rgb(20 23 29 / 0.3);
+  /* Significado: entró plata o cuadra · salió plata, deuda o no cuadra · mirá esto · premio (sin signo). */
+  --color-exito: oklch(50.8% 0.118 165.612); /* emerald-700 */
+  --color-peligro: oklch(50.5% 0.213 27.518); /* red-700 */
+  --color-aviso: oklch(55.5% 0.163 48.998); /* amber-700 */
+  --color-premio: oklch(54.1% 0.281 293.009); /* violet-600 */
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
 
   --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .dark {
   color-scheme: dark;
-  --color-lienzo: #0f1115;
-  --color-superficie: #171a20;
-  --color-superficie-2: #20242c;
-  --color-tinta: #eceef2;
-  --color-tinta-suave: #9ba2ae;
-  --color-borde: #2a2e37;
-  --color-noche: #1a1d24;
-  --color-noche-2: #262a33;
-  --color-acento: #3f67d8;
-  --color-acento-fuerte: #3459c4;
-  --color-acento-texto: #8aa6f2;
-  --color-exito: #45c07f;
-  --color-exito-suave: #11271b;
-  --color-peligro: #f07068;
-  --color-peligro-suave: #321816;
-  --color-aviso: #f0a04b;
-  --color-aviso-suave: #2d2211;
-  --shadow-tarjeta: 0 0 0 1px var(--color-borde);
-  --shadow-flotante: 0 -1px 0 var(--color-borde);
+  --color-background: #0a0a0a;
+  --color-foreground: #fafafa;
+  --color-card: #171717;
+  --color-sidebar: #171717;
+  --color-muted: #262626;
+  --color-muted-foreground: #a1a1a1;
+  --color-border: oklch(1 0 0 / 10%);
+  --color-input: oklch(1 0 0 / 15%);
+  --color-ring: #a1a1a1;
+  --color-primary: #e5e5e5;
+  --color-primary-foreground: #171717;
+  --color-exito: oklch(76.5% 0.177 163.223); /* emerald-400 */
+  --color-peligro: oklch(70.4% 0.191 22.216); /* red-400 */
+  --color-aviso: oklch(82.8% 0.189 84.429); /* amber-400 */
+  --color-premio: oklch(70.2% 0.183 293.541); /* violet-400 */
 }
 
 @layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
   html {
-    background-color: var(--color-lienzo);
+    background-color: var(--color-background);
     color-scheme: light;
-    scrollbar-color: var(--color-borde) transparent;
+    scrollbar-color: var(--color-input) transparent;
     overscroll-behavior-y: none;
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     font-family: var(--font-sans);
-    color: var(--color-tinta);
+    color: var(--color-foreground);
     font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1,
@@ -82,83 +82,78 @@
     text-wrap: balance;
   }
 
-  /* Los controles no se seleccionan con el dedo; el contenido sí. */
+  /* Los controles no se seleccionan con el dedo ni esperan el doble toque; el contenido sí se selecciona. */
   button,
   a,
   label {
+    touch-action: manipulation;
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
   }
 
   ::selection {
-    background-color: color-mix(in srgb, var(--color-acento) 25%, transparent);
-    color: var(--color-tinta);
+    background-color: color-mix(in oklab, var(--color-foreground) 16%, transparent);
   }
   input {
-    caret-color: var(--color-acento-texto);
+    caret-color: var(--color-foreground);
   }
   input::placeholder {
-    color: var(--color-tinta-suave);
+    color: var(--color-muted-foreground);
   }
 
   :focus {
     outline: none;
   }
   :focus-visible {
-    outline: 2px solid var(--color-acento-texto);
+    outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
-  .sobre-noche :focus-visible {
-    outline-color: var(--color-en-noche);
-  }
 }
 
-/* Cambio de tema: fundido corto de toda la página con View Transitions (App.tsx). */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 200ms;
-  animation-timing-function: var(--ease-salida);
+/* Montos: Geist Mono con cifras tabulares, para que las columnas alineen y nada baile. */
+@utility monto {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
-/* Todo lo que se toca se hunde apenas: el feedback que confirma el toque. */
+/* Etiqueta de dato ("EFECTIVO", "DEUDA"): chica, en mayúsculas, con aire entre letras. */
+@utility rotulo {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Todo lo que se toca se hunde apenas: confirma el toque en el mismo momento en que el dedo apoya. */
 @utility presiona {
   transition:
     transform 140ms var(--ease-salida),
     background-color 140ms ease,
     border-color 140ms ease,
-    color 140ms ease;
+    color 140ms ease,
+    box-shadow 140ms ease;
   &:active:not(:disabled) {
     transform: scale(0.97);
   }
 }
 
-/* Barra inferior: una capa translúcida con el contenido pasando por debajo. Sólida si el sistema pide menos transparencia. */
-@utility vidrio {
-  background-color: color-mix(in srgb, var(--color-superficie) 82%, transparent);
-  backdrop-filter: blur(16px) saturate(160%);
-  @media (prefers-reduced-transparency: reduce) {
-    background-color: var(--color-superficie);
-    backdrop-filter: none;
-  }
+/* Lugar reservado mientras carga, con la forma de lo que reemplaza. Quieto: nada late en bucle. */
+@utility esqueleto {
+  border-radius: var(--radius-lg);
+  background-color: var(--color-muted);
 }
 
-/* Esqueleto de carga con la forma de lo que reemplaza. */
-@utility esqueleto {
-  border-radius: 12px;
-  background-color: var(--color-superficie-2);
-  animation: latido 1.4s ease-in-out infinite;
-}
-@keyframes latido {
-  50% {
-    opacity: 0.55;
-  }
+/* Cambio de tema: fundido corto de toda la página con View Transitions (App.tsx). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: var(--ease-salida);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .esqueleto {
-    animation: none;
-  }
   .presiona:active:not(:disabled) {
     transform: none;
   }
