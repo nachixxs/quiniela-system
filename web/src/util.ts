@@ -15,6 +15,12 @@ const formatoCorto = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "
 export const fechaLarga = (f: string) => formatoFecha.format(new Date(`${f}T12:00:00`)).replace(",", "");
 export const fechaCorta = (f: string) => formatoCorto.format(new Date(`${f}T12:00:00`)).replace(".", "");
 
+// Hoy en la zona horaria local (no UTC, a diferencia de Date#toISOString).
+export function fechaHoy(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 const CLAVE_TEMA = "quiniela-tema";
 export type Tema = "claro" | "oscuro";
 
