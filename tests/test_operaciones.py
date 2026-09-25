@@ -156,27 +156,29 @@ def test_la_chica_no_tiene_esperado_hasta_el_ticket(db, agencia):  # §7.3
 
 def test_cierre_del_mes_por_corresponde_a_fecha_y_sin_anulados(db, agencia):  # D39
     """Septiembre contra agosto: el ticket recargado y el gasto anulado no cuentan, cada carga tardía cae en el mes
-    de su fecha y el arqueo que no cuadra suma en los contadores y en la diferencia."""
+    de su fecha, el arqueo que no cuadra suma en los contadores y en la diferencia y el explicado solo en los
+    contadores: su plata ya está en gastos (D40)."""
     a = agencia
     mov(db, a, "fiado", 4000, cliente_id=a.cliente)
     mov(db, a, "cobro_fiado", 1000, cliente_id=a.cliente)
     mov(db, a, "pago_premio", 12000)
     op.anular_movimiento(db, a.n, mov(db, a, "gasto", 3000).id, "Cargado dos veces")
-    mov(db, a, "gasto", 2000, corresponde_a_fecha=date(2026, 9, 10))  # tardía de este mes
     mov(db, a, "sueldo", 5000, corresponde_a_fecha=date(2026, 8, 31))  # tardía del mes anterior
     mov(db, a, "cobro_subagente", 27000, caja=a.grande)
     op.guardar_arqueo(db, a.n, a.grande, a.manana, 27000, 0)  # cuadra
     op.cargar_ticket(db, a.n, a.manana, 90000, [])
     op.cargar_ticket(db, a.n, a.manana, 100000, [{"juego_id": a.juego, "monto": 8000}])  # recargado
     op.guardar_arqueo(db, a.n, a.chica, a.manana, 91000, 12500)  # esperaba 93.000 y 12.000
+    arqueo = op.guardar_arqueo(db, a.n, a.grande, a.noche, 25000, 0)  # faltan 2.000
+    mov(db, a, "gasto", 2000, caja=a.grande, corresponde_a_fecha=date(2026, 9, 10), explica_arqueo_id=arqueo.id)
     reporte = consultas.reporte_mes(db, a.n, date(2026, 9, 1))
     assert reporte["actual"] == {
         "ventas_por_juego": [{"juego_id": 0, "nombre": "Quiniela", "total": 100000},  # sin juego es_quiniela
                              {"juego_id": a.juego, "nombre": "Quini 6", "total": 8000}],
         "total_vendido": 108000, "cobros_fiado": 1000, "cobros_subagente": 27000, "ingresos_del_dueno": 0,
         "premios_pagados": 12000, "cobros_mercado_pago": 0, "pagos_banco": 0, "sueldos": 0, "gastos": 2000,
-        "retiros_dueno": 0, "fiado": 4000, "arqueos_hechos": 2, "arqueos_cuadran": 1, "arqueos_con_diferencia": 1,
-        "arqueos_explicados": 0, "diferencia_efectivo": -2000, "diferencia_boletas": 500, "diferencia_total": -1500}
+        "retiros_dueno": 0, "fiado": 4000, "arqueos_hechos": 3, "arqueos_cuadran": 1, "arqueos_con_diferencia": 1,
+        "arqueos_explicados": 1, "diferencia_efectivo": -2000, "diferencia_boletas": 500, "diferencia_total": -1500}
     assert {k: v for k, v in reporte["anterior"].items() if v} == {"sueldos": 5000}  # todo lo demás en cero
     assert (reporte["mes"], reporte["deuda_total_hoy"]) == ("2026-09", 3000)
     por_dia = reporte["ventas_por_dia"]
