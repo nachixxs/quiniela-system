@@ -39,7 +39,7 @@ function Resultado({ r }: { r: ArqueoOut }) {
           )}
         </span>
         <p className="text-2xl font-semibold tracking-tight">
-          {cierra ? "Cierra" : `Diferencia de ${pesos(r.diferencia_efectivo + r.diferencia_boletas)}`}
+          {cierra ? "Cierra" : "No cuadra"}
         </p>
       </div>
       <div className="mt-4 divide-y divide-current/15">
@@ -148,7 +148,7 @@ export function Arqueo() {
         {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo arquear."}</Aviso>}
 
         <div>
-          <Boton type="submit" cargando={guardar.isPending} disabled={faltan.length > 0 || sinTicket} className="h-14 w-full text-base">
+          <Boton type="submit" cargando={guardar.isPending} disabled={faltan.length > 0 || sinTicket || !!resultado} className="h-14 w-full text-base">
             {guardar.isPending ? "Arqueando…" : "Arquear"}
           </Boton>
           <p aria-live="polite" className="mt-3 flex min-h-5 items-start justify-center gap-1.5 text-center text-sm text-tinta-suave">

@@ -46,7 +46,7 @@ export function Inicio() {
   const conDeuda = deudores.data?.filter((d) => d.saldo > 0).slice(0, 3);
 
   return (
-    <div>
+    <>
       {/* El tablero: la noche con las cajas del día y los accesos de carga. */}
       <section className="sobre-noche bg-noche px-4 pb-12 pt-3 text-en-noche lg:rounded-3xl lg:p-8">
         <div>
@@ -173,6 +173,6 @@ export function Inicio() {
       </div>
 
       <Carga seleccion={seleccion} onSeleccion={setSeleccion} />
-    </div>
+    </>
   );
 }

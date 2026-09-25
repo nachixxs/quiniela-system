@@ -12,8 +12,8 @@ export const usuarioMock: Usuario = {
 };
 
 export const cajasMock: CajaEstado[] = [
-  { id: 1, nombre: "Caja chica", tipo: "operativa", efectivo: 213000, boletas: 45000, esperado: null },
-  { id: 2, nombre: "Caja grande", tipo: "central", efectivo: 902000, boletas: 120000, esperado: null },
+  { id: 1, nombre: "Caja chica", tipo: "operativa", efectivo: -12000, boletas: 45000, esperado: null },
+  { id: 2, nombre: "Caja grande", tipo: "central", efectivo: 902000, boletas: 120000, esperado: { efectivo: 900000, boletas: 120000 } },
 ];
 
 export const diaActualMock: DiaActualOut = {
@@ -112,7 +112,7 @@ export const RUTAS_MOCK: Record<string, (cuerpo: unknown) => unknown> = {
     const caja = cajasMock.find((x) => x.id === a.caja_id);
     const turno = diaActualMock.turnos.find((t) => t.id === a.turno_id);
     if (caja?.tipo === "operativa" && turno && !turno.tiene_ticket) {
-      throw new ApiError("turno_sin_ticket", "Este turno todavía no tiene el ticket cargado.");
+      throw new ApiError("sin_ticket", "Este turno todavía no tiene el ticket cargado.");
     }
     const cuadra = a.efectivo_contado % 1000 === 0;
     const diferencia_efectivo = cuadra ? 0 : -2000;

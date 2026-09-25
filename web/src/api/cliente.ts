@@ -57,7 +57,7 @@ export const api = {
   cajas: () => pedir<CajaEstado[]>("GET", "/cajas"),
   clientes: (q: string) => pedir<ClienteBusqueda[]>("GET", `/clientes?q=${encodeURIComponent(q)}`),
   cliente: (id: number) => pedir<ClienteDetalle>("GET", `/clientes/${id}`),
-  deudores: (orden: "monto" | "antiguedad" = "monto") => pedir<DeudorOut[]>("GET", `/clientes/deudores?orden=${orden}`),
+  deudores: (orden: "monto" | "antiguedad") => pedir<DeudorOut[]>("GET", `/clientes/deudores?orden=${orden}`),
   crearMovimiento: (m: MovimientoCrear) => pedir<MovimientoOut>("POST", "/movimientos", m),
   arqueo: (a: ArqueoRequest) => pedir<ArqueoOut>("POST", "/arqueo", a),
 };
