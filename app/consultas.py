@@ -223,8 +223,7 @@ def reporte_mes(db: Session, negocio_id: int, mes: date) -> dict:
     """GET /reportes/mes/{mes} (D39), `mes` el primer día: ese mes y el anterior con la misma forma, lo que deben hoy
     los clientes y las ventas de cada día del mes, 0 si no hubo. Los movimientos van por corresponde_a_fecha y los
     arqueos por su día operativo; traspasos y rendición quedan afuera (internos)."""
-    siguiente = (mes + timedelta(days=31)).replace(day=1)
-    ultimo = siguiente - timedelta(days=1)
+    ultimo = (mes + timedelta(days=31)).replace(day=1) - timedelta(days=1)
     por_dia = dict(db.execute(select(Movimiento.corresponde_a_fecha, func.sum(Movimiento.monto)).where(
         *_vivos(negocio_id), Movimiento.tipo.in_(VENTAS), Movimiento.corresponde_a_fecha.between(mes, ultimo))
         .group_by(Movimiento.corresponde_a_fecha)).all())

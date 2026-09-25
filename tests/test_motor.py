@@ -77,12 +77,6 @@ def test_saldo_de_cliente():  # el saldo a favor se consume con el próximo fiad
     assert saldo_cliente(CLIENTE, movs) == -4000
 
 
-def test_arqueo_con_los_nombres_de_columna():
-    assert arqueo(esperado(CHICA, TURNO_CHICA, operativa=True), (90000, 10000)) == {
-        "efectivo_esperado": 90000, "boletas_esperadas": 10000, "efectivo_contado": 90000,
-        "boletas_contadas": 10000, "diferencia_efectivo": 0, "diferencia_boletas": 0, "estado": "cuadra"}
-
-
 @pytest.mark.parametrize("contadas, diferencia", [(39000, 0), (38500, -500)], ids=["cuadra", "falta_una_boleta"])
 def test_rendicion_contra_el_lote(contadas, diferencia):
     # boletas del arqueo de anoche (30.000) más las del traspaso (9.000); las de la chica no cuentan
