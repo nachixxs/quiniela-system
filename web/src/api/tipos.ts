@@ -11,6 +11,7 @@ export type MovimientosPagina = components["schemas"]["MovimientosPagina"];
 export type ArqueoRequest = components["schemas"]["ArqueoRequest"];
 export type ArqueoOut = components["schemas"]["ArqueoOut"];
 export type ReporteMes = components["schemas"]["ReporteMes"];
+export type ReporteDia = components["schemas"]["ReporteDia"];
 export type ResumenMes = components["schemas"]["ResumenMes"];
 export type VentaDia = components["schemas"]["VentaDia"];
 export type DiferenciaItem = components["schemas"]["DiferenciaItem"];

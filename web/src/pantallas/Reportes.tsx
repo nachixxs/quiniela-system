@@ -3,9 +3,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "../api/cliente";
-import type { ResumenMes } from "../api/tipos";
-import { fechaCorta, pesos } from "../util";
-import { Aviso, INSIGNIA, TARJETA, TONOS } from "../ui";
+import type { MovimientoOut, ResumenMes } from "../api/tipos";
+import { fechaCorta, fechaHoy, pesos } from "../util";
+import { Aviso, INSIGNIA, TARJETA, TIPOS, TONOS } from "../ui";
 
 const Reintentar = ({ onClick }: { onClick: () => void }) => (
   <button type="button" onClick={onClick} className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
@@ -111,9 +111,9 @@ function construirGrupos(actual: ResumenMes, anterior: ResumenMes, deudaHoy: num
 }
 
 // Barras a mano en SVG, un día por barra; los días en 0 quedan como una barra apenas visible.
-function GraficoVentas({ dias }: { dias: { fecha: string; total: number }[] }) {
+// `total` sale del reporte (total_vendido del mes), no de sumar las barras acá: el front no calcula plata.
+function GraficoVentas({ dias, total }: { dias: { fecha: string; total: number }[]; total: number }) {
   const max = Math.max(1, ...dias.map((d) => d.total));
-  const total = dias.reduce((s, d) => s + d.total, 0);
   const marcados = new Set([0, dias.length - 1, ...dias.map((_, i) => i).filter((i) => (i + 1) % 5 === 0)]);
   return (
     <svg viewBox={`0 0 ${dias.length * 10} 46`} role="img" className="h-32 w-full text-foreground"
@@ -151,6 +151,8 @@ export function Reportes() {
   const mp = useQuery({ queryKey: ["reportes-mp"], queryFn: api.reportesMercadoPago });
   const diferencias = useQuery({ queryKey: ["reportes-diferencias", mes], queryFn: () => api.reportesDiferencias({ desde, hasta }) });
   const rendiciones = useQuery({ queryKey: ["reportes-rendiciones", mes], queryFn: () => api.reportesRendiciones({ desde, hasta }) });
+  const hoy = fechaHoy();
+  const dia = useQuery({ queryKey: ["reportes-dia", hoy], queryFn: () => api.reportesDia(hoy) });
   const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
   const nombreCaja = (id: number) => cajas.data?.find((c) => c.id === id)?.nombre ?? `Caja #${id}`;
   const grupos = cierre.data ? construirGrupos(cierre.data.actual, cierre.data.anterior, cierre.data.deuda_total_hoy) : null;
@@ -183,7 +185,7 @@ export function Reportes() {
           <section className={`${TARJETA} p-4 lg:p-5`}>
             <h2 className="font-medium">Ventas por día</h2>
             <p className="text-sm text-muted-foreground">Un día por barra; en gris, los días sin ventas</p>
-            <div className="mt-3"><GraficoVentas dias={cierre.data.ventas_por_dia} /></div>
+            <div className="mt-3"><GraficoVentas dias={cierre.data.ventas_por_dia} total={cierre.data.actual.total_vendido} /></div>
           </section>
         </>
       )}
@@ -198,6 +200,37 @@ export function Reportes() {
             <p className="monto text-2xl font-semibold">{pesos(mp.data.acumulado)}</p>
             <p className="text-xs text-muted-foreground">{mp.data.desde ? `Desde ${fechaCorta(mp.data.desde)}` : "Todavía no hubo ingresos del dueño"}</p>
           </div>
+        )}
+      </section>
+
+      <section className={`${TARJETA} p-4 lg:p-5`}>
+        <h2 className="font-medium">Cierre del día</h2>
+        <p className="text-sm text-muted-foreground">Lo movido hoy, sin anulados</p>
+        {dia.isLoading && <div className="esqueleto mt-3 h-40" />}
+        {dia.isError && <div className="mt-3"><Aviso tono="error" accion={<Reintentar onClick={() => dia.refetch()} />}>No se pudo traer el cierre del día.</Aviso></div>}
+        {dia.data && (
+          <ul className="mt-3 divide-y text-sm">
+            <li className="flex items-center justify-between gap-3 py-2">
+              <span className="text-muted-foreground">Apuestas</span>
+              <span className="monto font-medium">{pesos(dia.data.apuestas)}</span>
+            </li>
+            <li className="flex items-center justify-between gap-3 py-2">
+              <span className="text-muted-foreground">Premios pagados</span>
+              <span className="monto font-medium">{pesos(dia.data.boletas)}</span>
+            </li>
+            {Object.entries(dia.data.totales_por_tipo).map(([tipo, monto]) => (
+              <li key={tipo} className="flex items-center justify-between gap-3 py-2">
+                <span className="text-muted-foreground">{TIPOS[tipo as MovimientoOut["tipo"]]?.etiqueta ?? tipo}</span>
+                <span className="monto font-medium">{pesos(monto)}</span>
+              </li>
+            ))}
+            <li className="flex items-center justify-between gap-3 py-2">
+              <span className="text-muted-foreground">Arqueos: cuadran / no cuadran</span>
+              <span className="font-medium">
+                {dia.data.arqueos.filter((a) => a.estado === "cuadra").length} / {dia.data.arqueos.filter((a) => a.estado !== "cuadra").length}
+              </span>
+            </li>
+          </ul>
         )}
       </section>
 
