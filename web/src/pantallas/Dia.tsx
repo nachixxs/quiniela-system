@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { api, ApiError } from "../api/cliente";
 import type { RendicionOut, Saldo, TicketOut, TurnoOut } from "../api/tipos";
@@ -7,7 +7,6 @@ import { pesos } from "../util";
 import { Aviso, Boton, CampoMonto, Hoja, TARJETA } from "../ui";
 
 const BOTON = "h-12 w-full text-base lg:h-10 lg:text-sm";
-const INVALIDAR = ["dia-actual", "cajas"];
 
 // Aviso repetido en las pantallas que necesitan un día abierto para actuar (D3, §3).
 export function AvisoAbrirDia() {
@@ -20,11 +19,7 @@ export function AvisoAbrirDia() {
 
 // Tarjeta de Inicio cuando no hay día abierto (§3): sin ella no hay turnos, cajas ni nada que cargar.
 export function TarjetaAbrirDia() {
-  const queryClient = useQueryClient();
-  const abrir = useMutation({
-    mutationFn: api.abrirDia,
-    onSuccess: () => { for (const clave of INVALIDAR) queryClient.invalidateQueries({ queryKey: [clave] }); },
-  });
+  const abrir = useMutation({ mutationFn: api.abrirDia });
   return (
     <section className={`${TARJETA} flex flex-col items-center gap-3 p-8 text-center`}>
       <h2 className="text-lg font-semibold tracking-tight">Todavía no se abrió el día</h2>
@@ -48,7 +43,6 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
   const [quiniela, setQuiniela] = useState("");
   const [montos, setMontos] = useState<Record<number, string>>({});
   const [resultado, setResultado] = useState<TicketOut | null>(null);
-  const queryClient = useQueryClient();
   const juegos = useQuery({ queryKey: ["juegos"], queryFn: api.juegos });
 
   const guardar = useMutation({
@@ -56,10 +50,7 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
       quiniela: Number(quiniela),
       juegos: (juegos.data ?? []).map((j) => ({ juego_id: j.id, monto: Number(montos[j.id] || 0) })),
     }),
-    onSuccess: (r) => {
-      setResultado(r);
-      for (const clave of INVALIDAR) queryClient.invalidateQueries({ queryKey: [clave] });
-    },
+    onSuccess: setResultado,
   });
 
   if (resultado) {
@@ -110,13 +101,12 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
 // Traspaso (D9): sube a la caja grande lo contado en el último arqueo de la chica. Sin montos a elegir.
 function HojaTraspaso({ cajaId, onCerrar }: { cajaId: number; onCerrar: () => void }) {
   const [movido, setMovido] = useState<Saldo | null>(null);
-  const queryClient = useQueryClient();
+  // Saldo actual de la caja chica (después del arqueo, lo contado): lo que se va a mover.
+  const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
+  const caja = cajas.data?.find((c) => c.id === cajaId);
   const hacer = useMutation({
     mutationFn: () => api.traspaso({ caja_origen_id: cajaId }),
-    onSuccess: (s) => {
-      setMovido(s);
-      for (const clave of INVALIDAR) queryClient.invalidateQueries({ queryKey: [clave] });
-    },
+    onSuccess: setMovido,
   });
 
   return (
@@ -124,8 +114,10 @@ function HojaTraspaso({ cajaId, onCerrar }: { cajaId: number; onCerrar: () => vo
       <div className="flex flex-col gap-4">
         {movido ? (
           <p className="text-sm">Se movieron <span className="monto font-medium">{pesos(movido.efectivo)}</span> en efectivo y <span className="monto font-medium">{pesos(movido.boletas)}</span> en boletas.</p>
+        ) : caja ? (
+          <p className="text-sm text-muted-foreground">Se mueven <span className="monto font-medium text-foreground">{pesos(caja.efectivo)}</span> en efectivo y <span className="monto font-medium text-foreground">{pesos(caja.boletas)}</span> en boletas a la caja grande.</p>
         ) : (
-          <p className="text-sm text-muted-foreground">Confirmá para mover el efectivo y las boletas contados a la caja grande.</p>
+          <div className="esqueleto h-5" />
         )}
         {hacer.isError && <Aviso tono="error">{hacer.error instanceof ApiError ? hacer.error.detalle : "No se pudo traspasar."}</Aviso>}
         <Boton type="button" cargando={hacer.isPending} onClick={() => (movido ? onCerrar() : hacer.mutate())} className={BOTON}>
@@ -140,13 +132,9 @@ function HojaTraspaso({ cajaId, onCerrar }: { cajaId: number; onCerrar: () => vo
 function HojaRendicion({ onCerrar }: { onCerrar: () => void }) {
   const [monto, setMonto] = useState("");
   const [lote, setLote] = useState<RendicionOut | null>(null);
-  const queryClient = useQueryClient();
   const guardar = useMutation({
     mutationFn: () => api.rendicion({ boletas_contadas: Number(monto) }),
-    onSuccess: (r) => {
-      setLote(r);
-      for (const clave of INVALIDAR) queryClient.invalidateQueries({ queryKey: [clave] });
-    },
+    onSuccess: setLote,
   });
 
   if (lote) {
@@ -178,14 +166,7 @@ function HojaRendicion({ onCerrar }: { onCerrar: () => void }) {
 
 // Cierre del día (§7.8, §8): sin vuelta atrás, se lo dice antes de confirmar.
 function HojaCerrarDia({ diaId, onCerrar }: { diaId: number; onCerrar: () => void }) {
-  const queryClient = useQueryClient();
-  const cerrar = useMutation({
-    mutationFn: () => api.cerrarDia(diaId),
-    onSuccess: () => {
-      for (const clave of INVALIDAR) queryClient.invalidateQueries({ queryKey: [clave] });
-      onCerrar();
-    },
-  });
+  const cerrar = useMutation({ mutationFn: () => api.cerrarDia(diaId), onSuccess: onCerrar });
   return (
     <Hoja titulo="Cerrar el día" descripcion="Un día cerrado no se reabre: las cargas tardías quedan como ajuste (§7.8)." onCerrar={onCerrar}>
       <div className="flex flex-col gap-4">
