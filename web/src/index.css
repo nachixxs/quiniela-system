@@ -2,81 +2,79 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Tokens del sistema (ver DESIGN.md). Los colores son roles: el tema oscuro reasigna los mismos nombres. */
+/* Tokens (ver DESIGN.md): la escala neutra de shadcn/ui, sin tinte, y color solo con significado.
+   El tema oscuro reasigna los mismos nombres; ningún componente escribe un color a mano. */
 @theme {
   --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 
-  --color-lienzo: #f2f3f7;
-  --color-superficie: #ffffff;
-  --color-superficie-2: #eceef3;
-  --color-tinta: #121826;
-  --color-tinta-suave: #525b6e;
-  --color-borde: #dfe2ea;
-  --color-noche: #101a33;
-  --color-noche-2: #1d2a4d;
-  --color-en-noche: #ffffff;
-  --color-en-noche-suave: #b7bac2;
-  --color-estrella: #f4b73f;
-  --color-estrella-fuerte: #e9a521;
-  --color-en-estrella: #101a33;
-  --color-foco: #101a33;
-  --color-exito: #13794b;
-  --color-exito-suave: #e3f4ec;
-  --color-peligro: #c42b2b;
-  --color-peligro-suave: #fbe7e6;
-  --color-aviso: #b54708;
-  --color-aviso-suave: #fdf0da;
+  --color-background: #f5f5f5;
+  --color-foreground: #0a0a0a;
+  --color-card: #ffffff;
+  --color-sidebar: #f5f5f5;
+  --color-muted: #e5e5e5;
+  --color-muted-foreground: #636363;
+  --color-border: #d4d4d4;
+  --color-input: #d4d4d4;
+  --color-ring: #737373;
+  --color-primary: #171717;
+  --color-primary-foreground: #fafafa;
 
-  --shadow-tarjeta: 0 1px 2px rgb(16 26 51 / 0.06), 0 12px 32px -16px rgb(16 26 51 / 0.22);
-  --shadow-flotante: 0 -1px 0 rgb(16 26 51 / 0.06), 0 -12px 40px -20px rgb(16 26 51 / 0.35);
+  /* Significado: entró plata o cuadra · salió plata, deuda o no cuadra · mirá esto · premio (sin signo). */
+  --color-exito: oklch(50.8% 0.118 165.612); /* emerald-700 */
+  --color-peligro: oklch(50.5% 0.213 27.518); /* red-700 */
+  --color-aviso: oklch(55.5% 0.163 48.998); /* amber-700 */
+  --color-premio: oklch(54.1% 0.281 293.009); /* violet-600 */
 
-  /* Curvas de Emil Kowalski: salida fuerte para entrar/salir, la de iOS para hojas. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
   --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-hoja: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .dark {
-  --color-lienzo: #0b1020;
-  --color-superficie: #141b2e;
-  --color-superficie-2: #1c2438;
-  --color-tinta: #eef0f6;
-  --color-tinta-suave: #a3abbd;
-  --color-borde: #262f45;
-  --color-noche: #151f3c;
-  --color-noche-2: #22305a;
-  --color-estrella: #f6c14f;
-  --color-estrella-fuerte: #f8cd6e;
-  --color-foco: #f6c14f;
-  --color-exito: #4cc98a;
-  --color-exito-suave: #10291f;
-  --color-peligro: #ff7a70;
-  --color-peligro-suave: #33161a;
-  --color-aviso: #ff9d4d;
-  --color-aviso-suave: #2e2210;
-  /* En oscuro la elevación la da la superficie más clara, no la sombra. */
-  --shadow-tarjeta: 0 0 0 1px rgb(255 255 255 / 0.04);
-  --shadow-flotante: 0 -1px 0 rgb(255 255 255 / 0.06);
+  color-scheme: dark;
+  --color-background: #0a0a0a;
+  --color-foreground: #fafafa;
+  --color-card: #171717;
+  --color-sidebar: #171717;
+  --color-muted: #262626;
+  --color-muted-foreground: #a1a1a1;
+  --color-border: oklch(1 0 0 / 10%);
+  --color-input: oklch(1 0 0 / 15%);
+  --color-ring: #a1a1a1;
+  --color-primary: #e5e5e5;
+  --color-primary-foreground: #171717;
+  --color-exito: oklch(76.5% 0.177 163.223); /* emerald-400 */
+  --color-peligro: oklch(70.4% 0.191 22.216); /* red-400 */
+  --color-aviso: oklch(82.8% 0.189 84.429); /* amber-400 */
+  --color-premio: oklch(70.2% 0.183 293.541); /* violet-400 */
 }
 
-/* Base en su capa, para que las utilidades de Tailwind puedan pisarla. */
 @layer base {
-  html {
-    background-color: var(--color-lienzo);
-    color-scheme: light;
-    scrollbar-color: var(--color-borde) transparent;
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
   }
-  .dark {
-    color-scheme: dark;
+
+  html {
+    background-color: var(--color-background);
+    color-scheme: light;
+    scrollbar-color: var(--color-input) transparent;
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: var(--color-lienzo);
-    color: var(--color-tinta);
+    color: var(--color-foreground);
     font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1,
@@ -84,90 +82,78 @@
     text-wrap: balance;
   }
 
+  /* Los controles no se seleccionan con el dedo ni esperan el doble toque; el contenido sí se selecciona. */
+  button,
+  a,
+  label {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
   ::selection {
-    background-color: color-mix(in srgb, var(--color-estrella) 45%, transparent);
-    color: var(--color-tinta);
+    background-color: color-mix(in oklab, var(--color-foreground) 16%, transparent);
   }
   input {
-    caret-color: var(--color-foco);
+    caret-color: var(--color-foreground);
   }
   input::placeholder {
-    color: var(--color-tinta-suave);
-    opacity: 1;
+    color: var(--color-muted-foreground);
   }
 
   :focus {
     outline: none;
   }
   :focus-visible {
-    outline: 2px solid var(--color-foco);
+    outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
-  /* Sobre la noche el foco va en dorado para que se vea. */
-  .sobre-noche :focus-visible {
-    outline-color: var(--color-estrella);
-  }
 }
 
-/* Cambio de tema: fundido corto de toda la página con View Transitions (App.tsx). */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 200ms;
-  animation-timing-function: var(--ease-salida);
+/* Montos: Geist Mono con cifras tabulares, para que las columnas alineen y nada baile. */
+@utility monto {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
-/* Todo lo que se toca se hunde apenas: el feedback que confirma el toque. */
+/* Etiqueta de dato ("EFECTIVO", "DEUDA"): chica, en mayúsculas, con aire entre letras. */
+@utility rotulo {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Todo lo que se toca se hunde apenas: confirma el toque en el mismo momento en que el dedo apoya. */
 @utility presiona {
   transition:
     transform 140ms var(--ease-salida),
     background-color 140ms ease,
     border-color 140ms ease,
-    color 140ms ease;
+    color 140ms ease,
+    box-shadow 140ms ease;
   &:active:not(:disabled) {
     transform: scale(0.97);
   }
 }
 
-/* Esqueleto de carga con la forma de lo que reemplaza. */
+/* Lugar reservado mientras carga, con la forma de lo que reemplaza. Quieto: nada late en bucle. */
 @utility esqueleto {
-  border-radius: 12px;
-  background-color: var(--color-superficie-2);
-  animation: latido 1.4s ease-in-out infinite;
-}
-@keyframes latido {
-  50% {
-    opacity: 0.55;
-  }
+  border-radius: var(--radius-lg);
+  background-color: var(--color-muted);
 }
 
-/* Punto vivo: solo para un estado que está ocurriendo ahora (turno o día abierto). */
-@utility vivo {
-  position: relative;
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: inherit;
-    animation: onda 2s var(--ease-salida) infinite;
-  }
-}
-@keyframes onda {
-  from {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  to {
-    transform: scale(2.6);
-    opacity: 0;
-  }
+/* Cambio de tema: fundido corto de toda la página con View Transitions (App.tsx). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: var(--ease-salida);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .esqueleto,
-  .vivo::after {
-    animation: none;
-  }
   .presiona:active:not(:disabled) {
     transform: none;
   }

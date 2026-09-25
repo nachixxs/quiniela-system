@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 
 const formato = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+// Las diferencias llevan signo: "+$ 2.000" sobra, "-$ 2.000" falta, "$ 0" cuadra.
+const conSigno = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0, signDisplay: "exceptZero" });
 
-export function pesos(monto: number): string {
-  return formato.format(monto);
+export function pesos(monto: number, signo = false): string {
+  // Intl mete un espacio duro (U+00A0) entre "$" y el número; lo sacamos para "$48.000".
+  return (signo ? conSigno : formato).format(monto).replace(/ /g, "");
 }
 
 // "2026-09-23" → "martes 23 de septiembre". Mediodía para que la zona horaria no corra el día.
@@ -27,8 +30,8 @@ export function temaInicial(): Tema {
 
 export function aplicarTema(tema: Tema): void {
   document.documentElement.classList.toggle("dark", tema === "oscuro");
-  // La barra del navegador en el celular sigue al tema (el mismo azul noche de la barra de arriba).
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", tema === "oscuro" ? "#151f3c" : "#101a33");
+  // La barra del navegador en el celular sigue al tema elegido, aunque no coincida con el del sistema.
+  for (const meta of document.querySelectorAll('meta[name="theme-color"]')) meta.setAttribute("content", tema === "oscuro" ? "#0a0a0a" : "#f5f5f5");
   try {
     localStorage.setItem(CLAVE_TEMA, tema);
   } catch {

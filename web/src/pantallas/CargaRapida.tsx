@@ -1,18 +1,14 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
-import { Banknote, Check, CircleCheck, Info, Search, X } from "lucide-react";
+import { Banknote, CircleCheck, Search, X } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
 import type { ClienteBusqueda, MovimientoCrear } from "../api/tipos";
 import { pesos, uuid } from "../util";
-import { AVATAR, Aviso, Boton, CampoMonto, EASE_SALIDA, Hoja, TIPOS } from "../ui";
+import { Aviso, Boton, CampoMonto, Hoja, OPCION, PUNTO_RADIO, TARJETA, TIPOS } from "../ui";
 
 // D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja.
-const OPCIONES_PAGO: { etiqueta: string; tipo: MovimientoCrear["tipo"] }[] = [
-  { etiqueta: "MP / transferencia", tipo: "cobro_mercado_pago" },
-  { etiqueta: "Retiro del dueño", tipo: "retiro_dueno" },
-  { etiqueta: "Gasto", tipo: "gasto" },
-];
+const TIPOS_PAGO: MovimientoCrear["tipo"][] = ["cobro_mercado_pago", "retiro_dueno", "gasto"];
 
 export const BOTONES = [
   { etiqueta: "Fiado", tipo: "fiado", requiereCliente: true, ayuda: "Suma a la cuenta del cliente", icono: TIPOS.fiado.icono, tono: TIPOS.fiado.tono },
@@ -22,16 +18,16 @@ export const BOTONES = [
 ] as const;
 export type BotonCarga = (typeof BOTONES)[number];
 
-const CAJA = "flex h-14 items-center gap-3 rounded-2xl bg-superficie-2 px-4";
+const CAJA = "flex h-12 items-center gap-2 rounded-md border border-input bg-background px-3 shadow-xs dark:bg-input/30";
 
-// La hoja de carga y su confirmación. La usan la pantalla de carga rápida y los accesos del tablero.
+// La hoja de carga y su confirmación. La usan la pantalla de carga rápida y los accesos del inicio.
 export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null; onSeleccion: (b: BotonCarga | null) => void }) {
   const [monto, setMonto] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [cliente, setCliente] = useState<ClienteBusqueda | null>(null);
   const [refCliente, setRefCliente] = useState(() => uuid());
-  const [tipoPago, setTipoPago] = useState(OPCIONES_PAGO[0].tipo);
-  const [confirmacion, setConfirmacion] = useState<{ id: number; texto: string } | null>(null);
+  const [tipoPago, setTipoPago] = useState(TIPOS_PAGO[0]);
+  const [confirmacion, setConfirmacion] = useState<{ id: number; titulo: string; texto: string } | null>(null);
   const queryClient = useQueryClient();
 
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
@@ -39,7 +35,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
   const clientes = useQuery({
     queryKey: ["clientes-busqueda", busqueda],
     queryFn: () => api.clientes(busqueda),
-    enabled: busqueda.length > 0 && !cliente,
+    enabled: busqueda.length > 0,
   });
 
   const guardar = useMutation({
@@ -53,10 +49,9 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
     },
     onSuccess: (mov) => {
       const etiqueta = seleccion?.tipo ? seleccion.etiqueta : TIPOS[mov.tipo].etiqueta;
-      setConfirmacion({ id: Date.now(), texto: `${etiqueta} ${pesos(mov.monto)}${cliente ? ` · ${cliente.nombre}` : ""}` });
-      setRefCliente(uuid());
+      setConfirmacion({ id: Date.now(), titulo: `${etiqueta} guardado`, texto: `${pesos(mov.monto)}${cliente ? ` · ${cliente.nombre}` : ""}` });
       cerrar();
-      // El tablero y los fiados muestran el saldo nuevo que calcula el servidor.
+      // El inicio y los fiados muestran el saldo nuevo que calcula el servidor.
       for (const clave of ["dia-actual", "cajas", "deudores"]) queryClient.invalidateQueries({ queryKey: [clave] });
     },
   });
@@ -66,7 +61,8 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
     setMonto("");
     setBusqueda("");
     setCliente(null);
-    setTipoPago(OPCIONES_PAGO[0].tipo);
+    setTipoPago(TIPOS_PAGO[0]);
+    setRefCliente(uuid());
     guardar.reset();
   }
 
@@ -80,25 +76,24 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
 
   return (
     <>
-      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex justify-center lg:inset-x-auto lg:right-8 lg:top-8">
+      {/* Confirmación: baja desde arriba y se va por el mismo lado, sin tapar la próxima carga. */}
+      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex justify-center lg:inset-x-auto lg:right-6 lg:top-4">
         <AnimatePresence>
           {confirmacion && (
             <m.button
               key={confirmacion.id}
               type="button"
               onClick={() => setConfirmacion(null)}
-              initial={{ opacity: 0, transform: "translateY(-120%)" }}
-              animate={{ opacity: 1, transform: "translateY(0%)" }}
-              exit={{ opacity: 0, transform: "translateY(-120%)", transition: { duration: 0.18 } }}
-              transition={{ duration: 0.25, ease: EASE_SALIDA }}
-              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl bg-tinta p-3 pr-4 text-left text-lienzo shadow-tarjeta"
+              initial={{ opacity: 0, transform: "translateY(-16px) scale(0.97)" }}
+              animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+              exit={{ opacity: 0, transform: "translateY(-16px) scale(0.97)", transition: { duration: 0.15 } }}
+              transition={{ type: "spring", duration: 0.35, bounce: 0.1 }}
+              className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border bg-card p-4 text-left shadow-lg"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-exito text-superficie">
-                <Check className="size-5" strokeWidth={3} aria-hidden />
-              </span>
+              <CircleCheck className="mt-0.5 size-4 shrink-0 text-exito" aria-hidden />
               <span className="min-w-0">
-                <span className="block font-semibold">Guardado</span>
-                <span className="block truncate text-sm opacity-80">{confirmacion.texto}</span>
+                <span className="block text-sm font-medium">{confirmacion.titulo}</span>
+                <span className="monto block truncate text-sm text-muted-foreground">{confirmacion.texto}</span>
               </span>
             </m.button>
           )}
@@ -107,16 +102,8 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
 
       <AnimatePresence>
         {seleccion && (
-          <Hoja
-            key="carga"
-            titulo={seleccion.etiqueta}
-            onCerrar={cerrar}
-            icono={
-              <span className={`grid size-10 place-items-center rounded-full ${seleccion.tono}`}>
-                <seleccion.icono className="size-5" aria-hidden />
-              </span>
-            }
-          >
+          <Hoja key="carga" titulo={seleccion.etiqueta} descripcion={seleccion.ayuda} onCerrar={cerrar}
+            icono={<seleccion.icono className={`mt-0.5 size-5 shrink-0 ${seleccion.tono}`} aria-hidden />}>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -126,43 +113,39 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
             >
               {seleccion.tipo === null && (
                 <fieldset className="grid gap-2">
-                  <legend className="mb-1.5 text-sm font-medium text-tinta-suave">Qué fue</legend>
-                  {OPCIONES_PAGO.map((o) => {
-                    const Icono = TIPOS[o.tipo].icono;
-                    const elegida = tipoPago === o.tipo;
+                  <legend className="mb-2 text-sm font-medium">Qué fue</legend>
+                  {TIPOS_PAGO.map((tipo) => {
+                    const t = TIPOS[tipo];
                     return (
-                      <label
-                        key={o.tipo}
-                        className={`presiona flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${elegida ? "border-estrella bg-estrella/15" : "border-transparent bg-superficie-2"}`}
-                      >
-                        <input type="radio" name="tipo-pago" className="sr-only" checked={elegida} onChange={() => setTipoPago(o.tipo)} />
-                        <Icono className="size-5 text-tinta-suave" aria-hidden />
-                        <span className="flex-1 font-medium">{o.etiqueta}</span>
-                        {elegida && <CircleCheck className="size-5" aria-hidden />}
+                      <label key={tipo} className={`${OPCION} min-h-12 px-3`}>
+                        <input type="radio" name="tipo-pago" className="sr-only" checked={tipoPago === tipo} onChange={() => { setTipoPago(tipo); setRefCliente(uuid()); }} />
+                        <t.icono className={`size-4 ${t.tono}`} aria-hidden />
+                        <span className="flex-1 text-sm font-medium">{t.etiqueta}</span>
+                        {PUNTO_RADIO}
                       </label>
                     );
                   })}
                 </fieldset>
               )}
 
-              <CampoMonto etiqueta="Monto" valor={monto} onValor={setMonto} grande autoFocus enterKeyHint={seleccion.requiereCliente ? "next" : "done"} />
+              <CampoMonto etiqueta="Monto" valor={monto} onValor={(v) => { setMonto(v); setRefCliente(uuid()); }} grande autoFocus enterKeyHint={seleccion.requiereCliente ? "next" : "done"} />
 
               {seleccion.requiereCliente && (
                 <div>
-                  <label htmlFor="carga-cliente" className="mb-1.5 block text-sm font-medium text-tinta-suave">Cliente</label>
+                  <label htmlFor="carga-cliente" className="mb-2 block text-sm font-medium">Cliente</label>
                   {cliente ? (
-                    <div className={`${CAJA} pl-2 pr-1`}>
-                      <span className={AVATAR} aria-hidden>{cliente.nombre.charAt(0)}</span>
-                      <span className="flex-1 truncate font-semibold">{cliente.nombre}</span>
-                      <button type="button" onClick={() => setCliente(null)} aria-label="Cambiar cliente" className="presiona grid size-11 place-items-center rounded-full text-tinta-suave hover:bg-borde">
-                        <X className="size-5" aria-hidden />
+                    <div className={`${CAJA} pr-1`}>
+                      <span className="flex-1 truncate font-medium">{cliente.nombre}</span>
+                      <button type="button" onClick={() => { setCliente(null); setRefCliente(uuid()); }} aria-label="Cambiar cliente" className="presiona grid size-11 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:size-8">
+                        <X className="size-4" aria-hidden />
                       </button>
                     </div>
                   ) : (
-                    <div className={`${CAJA} ring-foco focus-within:ring-2`}>
-                      <Search className="size-5 shrink-0 text-tinta-suave" aria-hidden />
+                    <div className={`${CAJA} transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20`}>
+                      <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                       <input
                         id="carga-cliente"
+                        name="cliente"
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                         placeholder="Buscar por nombre…"
@@ -176,23 +159,26 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                   {!cliente && busqueda && (
                     <div className="mt-2" aria-live="polite">
                       {clientes.isLoading ? (
-                        <div className="esqueleto h-14" aria-label="Buscando…" />
+                        <div className="esqueleto h-12" aria-label="Buscando…" />
                       ) : clientes.isError ? (
                         <p className="px-1 text-sm text-peligro">No se pudo buscar. Probá de nuevo.</p>
                       ) : clientes.data?.length === 0 ? (
-                        <p className="px-1 text-sm text-tinta-suave">Nadie con “{busqueda}”.</p>
+                        <p className="px-1 text-sm text-muted-foreground">Nadie con “{busqueda}”.</p>
                       ) : (
-                        <ul className="overflow-hidden rounded-2xl ring-1 ring-borde">
+                        <ul className="divide-y overflow-hidden rounded-lg border">
                           {clientes.data?.map((c) => (
                             <li key={c.id}>
                               <button
                                 type="button"
-                                onClick={() => { setCliente(c); setBusqueda(""); }}
-                                className="flex min-h-14 w-full items-center gap-3 px-3 text-left transition-colors hover:bg-superficie-2 active:bg-superficie-2"
+                                onClick={() => { setCliente(c); setBusqueda(""); setRefCliente(uuid()); }}
+                                className="flex min-h-12 w-full items-center gap-3 px-3 text-left transition-colors hover:bg-muted/60 active:bg-muted"
                               >
-                                <span className={AVATAR} aria-hidden>{c.nombre.charAt(0)}</span>
-                                <span className="flex-1 truncate font-medium">{c.nombre}</span>
-                                {c.saldo !== 0 && <span className={`text-sm ${c.saldo < 0 ? "text-exito" : "text-tinta-suave"}`}>{c.saldo < 0 ? "A favor " : "Debe "}{pesos(Math.abs(c.saldo))}</span>}
+                                <span className="flex-1 truncate text-sm font-medium">{c.nombre}</span>
+                                {c.saldo !== 0 && (
+                                  <span className={`text-xs ${c.saldo < 0 ? "text-exito" : "text-muted-foreground"}`}>
+                                    {c.saldo < 0 ? "A favor " : "Debe "}<span className="monto">{pesos(Math.abs(c.saldo))}</span>
+                                  </span>
+                                )}
                               </button>
                             </li>
                           ))}
@@ -207,7 +193,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
               {dia.isSuccess && !cajaChica && <Aviso tono="aviso">No hay caja chica abierta: hasta que se abra el día no se puede cargar.</Aviso>}
               {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo guardar."}</Aviso>}
 
-              <Boton type="submit" cargando={guardar.isPending} disabled={!listo} className="h-14 w-full text-base">
+              <Boton type="submit" cargando={guardar.isPending} disabled={!listo} className="h-12 w-full text-base lg:h-10 lg:text-sm">
                 {guardar.isPending ? "Guardando…" : `Guardar ${seleccion.etiqueta.toLowerCase()}`}
               </Boton>
             </form>
@@ -218,33 +204,28 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
   );
 }
 
+// Cuatro accesos grandes, a dos columnas en el celular: se tocan con el pulgar sin mirar dos veces.
 export function CargaRapida() {
   const [seleccion, setSeleccion] = useState<BotonCarga | null>(null);
   return (
-    <div className="px-4 pt-5 lg:px-0 lg:pt-0">
-      <p className="mb-5 flex items-center gap-2 text-sm text-tinta-suave">
-        <Info className="size-4 shrink-0" aria-hidden />
-        Las ventas en efectivo no se cargan acá: salen del ticket al cierre.
-      </p>
+    <>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         {BOTONES.map((b) => (
           <button
             key={b.etiqueta}
             type="button"
             onClick={() => setSeleccion(b)}
-            className="presiona flex aspect-square flex-col justify-between rounded-3xl bg-superficie p-4 text-left shadow-tarjeta hover:bg-superficie-2 lg:aspect-[4/5] lg:p-6"
+            className={`${TARJETA} presiona flex min-h-36 flex-col justify-between p-4 text-left hover:bg-muted/50 lg:min-h-40 lg:p-5`}
           >
-            <span className={`grid size-12 place-items-center rounded-2xl ${b.tono}`}>
-              <b.icono className="size-6" aria-hidden />
-            </span>
+            <b.icono className={`size-5 ${b.tono}`} aria-hidden />
             <span>
-              <span className="block text-xl font-semibold tracking-tight">{b.etiqueta}</span>
-              <span className="mt-0.5 block text-sm text-tinta-suave">{b.ayuda}</span>
+              <span className="block text-base font-semibold tracking-tight">{b.etiqueta}</span>
+              <span className="mt-1 block text-sm leading-snug text-muted-foreground">{b.ayuda}</span>
             </span>
           </button>
         ))}
       </div>
       <Carga seleccion={seleccion} onSeleccion={setSeleccion} />
-    </div>
+    </>
   );
 }

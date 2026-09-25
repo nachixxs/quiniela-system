@@ -11,21 +11,27 @@ export const usuarioMock: Usuario = {
   negocio: { id: 1, nombre: "Quiniela La Estrella" },
 };
 
-export const cajasMock: CajaEstado[] = [
-  { id: 1, nombre: "Caja chica", tipo: "operativa", efectivo: 213000, boletas: 45000, esperado: null },
-  { id: 2, nombre: "Caja grande", tipo: "central", efectivo: 902000, boletas: 120000, esperado: null },
+// Dos casos del turno noche: sin ticket (por defecto) y con ticket (sessionStorage "mock_ticket" = "1").
+// Sin ticket la caja chica no tiene esperado y su efectivo es parcial, hasta negativo (SPECS §7.3).
+const conTicket = () => { try { return sessionStorage.getItem("mock_ticket") === "1"; } catch { return false; } };
+
+const cajasMock = (): CajaEstado[] => [
+  conTicket()
+    ? { id: 1, nombre: "Caja chica", tipo: "operativa", efectivo: 186500, boletas: 45000, esperado: { efectivo: 186500, boletas: 45000 } }
+    : { id: 1, nombre: "Caja chica", tipo: "operativa", efectivo: -12000, boletas: 45000, esperado: null },
+  { id: 2, nombre: "Caja grande", tipo: "central", efectivo: 902000, boletas: 120000, esperado: { efectivo: 900000, boletas: 120000 } },
 ];
 
-export const diaActualMock: DiaActualOut = {
+const diaActualMock = (): DiaActualOut => ({
   dia: { id: 1, fecha: "2026-09-23", estado: "abierto" },
   rendicion_pendiente: true,
   turnos: [
     { id: 1, nombre: "mañana", estado: "cerrado", tiene_ticket: true },
-    { id: 2, nombre: "noche", estado: "abierto", tiene_ticket: false },
+    { id: 2, nombre: "noche", estado: "abierto", tiene_ticket: conTicket() },
   ],
-  cajas: cajasMock,
-  arqueos_pendientes: ["caja_grande_noche"],
-};
+  cajas: cajasMock(),
+  arqueos_pendientes: conTicket() ? ["caja_chica_noche", "caja_grande_noche"] : ["caja_grande_noche"],
+});
 
 export const clientesMock: ClienteBusqueda[] = [
   { id: 14, nombre: "Roberto Pérez", saldo: 30000 },
@@ -97,8 +103,8 @@ export const RUTAS_MOCK: Record<string, (cuerpo: unknown) => unknown> = {
     if (!hay) throw new ApiError("no_autenticado", "Iniciá sesión para continuar.");
     return usuarioMock;
   },
-  "GET /dia/actual": () => diaActualMock,
-  "GET /cajas": () => cajasMock,
+  "GET /dia/actual": diaActualMock,
+  "GET /cajas": cajasMock,
   "POST /movimientos": (c) => {
     const m = c as MovimientoCrear;
     return {
@@ -109,10 +115,10 @@ export const RUTAS_MOCK: Record<string, (cuerpo: unknown) => unknown> = {
   },
   "POST /arqueo": (c) => {
     const a = c as ArqueoRequest;
-    const caja = cajasMock.find((x) => x.id === a.caja_id);
-    const turno = diaActualMock.turnos.find((t) => t.id === a.turno_id);
+    const caja = cajasMock().find((x) => x.id === a.caja_id);
+    const turno = diaActualMock().turnos.find((t) => t.id === a.turno_id);
     if (caja?.tipo === "operativa" && turno && !turno.tiene_ticket) {
-      throw new ApiError("turno_sin_ticket", "Este turno todavía no tiene el ticket cargado.");
+      throw new ApiError("sin_ticket", "Este turno todavía no tiene el ticket cargado.");
     }
     const cuadra = a.efectivo_contado % 1000 === 0;
     const diferencia_efectivo = cuadra ? 0 : -2000;
