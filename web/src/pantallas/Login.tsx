@@ -5,7 +5,7 @@ import { api, ApiError } from "../api/cliente";
 import { useUsuario } from "../contexto/usuario";
 import { Aviso, Boton } from "../ui";
 
-const CAMPO = "h-14 w-full rounded-2xl bg-superficie-2 px-4 text-base text-tinta ring-foco transition-shadow focus-visible:outline-none focus-visible:ring-2";
+const CAMPO = "h-14 w-full rounded-xl bg-superficie-2 px-4 text-base text-tinta ring-acento-texto transition-shadow focus-visible:outline-none focus-visible:ring-2";
 
 export function Login({ acciones }: { acciones: ReactNode }) {
   const [usuario, setUsuario] = useState("");
@@ -31,14 +31,14 @@ export function Login({ acciones }: { acciones: ReactNode }) {
 
   return (
     <div className="min-h-dvh bg-lienzo lg:grid lg:grid-cols-[1.1fr_1fr]">
-      {/* La noche con la estrella: la misma marca que recibe al operador en el tablero. */}
+      {/* El grafito con la estrella: la misma marca que recibe al operador en el tablero. */}
       <section className="sobre-noche relative bg-noche px-6 pb-16 pt-[max(1rem,env(safe-area-inset-top))] text-en-noche lg:flex lg:flex-col lg:justify-center lg:p-12">
         <div className="flex justify-end lg:absolute lg:bottom-8 lg:left-10">{acciones}</div>
         <div className="mt-6 lg:mt-0">
-          <span className="grid size-14 place-items-center rounded-2xl bg-estrella text-en-estrella">
-            <Star className="size-7 fill-current" aria-hidden />
+          <span className="grid size-12 place-items-center rounded-xl bg-marca text-en-marca">
+            <Star className="size-6 fill-current" aria-hidden />
           </span>
-          <h1 className="mt-6 text-3xl font-semibold tracking-tight lg:text-5xl">Quiniela La Estrella</h1>
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight lg:text-4xl">Quiniela La Estrella</h1>
           <p className="mt-2 text-en-noche-suave lg:text-lg">Ingresá para abrir la caja</p>
         </div>
       </section>
@@ -50,7 +50,7 @@ export function Login({ acciones }: { acciones: ReactNode }) {
             e.preventDefault();
             mutacion.mutate();
           }}
-          className="relative mx-auto flex w-full max-w-sm flex-col gap-4 rounded-3xl bg-superficie p-6 shadow-tarjeta lg:p-8"
+          className="relative mx-auto flex w-full max-w-sm flex-col gap-4 rounded-2xl bg-superficie p-6 shadow-tarjeta lg:p-8"
         >
           <label className="block">
             <span className="mb-1.5 block text-sm font-medium text-tinta-suave">Usuario</span>

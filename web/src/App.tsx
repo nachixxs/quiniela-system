@@ -33,8 +33,8 @@ const BOTON_NOCHE = "presiona grid size-11 shrink-0 place-items-center rounded-f
 function Marca({ nombre }: { nombre: string }) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2.5">
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-estrella text-en-estrella">
-        <Star className="size-5 fill-current" aria-hidden />
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-marca text-en-marca">
+        <Star className="size-[18px] fill-current" aria-hidden />
       </span>
       <span className="truncate font-semibold tracking-tight">{nombre}</span>
     </div>
@@ -93,7 +93,7 @@ export function App() {
   const enlace = (p: Pantalla) => `#${p === "inicio" ? "" : p}`;
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[256px_1fr]">
+    <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
       <aside className="sobre-noche hidden bg-noche p-4 text-en-noche lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col">
         <div className="flex h-12 items-center px-1">
           <Marca nombre={usuario.negocio.nombre} />
@@ -104,16 +104,16 @@ export function App() {
               key={n.id}
               href={enlace(n.id)}
               aria-current={n.id === pantalla ? "page" : undefined}
-              className={`presiona relative flex h-12 items-center gap-3 rounded-xl px-3 font-medium ${n.id === pantalla ? "text-en-noche" : "text-en-noche-suave hover:text-en-noche"}`}
+              className={`presiona relative flex h-11 items-center gap-3 rounded-lg px-3 text-[15px] font-medium ${n.id === pantalla ? "text-en-noche" : "text-en-noche-suave hover:text-en-noche"}`}
             >
-              {n.id === pantalla && <m.span layoutId="nav-lateral" className="absolute inset-0 rounded-xl bg-white/10" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />}
-              <n.icono className={`relative size-5 ${n.id === pantalla ? "text-estrella" : ""}`} aria-hidden />
+              {n.id === pantalla && <m.span layoutId="nav-lateral" className="absolute inset-0 rounded-lg bg-white/10" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />}
+              <n.icono className="relative size-5" aria-hidden />
               <span className="relative">{n.texto}</span>
             </a>
           ))}
         </nav>
         <div className="mt-auto flex items-center gap-1 border-t border-white/10 pt-4">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-noche-2 text-sm font-semibold" aria-hidden>
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-noche-2 text-sm font-semibold" aria-hidden>
             {usuario.nombre.charAt(0)}
           </span>
           <span className="ml-1.5 flex-1 truncate text-sm font-medium">{usuario.nombre}</span>
@@ -130,20 +130,20 @@ export function App() {
         </header>
         {/* Cambio de pantalla: solo un fundido corto, porque se navega decenas de veces por turno. */}
         <m.main key={pantalla} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.16, ease: EASE_SALIDA }} className="mx-auto w-full max-w-5xl lg:px-10 lg:pt-10">
-          {pantalla !== "inicio" && <h1 className="mb-6 hidden text-3xl font-semibold tracking-tight lg:block">{titulo}</h1>}
+          {pantalla !== "inicio" && <h1 className="mb-6 hidden text-2xl font-semibold tracking-tight lg:block">{titulo}</h1>}
           <Actual />
         </m.main>
       </div>
 
-      <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-30 border-t border-borde bg-superficie pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <nav aria-label="Principal" className="vidrio fixed inset-x-0 bottom-0 z-30 border-t border-borde pb-[env(safe-area-inset-bottom)] lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-4">
           {NAV.map((n) => (
-            <a key={n.id} href={enlace(n.id)} aria-current={n.id === pantalla ? "page" : undefined} className="presiona flex h-16 flex-col items-center justify-center gap-1 text-xs font-semibold">
+            <a key={n.id} href={enlace(n.id)} aria-current={n.id === pantalla ? "page" : undefined} className="presiona flex h-16 flex-col items-center justify-center gap-1 text-xs font-medium">
               <span className="relative grid h-8 w-14 place-items-center">
-                {n.id === pantalla && <m.span layoutId="nav-inferior" className="absolute inset-0 rounded-full bg-estrella" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />}
-                <n.icono className={`relative size-5 ${n.id === pantalla ? "text-en-estrella" : "text-tinta-suave"}`} aria-hidden />
+                {n.id === pantalla && <m.span layoutId="nav-inferior" className="absolute inset-0 rounded-full bg-acento/12" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />}
+                <n.icono className={`relative size-5 ${n.id === pantalla ? "text-acento-texto" : "text-tinta-suave"}`} aria-hidden />
               </span>
-              <span className={n.id === pantalla ? "text-tinta" : "text-tinta-suave"}>{n.corto}</span>
+              <span className={n.id === pantalla ? "font-semibold text-tinta" : "text-tinta-suave"}>{n.corto}</span>
             </a>
           ))}
         </div>

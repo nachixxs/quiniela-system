@@ -7,7 +7,7 @@ import {
 import type { MovimientoOut } from "./api/tipos";
 import { useEscritorio } from "./util";
 
-export const AVATAR = "grid size-10 shrink-0 place-items-center rounded-full bg-estrella/25 text-sm font-semibold text-tinta";
+export const AVATAR = "grid size-10 shrink-0 place-items-center rounded-full bg-borde text-sm font-semibold text-tinta";
 export const EASE_SALIDA = [0.23, 1, 0.32, 1] as const;
 const EASE_HOJA = [0.32, 0.72, 0, 1] as const;
 
@@ -19,7 +19,7 @@ export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   cobro_mercado_pago: T("MP / transferencia", Smartphone, "bg-peligro-suave text-peligro"),
   retiro_dueno: T("Retiro del dueño", Wallet, "bg-peligro-suave text-peligro"),
   gasto: T("Gasto", ShoppingBag, "bg-peligro-suave text-peligro"),
-  pago_premio: T("Premio", Trophy, "bg-noche text-estrella"),
+  pago_premio: T("Premio", Trophy, "bg-noche text-en-noche"),
   apuesta_quiniela: T("Apuesta de quiniela"),
   venta_otro_juego: T("Venta de otro juego"),
   cobro_subagente: T("Cobro de subagente"),
@@ -31,9 +31,9 @@ export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   rendicion_boletas: T("Rendición de boletas"),
 };
 
-// Botón de toda la app: primario en dorado (una acción principal por vista) y secundario.
+// Botón de toda la app: primario en azul (una acción principal por vista) y secundario.
 const VARIANTES = {
-  primario: "bg-estrella text-en-estrella hover:bg-estrella-fuerte disabled:bg-superficie-2 disabled:text-tinta-suave",
+  primario: "bg-acento text-en-acento hover:bg-acento-fuerte disabled:bg-superficie-2 disabled:text-tinta-suave",
   secundario: "bg-superficie-2 text-tinta hover:bg-borde disabled:opacity-50",
 };
 export function Boton({
@@ -44,7 +44,7 @@ export function Boton({
       {...props}
       disabled={disabled || cargando}
       aria-busy={cargando || undefined}
-      className={`presiona inline-flex h-12 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold whitespace-nowrap ${VARIANTES[variante]} ${className}`}
+      className={`presiona inline-flex h-12 items-center justify-center gap-2 rounded-xl px-5 text-[15px] font-semibold whitespace-nowrap ${VARIANTES[variante]} ${className}`}
     >
       {cargando && <LoaderCircle className="size-5 animate-spin" aria-hidden />}
       {children}
@@ -66,7 +66,7 @@ export function Aviso({ tono, children, accion }: { tono: keyof typeof TONOS; ch
       initial={{ opacity: 0, transform: "translateY(-4px)" }}
       animate={{ opacity: 1, transform: "translateY(0px)" }}
       transition={{ duration: 0.2, ease: EASE_SALIDA }}
-      className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium ${clases}`}
+      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${clases}`}
     >
       <Icono className="size-5 shrink-0" aria-hidden />
       <div className="flex-1">{children}</div>
@@ -83,7 +83,7 @@ export function CampoMonto({
   return (
     <div>
       <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-tinta-suave">{etiqueta}</label>
-      <div className="flex items-center gap-1.5 rounded-2xl bg-superficie-2 px-4 ring-foco transition-shadow focus-within:ring-2">
+      <div className="flex items-center gap-1.5 rounded-xl bg-superficie-2 px-4 ring-acento-texto transition-shadow focus-within:ring-2">
         <span className={`font-semibold text-tinta-suave ${grande ? "text-3xl" : "text-xl"}`} aria-hidden>$</span>
         <input
           id={id}
@@ -107,7 +107,7 @@ export function Segmentado<V extends string | number>({
 }: { etiqueta: string; opciones: { valor: V; texto: string; detalle?: string; deshabilitada?: boolean }[]; valor: V | null; onCambio: (v: V) => void }) {
   const id = useId();
   return (
-    <div role="radiogroup" aria-label={etiqueta} className="flex gap-1 rounded-full bg-superficie-2 p-1">
+    <div role="radiogroup" aria-label={etiqueta} className="flex gap-1 rounded-xl bg-superficie-2 p-1">
       {opciones.map((o) => (
         <button
           key={o.valor}
@@ -116,10 +116,10 @@ export function Segmentado<V extends string | number>({
           aria-checked={o.valor === valor}
           disabled={o.deshabilitada}
           onClick={() => onCambio(o.valor)}
-          className="presiona relative flex min-h-11 flex-1 flex-col items-center justify-center rounded-full px-3 py-1 text-sm font-semibold disabled:opacity-45"
+          className="presiona relative flex min-h-11 flex-1 flex-col items-center justify-center rounded-lg px-3 py-1 text-sm font-semibold disabled:opacity-45"
         >
           {o.valor === valor && (
-            <m.span layoutId={id} className="absolute inset-0 rounded-full bg-superficie shadow-tarjeta dark:bg-noche-2" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />
+            <m.span layoutId={id} className="absolute inset-0 rounded-lg bg-superficie shadow-tarjeta dark:bg-white/12" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />
           )}
           <span className={`relative ${o.valor === valor ? "text-tinta" : "text-tinta-suave"}`}>{o.texto}</span>
           {o.detalle && <span className="relative text-xs font-medium text-tinta-suave">{o.detalle}</span>}
@@ -157,7 +157,7 @@ export function Hoja({ titulo, icono, onCerrar, children }: { titulo: string; ic
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center lg:items-center lg:p-6">
       <m.div
-        className="absolute inset-0 bg-noche/55"
+        className="absolute inset-0 bg-noche/50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0, transition: { duration: 0.15 } }}
@@ -170,16 +170,17 @@ export function Hoja({ titulo, icono, onCerrar, children }: { titulo: string; ic
         aria-modal="true"
         aria-labelledby={idTitulo}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full flex-col rounded-t-3xl bg-superficie shadow-flotante lg:max-w-md lg:rounded-3xl"
+        className="relative flex max-h-[92dvh] w-full flex-col rounded-t-[20px] bg-superficie shadow-flotante lg:max-w-md lg:rounded-2xl lg:ring-1 lg:ring-borde"
         initial={fuera}
         animate={escritorio ? { opacity: 1, transform: "scale(1)" } : { y: 0 }}
-        exit={{ ...fuera, transition: { duration: escritorio ? 0.15 : 0.2, ease: EASE_HOJA } }}
+        // Al soltarla, la salida es un resorte: hereda la velocidad del dedo y no hay costura entre arrastre y animación.
+        exit={{ ...fuera, transition: escritorio ? { duration: 0.15, ease: EASE_HOJA } : { type: "spring", bounce: 0, duration: 0.25 } }}
         transition={{ duration: escritorio ? 0.2 : 0.28, ease: EASE_HOJA }}
         drag={escritorio ? false : "y"}
         dragControls={arrastre}
         dragListener={false}
         dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.8 }}
+        dragElastic={{ top: 0.05, bottom: 0.8 }}
         onDragEnd={(_, i) => (i.offset.y > 110 || i.velocity.y > 300) && onCerrar()}
       >
         <div className="touch-none px-5 pb-2 pt-2.5 lg:pt-5" onPointerDown={(e) => arrastre.start(e)}>
@@ -192,7 +193,7 @@ export function Hoja({ titulo, icono, onCerrar, children }: { titulo: string; ic
             </button>
           </div>
         </div>
-        <div className="overflow-y-auto px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2">{children}</div>
+        <div className="overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2">{children}</div>
       </m.div>
     </div>
   );
