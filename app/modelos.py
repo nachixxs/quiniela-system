@@ -5,7 +5,7 @@ from uuid import UUID
 from pwdlib import PasswordHash
 from sqlalchemy import CheckConstraint, ForeignKey, Index, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
 
@@ -134,6 +134,12 @@ class Movimiento(Base):
     anula_id: Mapped[int | None] = mapped_column(ForeignKey("movimiento.id"), unique=True)
     motivo_anulacion: Mapped[str | None]
     ref_cliente: Mapped[UUID | None]
+    # carga lazy por defecto (select), no joined: los with_for_update no ven un outer join ni una query de más (D41)
+    cliente: Mapped[Cliente | None] = relationship()
+
+    @property
+    def cliente_nombre(self) -> str | None:
+        return self.cliente.nombre if self.cliente else None
 
 
 class LoteRendicion(Base):
