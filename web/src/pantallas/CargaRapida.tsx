@@ -57,14 +57,14 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
     mutationFn: () => {
       const mov: MovimientoCrear = {
         ref_cliente: refCliente, tipo: tipoFinal!, monto: Number(monto),
-        caja_id: caja!.id, cliente_id: cliente?.id ?? null,
+        caja_id: caja!.id, cliente_id: requiereCliente ? cliente?.id ?? null : null,
         contraparte: requiereContraparte ? contraparte.trim() : null,
       };
       return api.crearMovimiento(mov);
     },
     onSuccess: (mov) => {
       const etiqueta = seleccion?.tipo ? seleccion.etiqueta : TIPOS[mov.tipo].etiqueta;
-      const quien = cliente?.nombre ?? mov.contraparte;
+      const quien = requiereCliente ? cliente?.nombre : mov.contraparte;
       setConfirmacion({ id: Date.now(), titulo: `${etiqueta} guardado`, texto: `${pesos(mov.monto)}${quien ? ` · ${quien}` : ""}` });
       cerrar();
     },

@@ -1,17 +1,11 @@
-import type { ReactNode } from "react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "../api/cliente";
 import type { MovimientoOut, ResumenMes } from "../api/tipos";
 import { fechaCorta, fechaHoy, pesos } from "../util";
 import { Aviso, INSIGNIA, TARJETA, TIPOS, TONOS } from "../ui";
-
-const Reintentar = ({ onClick }: { onClick: () => void }) => (
-  <button type="button" onClick={onClick} className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
-    Reintentar
-  </button>
-);
+import { hora, Reintentar } from "./Movimientos";
 
 // "2026-09" ± meses, sin pasar por Date con día fijo (evita saltos por zona horaria).
 function sumarMes(mes: string, delta: number): string {
@@ -142,12 +136,11 @@ function GraficoVentas({ dias, total }: { dias: { fecha: string; total: number }
 function estadoInsignia(estado: "con_diferencia" | "explicada") {
   return estado === "explicada" ? { texto: "Explicada", clase: TONOS.aviso } : { texto: "No cuadra", clase: "bg-peligro/8 text-peligro" };
 }
-const horaFormato = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" });
 // Ya van aparte (Ventas y Premios pagados) o son internos que el cierre del mes deja afuera (D39).
 const FUERA_DE_LISTA_POR_TIPO = new Set(["apuesta_quiniela", "venta_otro_juego", "pago_premio", "traspaso", "traspaso_boletas", "rendicion_boletas"]);
 
 export function Reportes() {
-  const [mes, setMes] = useState(() => new Date().toISOString().slice(0, 7));
+  const [mes, setMes] = useState(() => fechaHoy().slice(0, 7));
   const { desde, hasta } = rangoMes(mes);
   const cierre = useQuery({ queryKey: ["reportes-mes", mes], queryFn: () => api.reportesMes(mes) });
   const mp = useQuery({ queryKey: ["reportes-mp"], queryFn: api.reportesMercadoPago });
@@ -181,8 +174,7 @@ export function Reportes() {
         <>
           <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
             {grupos.map((g) => (
-              <Grupo key={g.titulo} titulo={g.titulo} descripcion={g.descripcion} filas={g.filas}
-                actual={cierre.data.actual} anterior={cierre.data.anterior} nota={g.nota} />
+              <Grupo key={g.titulo} {...g} actual={cierre.data.actual} anterior={cierre.data.anterior} />
             ))}
           </div>
           <section className={`${TARJETA} p-4 lg:p-5`}>
@@ -230,7 +222,7 @@ export function Reportes() {
             <li className="flex items-center justify-between gap-3 py-2">
               <span className="text-muted-foreground">Arqueos: cuadran / no cuadran</span>
               <span className="font-medium">
-                {dia.data.arqueos.filter((a) => a.estado === "cuadra").length} / {dia.data.arqueos.filter((a) => a.estado !== "cuadra").length}
+                {dia.data.arqueos.filter((a) => a.estado === "cuadra").length} / {dia.data.arqueos.filter((a) => a.estado === "con_diferencia").length}
               </span>
             </li>
           </ul>
@@ -252,7 +244,7 @@ export function Reportes() {
               return (
                 <li key={d.id} className="flex items-center gap-3 px-4 py-2.5 text-sm lg:px-5">
                   <span className="min-w-0 flex-1">
-                    <span className="block font-medium">{nombreCaja(d.caja_id)} · {horaFormato.format(new Date(d.momento))}</span>
+                    <span className="block font-medium">{nombreCaja(d.caja_id)} · {hora(d.momento)}</span>
                     <span className="block text-xs text-muted-foreground">{fechaCorta(d.momento.slice(0, 10))}</span>
                   </span>
                   <span className="monto text-right text-xs text-muted-foreground">
