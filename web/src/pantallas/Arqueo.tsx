@@ -46,7 +46,7 @@ function Resultado({ r }: { r: ArqueoOut }) {
           )}
         </span>
         <div>
-          <p className={`text-lg font-semibold tracking-tight ${cierra ? "text-exito" : "text-peligro"}`}>{cierra ? "Cierra" : "No cuadra"}</p>
+          <p className={`text-lg font-semibold tracking-tight ${cierra ? "text-exito" : "text-peligro"}`}>{cierra ? "Cuadra" : "No cuadra"}</p>
           <p className="text-sm text-muted-foreground">{cierra ? "Las dos diferencias dan cero." : "Quedó guardado con su diferencia."}</p>
         </div>
       </div>
@@ -184,7 +184,7 @@ export function Arqueo() {
             <Resultado key={resultado.id} r={resultado} />
           ) : (
             <p key="vacio" className="hidden rounded-xl border border-dashed px-6 py-12 text-center text-sm text-muted-foreground lg:block">
-              El resultado aparece acá. El esperado no se muestra antes de contar.
+              El resultado aparece acá.
             </p>
           )}
         </AnimatePresence>

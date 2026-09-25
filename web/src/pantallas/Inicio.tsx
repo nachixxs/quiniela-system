@@ -9,7 +9,7 @@ import { Aviso, INSIGNIA, TARJETA, TONOS } from "../ui";
 import { BOTONES, Carga, type BotonCarga } from "./CargaRapida";
 
 const Reintentar = ({ onClick }: { onClick: () => void }) => (
-  <button type="button" onClick={onClick} className="presiona -my-1 h-8 rounded-md px-2 font-medium underline underline-offset-4">
+  <button type="button" onClick={onClick} className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
     Reintentar
   </button>
 );

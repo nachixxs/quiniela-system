@@ -47,12 +47,11 @@ export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   rendicion_boletas: T("Rendición de boletas"),
 };
 
-// Botón: primario claro sobre oscuro (una acción principal por vista), secundario con borde, fantasma sin fondo.
+// Botón: primario claro sobre oscuro (una acción principal por vista), secundario con borde.
 // 44 px en el celular, la escala de escritorio (36 px) desde 1024 px.
 const VARIANTES = {
   primario: "bg-primary text-primary-foreground hover:bg-primary/90",
   secundario: "border bg-card shadow-xs hover:bg-muted",
-  fantasma: "hover:bg-muted",
 };
 export function Boton({
   variante = "primario", cargando = false, className = "", children, disabled, ...props
@@ -62,7 +61,7 @@ export function Boton({
       {...props}
       disabled={disabled || cargando}
       aria-busy={cargando || undefined}
-      className={`presiona inline-flex h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 lg:h-9 ${VARIANTES[variante]} ${className}`}
+      className={`presiona inline-flex h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium whitespace-nowrap disabled:pointer-events-none disabled:bg-muted disabled:text-muted-foreground lg:h-9 ${VARIANTES[variante]} ${className}`}
     >
       {cargando && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
       {children}

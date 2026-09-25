@@ -136,7 +136,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                   {cliente ? (
                     <div className={`${CAJA} pr-1`}>
                       <span className="flex-1 truncate font-medium">{cliente.nombre}</span>
-                      <button type="button" onClick={() => { setCliente(null); setRefCliente(uuid()); }} aria-label="Cambiar cliente" className="presiona grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground">
+                      <button type="button" onClick={() => { setCliente(null); setRefCliente(uuid()); }} aria-label="Cambiar cliente" className="presiona grid size-11 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:size-8">
                         <X className="size-4" aria-hidden />
                       </button>
                     </div>

@@ -26,7 +26,7 @@ cuatro de significado:
 
 | Token | Significa | Dónde |
 |---|---|---|
-| `exito` (esmeralda) | Cuadra, entró plata, abierto | "Cierra", cobro de fiado, saldo a favor, turno abierto |
+| `exito` (esmeralda) | Cuadra, entró plata, abierto | "Cuadra", cobro de fiado, saldo a favor, turno abierto |
 | `peligro` (rojo) | No cuadra, salió plata, deuda | "No cuadra", diferencias ≠ 0, MP / retiro / gasto, "Deuda" |
 | `aviso` (ámbar) | Mirá esto | Sin ticket, pendientes, fiado |
 | `premio` (violeta) | Premio pagado | Solo el ícono del premio: sale efectivo y entra la boleta, sin signo |
@@ -39,8 +39,8 @@ Reglas:
 - **La selección es neutra.** Opción elegida: borde en `foreground`. Ítem activo de la
   barra lateral y fila elegida: `muted`. El segmentado: una pastilla en `background`
   sobre `muted`. Ningún color de estado marca selección.
-- **Botón primario:** uno por vista y siempre `primary`. Lo demás es secundario (con borde) o
-  fantasma. Deshabilitado = opacidad al 50 %, con el motivo escrito debajo.
+- **Botón primario:** uno por vista y siempre `primary`. Lo demás es secundario (con borde).
+  Deshabilitado = fondo `muted` y texto `muted-foreground`, con el motivo escrito debajo.
 - **Contraste medido** (WCAG 2, en los dos temas, con mezcla de alfa): texto 4,5:1 o más;
   íconos y foco, 3:1 o más. Desvíos de shadcn en claro: `muted-foreground` y `ring`, un punto
   más oscuros (los de shadcn dan 4,35 sobre `muted` y menos de 3:1 como foco). Falla conocida,
@@ -106,7 +106,7 @@ bundle, D26). Cifras tabulares en todo el `body`.
   son dos columnas: el formulario en tarjeta y el resultado al lado. Es un arqueo a ciegas:
   el esperado no se ve antes de contar.
   Botón bloqueado = motivo a la vista (qué falta, o turno sin ticket). **Resultado (D2):**
-  "Cierra" o "No cuadra"; efectivo y boletas (esperado y diferencia) bajo rótulos, y la
+  "Cuadra" o "No cuadra"; efectivo y boletas (esperado y diferencia) bajo rótulos, y la
   fila "Diferencia total". Diferencia ≠ 0 en `peligro`; cuadra solo si las dos dan cero.
   Con el resultado a la vista el botón queda deshabilitado; cualquier cambio lo borra.
 - **Cuenta corriente:** un segmentado para el orden y una tabla en tarjeta (Cliente, Días,

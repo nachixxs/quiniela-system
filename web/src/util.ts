@@ -5,7 +5,8 @@ const formato = new Intl.NumberFormat("es-AR", { style: "currency", currency: "A
 const conSigno = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0, signDisplay: "exceptZero" });
 
 export function pesos(monto: number, signo = false): string {
-  return (signo ? conSigno : formato).format(monto);
+  // Intl mete un espacio duro (U+00A0) entre "$" y el número; lo sacamos para "$48.000".
+  return (signo ? conSigno : formato).format(monto).replace(/ /g, "");
 }
 
 // "2026-09-23" → "martes 23 de septiembre". Mediodía para que la zona horaria no corra el día.
