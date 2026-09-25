@@ -29,7 +29,7 @@ export const PUNTO_RADIO = (
 const T = (etiqueta: string, icono: LucideIcon = ReceiptText, tono = "text-muted-foreground") => ({ etiqueta, icono, tono });
 export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   fiado: T("Fiado", NotebookPen, "text-aviso"),
-  cobro_fiado: T("Fiado de cliente", HandCoins, "text-exito"),
+  cobro_fiado: T("Cobro de fiado", HandCoins, "text-exito"),
   cobro_mercado_pago: T("MP / transferencia", Smartphone, "text-peligro"),
   retiro_dueno: T("Retiro del dueño", Wallet, "text-peligro"),
   gasto: T("Gasto", ShoppingBag, "text-peligro"),
