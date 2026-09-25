@@ -13,7 +13,6 @@ export const TARJETA = "rounded-xl border bg-card shadow-xs";
 export const INSIGNIA = "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium whitespace-nowrap";
 export const TONOS = {
   exito: "bg-exito/8 text-exito",
-  peligro: "bg-peligro/8 text-peligro",
   aviso: "bg-aviso/8 text-aviso",
   neutro: "bg-muted text-muted-foreground",
 } as const;
@@ -162,10 +161,13 @@ export function Hoja({
   const panel = useRef<HTMLDivElement>(null);
   const cerrar = useRef(onCerrar);
   cerrar.current = onCerrar;
+  // Se guarda en el render, no en el efecto: los efectos de los hijos (CampoMonto con
+  // autoFocus) corren antes que este, así que para cuando se ejecuta el foco ya se movió.
+  const previo = useRef(document.activeElement as HTMLElement | null);
 
   useEffect(() => {
-    const previo = document.activeElement as HTMLElement | null;
-    panel.current?.focus({ preventScroll: true });
+    // Si un hijo ya enfocó algo adentro (CampoMonto con autoFocus), no se lo robamos.
+    if (!panel.current?.contains(document.activeElement)) panel.current?.focus({ preventScroll: true });
     const tecla = (e: KeyboardEvent) => e.key === "Escape" && cerrar.current();
     document.addEventListener("keydown", tecla);
 
@@ -187,7 +189,7 @@ export function Hoja({
       style.width = previoAncho;
       document.documentElement.style.overflow = previoOverflowHtml;
       window.scrollTo(0, scrollY);
-      previo?.focus();
+      previo.current?.focus();
     };
   }, []);
 
@@ -207,7 +209,7 @@ export function Hoja({
         aria-modal="true"
         aria-labelledby={idTitulo}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full max-w-md flex-col overscroll-contain rounded-xl border bg-card shadow-lg"
+        className="relative flex max-h-[92dvh] w-full max-w-md flex-col rounded-xl border bg-card shadow-lg"
         initial={{ opacity: 0, transform: "scale(0.96)" }}
         animate={{ opacity: 1, transform: "scale(1)" }}
         exit={{ opacity: 0, transform: "scale(0.96)", transition: { duration: 0.15, ease: EASE_SALIDA } }}

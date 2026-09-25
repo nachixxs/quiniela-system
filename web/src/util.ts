@@ -39,7 +39,7 @@ export function aplicarTema(tema: Tema): void {
   }
 }
 
-// Escritorio: barra lateral, hojas como diálogo centrado y detalle al costado de la lista.
+// Punto de corte de escritorio: barra lateral y, en cuenta corriente, detalle al costado de la lista.
 const CONSULTA_ESCRITORIO = "(min-width: 1024px)";
 export function useEscritorio(): boolean {
   const [es, setEs] = useState(() => matchMedia(CONSULTA_ESCRITORIO).matches);

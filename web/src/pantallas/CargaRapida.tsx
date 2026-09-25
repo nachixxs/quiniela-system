@@ -40,10 +40,9 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
 
   const guardar = useMutation({
     mutationFn: () => {
-      if (!cajaChica) throw new ApiError("sin_caja", "No hay caja chica abierta.");
       const mov: MovimientoCrear = {
         ref_cliente: refCliente, tipo: seleccion!.tipo ?? tipoPago, monto: Number(monto),
-        caja_id: cajaChica.id, cliente_id: cliente?.id ?? null,
+        caja_id: cajaChica!.id, cliente_id: cliente?.id ?? null,
       };
       return api.crearMovimiento(mov);
     },
@@ -77,7 +76,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
   return (
     <>
       {/* Confirmación: baja desde arriba y se va por el mismo lado, sin tapar la próxima carga. */}
-      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex justify-center lg:inset-x-auto lg:right-6 lg:top-4">
+      <div role="status" className="pointer-events-none fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex justify-center lg:inset-x-auto lg:right-6 lg:top-4">
         <AnimatePresence>
           {confirmacion && (
             <m.button

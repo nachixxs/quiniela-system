@@ -104,7 +104,7 @@ export function Inicio() {
         )}
         <Indicador titulo="Pendientes" icono={ListTodo} tonoIcono={pendientes ? "text-aviso" : undefined}>
           <p className="monto mt-4 text-2xl font-semibold">{dia.data ? pendientes : "–"}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{pendientes ? "Controles por hacer hoy" : "Nada pendiente"}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{!dia.data ? "" : pendientes ? "Controles por hacer hoy" : "Nada pendiente"}</p>
         </Indicador>
         <Indicador titulo="Fiados" icono={BookUser}>
           <p className="monto mt-4 text-2xl font-semibold">{conDeuda ? conDeuda.length : "–"}</p>
