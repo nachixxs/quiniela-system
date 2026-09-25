@@ -109,7 +109,7 @@ export function CuentaCorriente() {
           onCambio={setOrden}
           opciones={[{ valor: "monto", texto: "Por monto" }, { valor: "antiguedad", texto: "Por antigüedad" }]}
         />
-        <div className="mt-4 rounded-3xl bg-superficie p-2 shadow-tarjeta">
+        <div className="mt-4 rounded-2xl bg-superficie p-2 shadow-tarjeta">
           <div className="grid grid-cols-[1fr_3.5rem_6rem] gap-2 px-3 pb-1 pt-2 text-xs font-medium text-tinta-suave" aria-hidden>
             <span>Cliente</span>
             <span className="text-right">Días</span>
@@ -130,7 +130,7 @@ export function CuentaCorriente() {
                   type="button"
                   onClick={() => setClienteId(d.id)}
                   aria-current={d.id === clienteId || undefined}
-                  className={`presiona grid min-h-16 w-full grid-cols-[1fr_3.5rem_6rem] items-center gap-2 rounded-2xl px-3 py-2 text-left hover:bg-superficie-2 ${d.id === clienteId ? "bg-estrella/15" : ""}`}
+                  className={`presiona grid min-h-16 w-full grid-cols-[1fr_3.5rem_6rem] items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-superficie-2 ${d.id === clienteId ? "bg-acento/8" : ""}`}
                 >
                   <span className="flex min-w-0 items-center gap-3">
                     <span className={`${AVATAR} max-sm:hidden`} aria-hidden>{d.nombre.charAt(0)}</span>
@@ -151,7 +151,7 @@ export function CuentaCorriente() {
       </div>
 
       {escritorio ? (
-        <aside className="sticky top-10 rounded-3xl bg-superficie p-6 shadow-tarjeta">
+        <aside className="sticky top-10 rounded-2xl bg-superficie p-6 shadow-tarjeta">
           {clienteId === null ? (
             <p className="flex items-center gap-2 py-8 text-sm text-tinta-suave">
               <ChevronRight className="size-4 rotate-180" aria-hidden />

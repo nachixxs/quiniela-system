@@ -7,10 +7,11 @@ import type { ArqueoOut } from "../api/tipos";
 import { pesos } from "../util";
 import { Aviso, Boton, CampoMonto, EASE_SALIDA, Segmentado } from "../ui";
 
-const Dato = ({ nombre, valor }: { nombre: string; valor: string }) => (
-  <div className="flex items-baseline justify-between gap-3 py-1.5 text-sm">
-    <span className="opacity-80">{nombre}</span>
-    <span className="font-semibold">{valor}</span>
+// Una fila del resultado. Una diferencia distinta de cero va en color de aviso: es lo que hay que mirar.
+const Dato = ({ nombre, valor, diferencia, total }: { nombre: string; valor: number; diferencia?: boolean; total?: boolean }) => (
+  <div className={`flex items-baseline justify-between gap-3 py-2.5 ${total ? "font-semibold" : "text-sm"}`}>
+    <span className={total ? "" : "text-tinta-suave"}>{nombre}</span>
+    <span className={`font-semibold ${diferencia && valor !== 0 ? "text-aviso" : ""}`}>{pesos(valor)}</span>
   </div>
 );
 
@@ -21,35 +22,35 @@ function Resultado({ r }: { r: ArqueoOut }) {
   return (
     <m.div
       ref={(el) => el?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })}
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, transform: "scale(0.97)" }}
+      animate={{ opacity: 1, transform: "scale(1)" }}
       exit={{ opacity: 0, transition: { duration: 0.12 } }}
-      transition={{ type: "spring", duration: 0.45, bounce: 0.2 }}
+      transition={{ type: "spring", duration: 0.35, bounce: 0 }}
       role="status"
-      className={`rounded-3xl p-5 ${cierra ? "bg-exito-suave text-exito" : "bg-aviso-suave text-aviso"}`}
+      className="scroll-mb-24 overflow-hidden rounded-2xl bg-superficie shadow-tarjeta lg:scroll-mb-6"
     >
-      <div className="flex items-center gap-3">
-        <span className={`grid size-12 shrink-0 place-items-center rounded-full ${cierra ? "bg-exito" : "bg-aviso"} text-superficie`}>
+      <div className={`flex items-center gap-3 px-5 py-4 ${cierra ? "bg-exito-suave text-exito" : "bg-aviso-suave text-aviso"}`}>
+        <span className={`grid size-10 shrink-0 place-items-center rounded-full ${cierra ? "bg-exito" : "bg-aviso"} text-superficie`}>
           {cierra ? (
-            <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <m.path d="M4 12l5 5L20 6" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.35, delay: 0.1, ease: EASE_SALIDA }} />
             </svg>
           ) : (
-            <TriangleAlert className="size-6" aria-hidden />
+            <TriangleAlert className="size-5" aria-hidden />
           )}
         </span>
-        <p className="text-2xl font-semibold tracking-tight">
-          {cierra ? "Cierra" : "No cuadra"}
-        </p>
+        <p className="text-xl font-semibold tracking-tight">{cierra ? "Cierra" : "No cuadra"}</p>
       </div>
-      <div className="mt-4 divide-y divide-current/15">
-        <Dato nombre="Efectivo esperado" valor={pesos(r.efectivo_esperado)} />
-        <Dato nombre="Diferencia de efectivo" valor={pesos(r.diferencia_efectivo)} />
-        <Dato nombre="Boletas esperadas" valor={pesos(r.boletas_esperadas)} />
-        <Dato nombre="Diferencia de boletas" valor={pesos(r.diferencia_boletas)} />
+      {/* D2: dos diferencias, y la suma a la vista. Cuadra solo si las dos dan cero, no si la suma da cero. */}
+      <div className="divide-y divide-borde px-5 py-1">
+        <Dato nombre="Efectivo esperado" valor={r.efectivo_esperado} />
+        <Dato nombre="Diferencia de efectivo" valor={r.diferencia_efectivo} diferencia />
+        <Dato nombre="Boletas esperadas" valor={r.boletas_esperadas} />
+        <Dato nombre="Diferencia de boletas" valor={r.diferencia_boletas} diferencia />
+        <Dato nombre="Diferencia total" valor={r.diferencia_efectivo + r.diferencia_boletas} diferencia total />
       </div>
       {!cierra && (
-        <button type="button" disabled className="mt-4 flex min-h-11 w-full items-center gap-2 rounded-2xl bg-superficie px-4 py-2 text-left text-sm font-medium text-tinta-suave">
+        <button type="button" disabled className="mx-5 mb-5 flex min-h-11 w-[calc(100%-2.5rem)] items-center gap-2 rounded-xl bg-superficie-2 px-4 py-2 text-left text-sm font-medium text-tinta-suave">
           <Sparkles className="size-4 shrink-0" aria-hidden />
           <span className="flex-1">Preguntarle al asistente</span>
           <span className="text-xs">(Próximamente)</span>
@@ -113,10 +114,10 @@ export function Arqueo() {
               return (
                 <label
                   key={c.id}
-                  className={`presiona flex cursor-pointer flex-col gap-3 rounded-2xl border-2 p-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${elegida ? "border-estrella bg-estrella/15" : "border-transparent bg-superficie shadow-tarjeta"}`}
+                  className={`presiona flex cursor-pointer flex-col gap-3 rounded-xl border-2 p-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-acento-texto ${elegida ? "border-acento bg-acento/8" : "border-transparent bg-superficie shadow-tarjeta"}`}
                 >
                   <input type="radio" name="caja" className="sr-only" checked={elegida} onChange={() => cambiar(setCajaId)(c.id)} />
-                  <Icono className="size-6" aria-hidden />
+                  <Icono className={`size-6 ${elegida ? "text-acento-texto" : "text-tinta-suave"}`} aria-hidden />
                   <span className="font-semibold">{c.nombre}</span>
                 </label>
               );

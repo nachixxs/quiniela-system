@@ -6,64 +6,66 @@
 @theme {
   --font-sans: "Geist Variable", system-ui, sans-serif;
 
-  --color-lienzo: #f2f3f7;
+  --color-lienzo: #f4f5f7;
   --color-superficie: #ffffff;
-  --color-superficie-2: #eceef3;
-  --color-tinta: #121826;
-  --color-tinta-suave: #525b6e;
-  --color-borde: #dfe2ea;
-  --color-noche: #101a33;
-  --color-noche-2: #1d2a4d;
-  --color-en-noche: #ffffff;
-  --color-en-noche-suave: #b7bac2;
-  --color-estrella: #f4b73f;
-  --color-estrella-fuerte: #e9a521;
-  --color-en-estrella: #101a33;
-  --color-foco: #101a33;
-  --color-exito: #13794b;
-  --color-exito-suave: #e3f4ec;
-  --color-peligro: #c42b2b;
-  --color-peligro-suave: #fbe7e6;
-  --color-aviso: #b54708;
-  --color-aviso-suave: #fdf0da;
+  --color-superficie-2: #eef0f3;
+  --color-tinta: #14171d;
+  --color-tinta-suave: #5a6170;
+  --color-borde: #e1e4e9;
+  --color-noche: #171a21;
+  --color-noche-2: #242832;
+  --color-en-noche: #f5f6f8;
+  --color-en-noche-suave: #a9afbb;
+  --color-acento: #2b55c4;
+  --color-acento-fuerte: #2147ab;
+  --color-acento-texto: #2b55c4;
+  --color-en-acento: #ffffff;
+  --color-marca: #d9a93f;
+  --color-en-marca: #171a21;
+  --color-exito: #177245;
+  --color-exito-suave: #e3f2e9;
+  --color-peligro: #b93229;
+  --color-peligro-suave: #fae8e6;
+  --color-aviso: #9c4a07;
+  --color-aviso-suave: #fbefdc;
 
-  --shadow-tarjeta: 0 1px 2px rgb(16 26 51 / 0.06), 0 12px 32px -16px rgb(16 26 51 / 0.22);
-  --shadow-flotante: 0 -1px 0 rgb(16 26 51 / 0.06), 0 -12px 40px -20px rgb(16 26 51 / 0.35);
+  /* Elevación declarada una sola vez: un filo de 1 px y una sombra corta, con offset. */
+  --shadow-tarjeta: 0 0 0 1px var(--color-borde), 0 1px 2px rgb(20 23 29 / 0.05);
+  --shadow-flotante: 0 -1px 0 var(--color-borde), 0 -16px 40px -24px rgb(20 23 29 / 0.3);
 
-  /* Curva de Emil Kowalski: salida fuerte para entrar/salir. */
   --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .dark {
   color-scheme: dark;
-  --color-lienzo: #0b1020;
-  --color-superficie: #141b2e;
-  --color-superficie-2: #1c2438;
-  --color-tinta: #eef0f6;
-  --color-tinta-suave: #a3abbd;
-  --color-borde: #262f45;
-  --color-noche: #151f3c;
-  --color-noche-2: #22305a;
-  --color-estrella: #f6c14f;
-  --color-estrella-fuerte: #f8cd6e;
-  --color-foco: #f6c14f;
-  --color-exito: #4cc98a;
-  --color-exito-suave: #10291f;
-  --color-peligro: #ff7a70;
-  --color-peligro-suave: #33161a;
-  --color-aviso: #ff9d4d;
-  --color-aviso-suave: #2e2210;
-  /* En oscuro la elevación la da la superficie más clara, no la sombra. */
-  --shadow-tarjeta: 0 0 0 1px rgb(255 255 255 / 0.04);
-  --shadow-flotante: 0 -1px 0 rgb(255 255 255 / 0.06);
+  --color-lienzo: #0f1115;
+  --color-superficie: #171a20;
+  --color-superficie-2: #20242c;
+  --color-tinta: #eceef2;
+  --color-tinta-suave: #9ba2ae;
+  --color-borde: #2a2e37;
+  --color-noche: #1a1d24;
+  --color-noche-2: #262a33;
+  --color-acento: #3f67d8;
+  --color-acento-fuerte: #3459c4;
+  --color-acento-texto: #8aa6f2;
+  --color-exito: #45c07f;
+  --color-exito-suave: #11271b;
+  --color-peligro: #f07068;
+  --color-peligro-suave: #321816;
+  --color-aviso: #f0a04b;
+  --color-aviso-suave: #2d2211;
+  --shadow-tarjeta: 0 0 0 1px var(--color-borde);
+  --shadow-flotante: 0 -1px 0 var(--color-borde);
 }
 
-/* Base en su capa, para que las utilidades de Tailwind puedan pisarla. */
 @layer base {
   html {
     background-color: var(--color-lienzo);
     color-scheme: light;
     scrollbar-color: var(--color-borde) transparent;
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -80,12 +82,21 @@
     text-wrap: balance;
   }
 
+  /* Los controles no se seleccionan con el dedo; el contenido sí. */
+  button,
+  a,
+  label {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
   ::selection {
-    background-color: color-mix(in srgb, var(--color-estrella) 45%, transparent);
+    background-color: color-mix(in srgb, var(--color-acento) 25%, transparent);
     color: var(--color-tinta);
   }
   input {
-    caret-color: var(--color-foco);
+    caret-color: var(--color-acento-texto);
   }
   input::placeholder {
     color: var(--color-tinta-suave);
@@ -95,12 +106,11 @@
     outline: none;
   }
   :focus-visible {
-    outline: 2px solid var(--color-foco);
+    outline: 2px solid var(--color-acento-texto);
     outline-offset: 2px;
   }
-  /* Sobre la noche el foco va en dorado para que se vea. */
   .sobre-noche :focus-visible {
-    outline-color: var(--color-estrella);
+    outline-color: var(--color-en-noche);
   }
 }
 
@@ -123,6 +133,16 @@
   }
 }
 
+/* Barra inferior: una capa translúcida con el contenido pasando por debajo. Sólida si el sistema pide menos transparencia. */
+@utility vidrio {
+  background-color: color-mix(in srgb, var(--color-superficie) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-superficie);
+    backdrop-filter: none;
+  }
+}
+
 /* Esqueleto de carga con la forma de lo que reemplaza. */
 @utility esqueleto {
   border-radius: 12px;
@@ -135,32 +155,8 @@
   }
 }
 
-/* Punto vivo: solo para un estado que está ocurriendo ahora (turno o día abierto). */
-@utility vivo {
-  position: relative;
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: inherit;
-    animation: onda 2s var(--ease-salida) infinite;
-  }
-}
-@keyframes onda {
-  from {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  to {
-    transform: scale(2.6);
-    opacity: 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .esqueleto,
-  .vivo::after {
+  .esqueleto {
     animation: none;
   }
   .presiona:active:not(:disabled) {

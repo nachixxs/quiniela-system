@@ -18,7 +18,7 @@ export const BOTONES = [
 ] as const;
 export type BotonCarga = (typeof BOTONES)[number];
 
-const CAJA = "flex h-14 items-center gap-3 rounded-2xl bg-superficie-2 px-4";
+const CAJA = "flex h-14 items-center gap-3 rounded-xl bg-superficie-2 px-4";
 
 // La hoja de carga y su confirmación. La usan la pantalla de carga rápida y los accesos del tablero.
 export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null; onSeleccion: (b: BotonCarga | null) => void }) {
@@ -87,9 +87,9 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
               animate={{ opacity: 1, transform: "translateY(0%)" }}
               exit={{ opacity: 0, transform: "translateY(-120%)", transition: { duration: 0.18 } }}
               transition={{ duration: 0.25, ease: EASE_SALIDA }}
-              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl bg-tinta p-3 pr-4 text-left text-lienzo shadow-tarjeta"
+              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl bg-tinta p-3 pr-4 text-left text-lienzo shadow-lg"
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-exito text-superficie">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-exito text-superficie">
                 <Check className="size-5" strokeWidth={3} aria-hidden />
               </span>
               <span className="min-w-0">
@@ -129,12 +129,12 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                     return (
                       <label
                         key={tipo}
-                        className={`presiona flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border-2 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-foco ${elegida ? "border-estrella bg-estrella/15" : "border-transparent bg-superficie-2"}`}
+                        className={`presiona flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border-2 px-4 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-acento-texto ${elegida ? "border-acento bg-acento/8" : "border-transparent bg-superficie-2"}`}
                       >
                         <input type="radio" name="tipo-pago" className="sr-only" checked={elegida} onChange={() => { setTipoPago(tipo); setRefCliente(uuid()); }} />
                         <t.icono className="size-5 text-tinta-suave" aria-hidden />
                         <span className="flex-1 font-medium">{t.etiqueta}</span>
-                        {elegida && <CircleCheck className="size-5" aria-hidden />}
+                        {elegida && <CircleCheck className="size-5 text-acento-texto" aria-hidden />}
                       </label>
                     );
                   })}
@@ -155,7 +155,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                       </button>
                     </div>
                   ) : (
-                    <div className={`${CAJA} ring-foco focus-within:ring-2`}>
+                    <div className={`${CAJA} ring-acento-texto focus-within:ring-2`}>
                       <Search className="size-5 shrink-0 text-tinta-suave" aria-hidden />
                       <input
                         id="carga-cliente"
@@ -178,7 +178,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                       ) : clientes.data?.length === 0 ? (
                         <p className="px-1 text-sm text-tinta-suave">Nadie con “{busqueda}”.</p>
                       ) : (
-                        <ul className="overflow-hidden rounded-2xl ring-1 ring-borde">
+                        <ul className="overflow-hidden rounded-xl ring-1 ring-borde">
                           {clientes.data?.map((c) => (
                             <li key={c.id}>
                               <button
@@ -228,13 +228,13 @@ export function CargaRapida() {
             key={b.etiqueta}
             type="button"
             onClick={() => setSeleccion(b)}
-            className="presiona flex aspect-square flex-col justify-between rounded-3xl bg-superficie p-4 text-left shadow-tarjeta hover:bg-superficie-2 lg:aspect-[4/5] lg:p-6"
+            className="presiona flex aspect-square flex-col justify-between rounded-2xl bg-superficie p-4 text-left shadow-tarjeta hover:bg-superficie-2 lg:aspect-[5/4] lg:p-6"
           >
-            <span className={`grid size-12 place-items-center rounded-2xl ${b.tono}`}>
+            <span className={`grid size-11 place-items-center rounded-xl ${b.tono}`}>
               <b.icono className="size-6" aria-hidden />
             </span>
             <span>
-              <span className="block text-xl font-semibold tracking-tight">{b.etiqueta}</span>
+              <span className="block text-lg font-semibold tracking-tight">{b.etiqueta}</span>
               <span className="mt-0.5 block text-sm text-tinta-suave">{b.ayuda}</span>
             </span>
           </button>
