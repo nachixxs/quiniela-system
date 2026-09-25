@@ -7,6 +7,7 @@ export type ClienteDetalle = components["schemas"]["ClienteDetalle"];
 export type DeudorOut = components["schemas"]["DeudorOut"];
 export type MovimientoCrear = components["schemas"]["MovimientoCrear"];
 export type MovimientoOut = components["schemas"]["MovimientoOut"];
+export type MovimientosPagina = components["schemas"]["MovimientosPagina"];
 export type ArqueoRequest = components["schemas"]["ArqueoRequest"];
 export type ArqueoOut = components["schemas"]["ArqueoOut"];
 
