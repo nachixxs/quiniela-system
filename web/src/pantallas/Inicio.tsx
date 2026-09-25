@@ -7,6 +7,7 @@ import { useUsuario } from "../contexto/usuario";
 import { fechaLarga, pesos } from "../util";
 import { Aviso, INSIGNIA, TARJETA, TONOS } from "../ui";
 import { BOTONES, Carga, type BotonCarga } from "./CargaRapida";
+import { TarjetaMovimientos } from "./Movimientos";
 
 const Reintentar = ({ onClick }: { onClick: () => void }) => (
   <button type="button" onClick={onClick} className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
@@ -194,6 +195,8 @@ export function Inicio() {
           </a>
         </section>
       </div>
+
+      <TarjetaMovimientos />
 
       <Carga seleccion={seleccion} onSeleccion={setSeleccion} />
     </>

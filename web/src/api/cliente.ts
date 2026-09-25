@@ -1,6 +1,6 @@
 import type {
   ArqueoOut, ArqueoRequest, CajaEstado, ClienteBusqueda, ClienteDetalle,
-  DeudorOut, DiaActualOut, MovimientoCrear, MovimientoOut, Usuario,
+  DeudorOut, DiaActualOut, MovimientoCrear, MovimientoOut, MovimientosPagina, Usuario,
 } from "./tipos";
 import { ApiError } from "./tipos";
 
@@ -30,5 +30,8 @@ export const api = {
   cliente: (id: number) => pedir<ClienteDetalle>("GET", `/clientes/${id}`),
   deudores: (orden: "monto" | "antiguedad") => pedir<DeudorOut[]>("GET", `/clientes/deudores?orden=${orden}`),
   crearMovimiento: (m: MovimientoCrear) => pedir<MovimientoOut>("POST", "/movimientos", m),
+  movimientos: (p: { desde: string; hasta: string }) =>
+    pedir<MovimientosPagina>("GET", `/movimientos?desde=${p.desde}&hasta=${p.hasta}`),
+  anular: (id: number, motivo: string) => pedir<MovimientoOut>("POST", `/movimientos/${id}/anular`, { motivo }),
   arqueo: (a: ArqueoRequest) => pedir<ArqueoOut>("POST", "/arqueo", a),
 };
