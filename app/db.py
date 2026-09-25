@@ -1,11 +1,11 @@
+import os
 from datetime import datetime
 
 from sqlalchemy import DateTime, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from app.config import DATABASE_URL
-
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+psycopg://quiniela:quiniela@127.0.0.1:5433/quiniela")
+engine = create_engine(DATABASE_URL, hide_parameters=True)  # los errores no llevan datos al log (auditoría 3.C2)
 SessionLocal = sessionmaker(engine)
 
 

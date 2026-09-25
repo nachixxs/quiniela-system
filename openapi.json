@@ -112,9 +112,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Yo Api Auth Yo Get"
+                  "$ref": "#/components/schemas/UsuarioOut"
                 }
               }
             }
@@ -1820,6 +1818,14 @@
       },
       "CajaEstado": {
         "properties": {
+          "efectivo": {
+            "type": "integer",
+            "title": "Efectivo"
+          },
+          "boletas": {
+            "type": "integer",
+            "title": "Boletas"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -1836,14 +1842,6 @@
             ],
             "title": "Tipo"
           },
-          "efectivo": {
-            "type": "integer",
-            "title": "Efectivo"
-          },
-          "boletas": {
-            "type": "integer",
-            "title": "Boletas"
-          },
           "esperado": {
             "anyOf": [
               {
@@ -1857,11 +1855,11 @@
         },
         "type": "object",
         "required": [
+          "efectivo",
+          "boletas",
           "id",
           "nombre",
-          "tipo",
-          "efectivo",
-          "boletas"
+          "tipo"
         ],
         "title": "CajaEstado"
       },
@@ -1979,6 +1977,10 @@
           "premios": {
             "type": "integer",
             "title": "Premios"
+          },
+          "otros_pagos": {
+            "type": "integer",
+            "title": "Otros Pagos"
           }
         },
         "type": "object",
@@ -1988,7 +1990,8 @@
           "cobros",
           "fiados",
           "mercado_pago",
-          "premios"
+          "premios",
+          "otros_pagos"
         ],
         "title": "Desglose"
       },
@@ -2215,6 +2218,7 @@
           },
           "password": {
             "type": "string",
+            "maxLength": 128,
             "title": "Password"
           }
         },
@@ -2499,16 +2503,29 @@
         ],
         "title": "MovimientosPagina"
       },
-      "RendicionItem": {
+      "NegocioOut": {
         "properties": {
           "id": {
             "type": "integer",
             "title": "Id"
           },
-          "fecha": {
+          "nombre": {
             "type": "string",
-            "format": "date",
-            "title": "Fecha"
+            "title": "Nombre"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "title": "NegocioOut"
+      },
+      "RendicionItem": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
           },
           "total_esperado": {
             "type": "integer",
@@ -2525,16 +2542,21 @@
           "cantidad_boletas": {
             "type": "integer",
             "title": "Cantidad Boletas"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "fecha",
           "total_esperado",
           "total_contado",
           "diferencia",
-          "cantidad_boletas"
+          "cantidad_boletas",
+          "fecha"
         ],
         "title": "RendicionItem"
       },
@@ -2749,6 +2771,28 @@
           "tiene_ticket"
         ],
         "title": "TurnoOut"
+      },
+      "UsuarioOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "negocio": {
+            "$ref": "#/components/schemas/NegocioOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "negocio"
+        ],
+        "title": "UsuarioOut"
       },
       "ValidationError": {
         "properties": {

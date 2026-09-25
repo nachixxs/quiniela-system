@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tokens (ver DESIGN.md): la escala neutra de shadcn/ui, sin tinte, y color solo con significado.
+   El tema oscuro reasigna los mismos nombres; ningún componente escribe un color a mano. */
+@theme {
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+
+  --color-background: #f5f5f5;
+  --color-foreground: #0a0a0a;
+  --color-card: #ffffff;
+  --color-sidebar: #f5f5f5;
+  --color-muted: #e5e5e5;
+  --color-muted-foreground: #636363;
+  --color-border: #d4d4d4;
+  --color-input: #d4d4d4;
+  --color-ring: #737373;
+  --color-primary: #171717;
+  --color-primary-foreground: #fafafa;
+
+  /* Significado: entró plata o cuadra · salió plata, deuda o no cuadra · mirá esto · premio (sin signo). */
+  --color-exito: oklch(50.8% 0.118 165.612); /* emerald-700 */
+  --color-peligro: oklch(50.5% 0.213 27.518); /* red-700 */
+  --color-aviso: oklch(55.5% 0.163 48.998); /* amber-700 */
+  --color-premio: oklch(54.1% 0.281 293.009); /* violet-600 */
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.dark {
+  color-scheme: dark;
+  --color-background: #0a0a0a;
+  --color-foreground: #fafafa;
+  --color-card: #171717;
+  --color-sidebar: #171717;
+  --color-muted: #262626;
+  --color-muted-foreground: #a1a1a1;
+  --color-border: oklch(1 0 0 / 10%);
+  --color-input: oklch(1 0 0 / 15%);
+  --color-ring: #a1a1a1;
+  --color-primary: #e5e5e5;
+  --color-primary-foreground: #171717;
+  --color-exito: oklch(76.5% 0.177 163.223); /* emerald-400 */
+  --color-peligro: oklch(70.4% 0.191 22.216); /* red-400 */
+  --color-aviso: oklch(82.8% 0.189 84.429); /* amber-400 */
+  --color-premio: oklch(70.2% 0.183 293.541); /* violet-400 */
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
+  html {
+    background-color: var(--color-background);
+    color-scheme: light;
+    scrollbar-color: var(--color-input) transparent;
+    overscroll-behavior-y: none;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-foreground);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
+
+  /* Los controles no se seleccionan con el dedo ni esperan el doble toque; el contenido sí se selecciona. */
+  button,
+  a,
+  label {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-foreground) 16%, transparent);
+  }
+  input {
+    caret-color: var(--color-foreground);
+  }
+  input::placeholder {
+    color: var(--color-muted-foreground);
+  }
+
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Montos: Geist Mono con cifras tabulares, para que las columnas alineen y nada baile. */
+@utility monto {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Etiqueta de dato ("EFECTIVO", "DEUDA"): chica, en mayúsculas, con aire entre letras. */
+@utility rotulo {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Todo lo que se toca se hunde apenas: confirma el toque en el mismo momento en que el dedo apoya. */
+@utility presiona {
+  transition:
+    transform 140ms var(--ease-salida),
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+/* Lugar reservado mientras carga, con la forma de lo que reemplaza. Quieto: nada late en bucle. */
+@utility esqueleto {
+  border-radius: var(--radius-lg);
+  background-color: var(--color-muted);
+}
+
+/* Cambio de tema: fundido corto de toda la página con View Transitions (App.tsx). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: var(--ease-salida);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presiona:active:not(:disabled) {
+    transform: none;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

@@ -3,8 +3,8 @@
 Sistema de cajas para una agencia de quiniela: un libro único de movimientos, cuatro arqueos
 y reportes calculados, en lugar de siete cuadernos. Todos los datos del repo son ficticios.
 
-Stack: FastAPI + SQLAlchemy 2.0 + Alembic + PostgreSQL 16, React + TypeScript + Vite, Caddy,
-Docker Compose.
+Stack: FastAPI + SQLAlchemy 2.0 + Alembic + PostgreSQL 16, React + TypeScript + Vite,
+Docker Compose para desarrollo local. Producción: Render + Neon, con backup diario a Backblaze B2.
 
 ## Levantarlo
 
@@ -15,7 +15,7 @@ docker compose exec api alembic upgrade head
 docker compose exec api python -m app.seed
 ```
 
-La documentación de la API queda en `http://localhost/api/docs`.
+La documentación de la API queda en `http://localhost:8000/api/docs` (apagada en producción).
 
 ## Tests
 

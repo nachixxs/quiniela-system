@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: quiniela-system
+    runtime: docker
+    plan: free
+    region: virginia
+    branch: main
+    healthCheckPath: /api/salud
+    envVars:
+      - key: PRODUCCION
+        value: "1"
+      - key: DATABASE_URL
+        sync: false

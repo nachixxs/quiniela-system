@@ -1,0 +1,28 @@
+name: Backup
+on:
+  schedule: [{ cron: "0 6 * * *" }]
+  workflow_dispatch: {}
+env:
+  # coincide con el proyecto Neon (creado en Postgres 16) y con el Compose/CI; digest fijo
+  PG_IMAGE: "postgres@sha256:a3b7f434b2dc57ce85a67e171163eb8ab1a1ebcb39d27484661f26b1dfbe30d6"
+permissions: {}
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: backup
+    steps:
+      - name: Dump y subida cifrada a B2
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.B2_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+          B2_BUCKET: ${{ secrets.B2_BUCKET }}
+          B2_ENDPOINT: ${{ secrets.B2_ENDPOINT }}
+        run: |
+          set -euo pipefail
+          nombre="quiniela-$(date -u +%Y%m%d-%H%M%S).dump"
+          docker run --rm -v "$PWD:/out" "$PG_IMAGE" \
+            pg_dump -Fc -d "$NEON_DATABASE_URL" -f "/out/$nombre"
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 -c "$nombre" <<< "$BACKUP_PASSPHRASE"
+          aws s3 cp "$nombre.gpg" "s3://$B2_BUCKET/$nombre.gpg" --endpoint-url "$B2_ENDPOINT"

@@ -1,9 +1,27 @@
+from datetime import UTC, datetime, timedelta
+from uuid import uuid4
+
 from fastapi.testclient import TestClient
 
+from app import operaciones
 from app.auth import hash_token
 from app.db import get_db
 from app.main import app
-from app.modelos import Sesion
+from app.modelos import Caja, Cliente, Negocio, Sesion, Usuario, hasher
+
+
+def _sesion(db, negocio_id: int, nombre: str = "Operador") -> str:
+    """Usuario y sesión de `negocio_id`, sin pasar por /auth/login: más rápido para tests que no
+    prueban el login en sí. Devuelve el token de cookie."""
+    usuario = Usuario(negocio_id=negocio_id, usuario=f"{nombre}-{negocio_id}-{uuid4()}", nombre=nombre,
+                      password_hash=hasher.hash("clave"))
+    db.add(usuario)
+    db.flush()
+    token = f"token-{usuario.id}"
+    db.add(Sesion(id=hash_token(token), usuario_id=usuario.id, negocio_id=negocio_id,
+                  expira=datetime.now(UTC) + timedelta(hours=1)))
+    db.flush()
+    return token
 
 
 def test_flujo_login_yo_logout(db, usuario_test):
@@ -54,5 +72,80 @@ def test_formato_422_datos_invalidos(db, usuario_test):
     assert cuerpo["error"] == "datos_invalidos"
     assert isinstance(cuerpo["detalle"], str)
     assert "no-debe-filtrarse" not in resp.text
+
+    app.dependency_overrides.clear()
+
+
+def test_aislamiento_por_negocio_id(db, agencia):
+    """Un usuario de otro negocio no ve un cliente ajeno ni puede anular un movimiento ajeno (§7.4)."""
+    otro_negocio = Negocio(nombre="Otro Negocio")
+    db.add(otro_negocio)
+    db.flush()
+    token_ajeno = _sesion(db, otro_negocio.id)
+    token_propio = _sesion(db, agencia.n)
+    movimiento = operaciones.crear_movimiento(db, agencia.n, ref_cliente=uuid4(), tipo="fiado", monto=1000,
+                                              caja_id=agencia.chica, cliente_id=agencia.cliente)
+
+    app.dependency_overrides[get_db] = lambda: db
+    cliente = TestClient(app, base_url="https://testserver")
+
+    cliente.cookies.set("sesion", token_ajeno)
+    assert cliente.get(f"/api/clientes/{agencia.cliente}").status_code == 404
+    resp = cliente.post(f"/api/movimientos/{movimiento.id}/anular", json={"motivo": "prueba"})
+    assert resp.status_code == 404
+
+    cliente.cookies.set("sesion", token_propio)
+    assert cliente.get(f"/api/clientes/{agencia.cliente}").status_code == 200
+
+    app.dependency_overrides.clear()
+
+
+def test_recorrido_feliz_http(db):
+    """Abrir día, un fiado, ver el saldo del cliente, y un error de dominio (409) con el formato único."""
+    negocio = Negocio(nombre="Recorrido Feliz")
+    db.add(negocio)
+    db.flush()
+    grande = Caja(negocio_id=negocio.id, nombre="Caja grande", tipo="central")
+    db.add(grande)
+    db.flush()
+    chica = Caja(negocio_id=negocio.id, nombre="Caja chica", tipo="operativa", caja_padre_id=grande.id)
+    cliente_db = Cliente(negocio_id=negocio.id, nombre="Cliente Feliz")
+    db.add_all([chica, cliente_db])
+    db.flush()
+    token = _sesion(db, negocio.id)
+
+    app.dependency_overrides[get_db] = lambda: db
+    cliente = TestClient(app, base_url="https://testserver")
+    cliente.cookies.set("sesion", token)
+
+    assert cliente.post("/api/dia/abrir").status_code == 201
+
+    resp = cliente.post("/api/movimientos", json={"ref_cliente": str(uuid4()), "tipo": "fiado", "monto": 5000,
+                                                    "caja_id": chica.id, "cliente_id": cliente_db.id})
+    assert resp.status_code == 201
+
+    resp = cliente.get(f"/api/clientes/{cliente_db.id}")
+    assert resp.status_code == 200
+    assert resp.json()["saldo"] == 5000
+
+    resp = cliente.post("/api/dia/abrir")  # ya hay un día abierto: error de dominio (Conflicto)
+    assert resp.status_code == 409
+    assert resp.json()["error"] == "dia_existente"
+    assert isinstance(resp.json()["detalle"], str)
+
+    app.dependency_overrides.clear()
+
+
+def test_413_body_grande(db):
+    app.dependency_overrides[get_db] = lambda: db
+    cliente = TestClient(app, base_url="https://testserver")
+
+    resp = cliente.post("/api/clientes", content=b"x" * 70_000, headers={"content-type": "application/json"})
+    assert resp.status_code == 413
+    assert resp.json()["error"] == "cuerpo_muy_grande"
+
+    resp_get = cliente.request("GET", "/api/cajas", content=b"x" * 70_000, headers={"content-type": "application/json"})
+    assert resp_get.status_code == 413
+    assert resp_get.json()["error"] == "cuerpo_muy_grande"
 
     app.dependency_overrides.clear()

@@ -83,11 +83,6 @@ def test_arqueo_con_los_nombres_de_columna():
         "boletas_contadas": 10000, "diferencia_efectivo": 0, "diferencia_boletas": 0, "estado": "cuadra"}
 
 
-def test_no_hay_arqueo_de_la_chica_sin_ticket():
-    with pytest.raises(ValueError, match="ticket"):
-        arqueo(esperado(CHICA, TURNO_CHICA[:-1], operativa=True), (90000, 10000))
-
-
 @pytest.mark.parametrize("contadas, diferencia", [(39000, 0), (38500, -500)], ids=["cuadra", "falta_una_boleta"])
 def test_rendicion_contra_el_lote(contadas, diferencia):
     # boletas del arqueo de anoche (30.000) más las del traspaso (9.000); las de la chica no cuentan

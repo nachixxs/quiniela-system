@@ -3,7 +3,7 @@ from typing import Literal
 from uuid import UUID
 
 from pwdlib import PasswordHash
-from sqlalchemy import CheckConstraint, ForeignKey, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, ForeignKey, Index, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,6 +18,7 @@ TipoMovimiento = Literal[
     "retiro_dueno", "traspaso", "traspaso_boletas", "rendicion_boletas",
 ]
 Estado = Literal["abierto", "cerrado"]
+NombreTurno = Literal["mañana", "noche"]  # D3b; configurables recién con §10
 
 
 class Negocio(Base):
@@ -67,13 +68,15 @@ class Turno(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     negocio_id: Mapped[int] = mapped_column(ForeignKey("negocio.id"))
     dia_id: Mapped[int] = mapped_column(ForeignKey("dia_operativo.id"))
-    nombre: Mapped[str]  # mañana | noche; texto porque los turnos son configurables (§10)
+    nombre: Mapped[NombreTurno]
     estado: Mapped[Estado] = mapped_column(default="abierto")
     ticket_terminal: Mapped[dict | None] = mapped_column(JSONB)  # JSON abierto hasta ver un ticket real
 
 
 class Cliente(Base):
     __tablename__ = "cliente"  # el saldo no se guarda: fiado − cobro_fiado (§5.6)
+    __table_args__ = tuple(Index(f"ix_cliente_{c}_trgm", c, postgresql_using="gin", postgresql_ops={c: "gin_trgm_ops"})
+                           for c in ("nombre", "alias"))  # el ILIKE '%q%' de GET /clientes?q=
     id: Mapped[int] = mapped_column(primary_key=True)
     negocio_id: Mapped[int] = mapped_column(ForeignKey("negocio.id"))
     nombre: Mapped[str]
@@ -96,7 +99,8 @@ class Arqueo(Base):
     negocio_id: Mapped[int] = mapped_column(ForeignKey("negocio.id"))
     caja_id: Mapped[int] = mapped_column(ForeignKey("caja.id"))
     turno_id: Mapped[int] = mapped_column(ForeignKey("turno.id"))
-    momento: Mapped[datetime] = mapped_column(server_default=func.now())
+    # clock_timestamp y no now(), que es el inicio de la transacción: el re-anclaje compara momentos
+    momento: Mapped[datetime] = mapped_column(server_default=func.clock_timestamp())
     efectivo_esperado: Mapped[int]
     efectivo_contado: Mapped[int]
     boletas_esperadas: Mapped[int]
@@ -109,7 +113,8 @@ class Arqueo(Base):
 
 class Movimiento(Base):
     __tablename__ = "movimiento"
-    __table_args__ = (CheckConstraint("monto > 0", name="monto_positivo"),)
+    __table_args__ = (CheckConstraint("monto > 0", name="monto_positivo"),
+                      UniqueConstraint("negocio_id", "ref_cliente"))  # idempotencia (CONTRATO-API)
     id: Mapped[int] = mapped_column(primary_key=True)
     negocio_id: Mapped[int] = mapped_column(ForeignKey("negocio.id"))
     dia_id: Mapped[int] = mapped_column(ForeignKey("dia_operativo.id"))
@@ -121,14 +126,14 @@ class Movimiento(Base):
     cliente_id: Mapped[int | None] = mapped_column(ForeignKey("cliente.id"))
     contraparte: Mapped[str | None]
     nota: Mapped[str | None]
-    creado_en: Mapped[datetime] = mapped_column(server_default=func.now())
+    creado_en: Mapped[datetime] = mapped_column(server_default=func.clock_timestamp())
     corresponde_a_fecha: Mapped[date]  # la del día, salvo ajuste tardío (§7.8)
     es_ajuste: Mapped[bool] = mapped_column(default=False)
     explica_arqueo_id: Mapped[int | None] = mapped_column(ForeignKey("arqueo.id"))
     # §7.1: el original nunca se edita; el contra-asiento apunta a él y lleva el motivo
     anula_id: Mapped[int | None] = mapped_column(ForeignKey("movimiento.id"), unique=True)
     motivo_anulacion: Mapped[str | None]
-    ref_cliente: Mapped[UUID | None] = mapped_column(unique=True)  # idempotencia (CONTRATO-API)
+    ref_cliente: Mapped[UUID | None]
 
 
 class LoteRendicion(Base):
