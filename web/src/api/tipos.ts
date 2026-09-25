@@ -10,6 +10,12 @@ export type MovimientoOut = components["schemas"]["MovimientoOut"];
 export type MovimientosPagina = components["schemas"]["MovimientosPagina"];
 export type ArqueoRequest = components["schemas"]["ArqueoRequest"];
 export type ArqueoOut = components["schemas"]["ArqueoOut"];
+export type ReporteMes = components["schemas"]["ReporteMes"];
+export type ResumenMes = components["schemas"]["ResumenMes"];
+export type VentaDia = components["schemas"]["VentaDia"];
+export type DiferenciaItem = components["schemas"]["DiferenciaItem"];
+export type ReporteMercadoPago = components["schemas"]["ReporteMercadoPago"];
+export type RendicionItem = components["schemas"]["RendicionItem"];
 
 // GET /auth/yo no está tipado en el contrato (additionalProperties), CONTRATO-API.md fija esta forma
 export interface Usuario {
