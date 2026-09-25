@@ -201,13 +201,15 @@ def rendiciones(db: Session, negocio_id: int, desde: date | None = None,
 
 
 def _resumen(db: Session, negocio_id: int, desde: date, hasta: date) -> dict:
-    """Un mes de reporte_mes: ventas por juego, un total por tipo sin los internos y los arqueos de sus días."""
+    """Un mes de reporte_mes: ventas por juego, un total por tipo sin los internos y los arqueos de sus días. La
+    diferencia suma solo los con_diferencia: la de un explicado ya está en el total de su tipo (D40)."""
     nombres = dict(db.execute(select(Juego.id, Juego.nombre).where(Juego.negocio_id == negocio_id)).all())
     tipos = dict(db.execute(select(Movimiento.tipo, func.sum(Movimiento.monto)).where(
         *_vivos(negocio_id), Movimiento.corresponde_a_fecha.between(desde, hasta)).group_by(Movimiento.tipo)).all())
     arqueos = db.scalars(_arqueos_por_dia(negocio_id, DiaOperativo.fecha.between(desde, hasta))).all()
     estados = [a.estado for a in arqueos]
-    efectivo, boletas = sum(a.diferencia_efectivo for a in arqueos), sum(a.diferencia_boletas for a in arqueos)
+    abiertos = [a for a in arqueos if a.estado == "con_diferencia"]
+    efectivo, boletas = sum(a.diferencia_efectivo for a in abiertos), sum(a.diferencia_boletas for a in abiertos)
     return {"ventas_por_juego": [{"juego_id": v["juego_id"], "nombre": nombres.get(v["juego_id"], "Quiniela"),
                                   "total": v["total"]} for v in ventas_por_juego(db, negocio_id, desde, hasta, "mes")],
             "total_vendido": sum(tipos.get(t, 0) for t in VENTAS),
