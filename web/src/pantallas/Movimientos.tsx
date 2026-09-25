@@ -11,6 +11,8 @@ const horaFormato = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: 
 const hora = (iso: string) => horaFormato.format(new Date(iso));
 // D31: sin nombre de cliente en el contrato de movimientos, se identifica por id hasta que lo sume.
 const quien = (m: MovimientoOut) => m.contraparte ?? (m.cliente_id ? `Cliente #${m.cliente_id}` : null);
+// Espejo de TIPOS_CARGA (app/operaciones.py:16): lo que el backend rechaza con tipo_no_anulable.
+const NO_ANULABLE = new Set<MovimientoOut["tipo"]>(["apuesta_quiniela", "venta_otro_juego", "traspaso", "traspaso_boletas", "rendicion_boletas"]);
 
 const Reintentar = ({ onClick }: { onClick: () => void }) => (
   <button type="button" onClick={onClick} className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
@@ -115,7 +117,7 @@ export function TarjetaMovimientos() {
           const t = TIPOS[mov.tipo];
           const anulado = anulados.has(mov.id);
           const esContraAsiento = mov.anula_id !== null;
-          const anulable = !anulado && !esContraAsiento;
+          const anulable = !anulado && !esContraAsiento && !NO_ANULABLE.has(mov.tipo);
           return (
             <li key={mov.id} className={FILA}>
               <t.icono className={`size-4 shrink-0 ${t.tono}`} aria-hidden />

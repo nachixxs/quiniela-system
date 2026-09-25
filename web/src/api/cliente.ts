@@ -1,6 +1,7 @@
 import type {
-  ArqueoOut, ArqueoRequest, CajaEstado, ClienteBusqueda, ClienteDetalle,
-  DeudorOut, DiaActualOut, MovimientoCrear, MovimientoOut, MovimientosPagina, Usuario,
+  ArqueoOut, ArqueoRequest, CajaEstado, ClienteBusqueda, ClienteCrear, ClienteDetalle,
+  DeudorOut, DiaActualOut, DiaConTurnos, JuegoOut, MovimientoCrear, MovimientoOut, MovimientosPagina,
+  RendicionOut, RendicionRequest, Saldo, TicketOut, TicketRequest, TraspasoRequest, Usuario,
 } from "./tipos";
 import { ApiError } from "./tipos";
 
@@ -34,4 +35,11 @@ export const api = {
     pedir<MovimientosPagina>("GET", `/movimientos?desde=${p.desde}&hasta=${p.hasta}`),
   anular: (id: number, motivo: string) => pedir<MovimientoOut>("POST", `/movimientos/${id}/anular`, { motivo }),
   arqueo: (a: ArqueoRequest) => pedir<ArqueoOut>("POST", "/arqueo", a),
+  abrirDia: () => pedir<DiaConTurnos>("POST", "/dia/abrir"),
+  cerrarDia: (id: number) => pedir<void>("POST", `/dia/${id}/cerrar`),
+  juegos: () => pedir<JuegoOut[]>("GET", "/juegos"),
+  cargarTicket: (turnoId: number, t: TicketRequest) => pedir<TicketOut>("POST", `/turno/${turnoId}/ticket`, t),
+  traspaso: (t: TraspasoRequest) => pedir<Saldo>("POST", "/traspaso", t),
+  rendicion: (r: RendicionRequest) => pedir<RendicionOut>("POST", "/rendicion", r),
+  crearCliente: (c: ClienteCrear) => pedir<ClienteBusqueda>("POST", "/clientes", c),
 };

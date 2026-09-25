@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
-import { Banknote, CircleCheck, Search, X } from "lucide-react";
+import { Banknote, CircleCheck, Search, UserPlus, X } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
-import type { ClienteBusqueda, MovimientoCrear } from "../api/tipos";
+import { esSinDia, type ClienteBusqueda, type MovimientoCrear } from "../api/tipos";
 import { pesos, uuid } from "../util";
 import { Aviso, Boton, CampoMonto, Hoja, OPCION, PUNTO_RADIO, TARJETA, TIPOS } from "../ui";
+import { AvisoAbrirDia } from "./Dia";
 
 // D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja.
 const TIPOS_PAGO: MovimientoCrear["tipo"][] = ["cobro_mercado_pago", "retiro_dueno", "gasto"];
@@ -31,11 +32,17 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
   const queryClient = useQueryClient();
 
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
+  const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
   const cajaChica = dia.data?.cajas.find((c) => c.tipo === "operativa");
   const clientes = useQuery({
     queryKey: ["clientes-busqueda", busqueda],
     queryFn: () => api.clientes(busqueda),
     enabled: busqueda.length > 0,
+  });
+  // Sin esto, con la base real vacía no se puede fiar a nadie: crea y selecciona en el mismo paso.
+  const crearCliente = useMutation({
+    mutationFn: (nombre: string) => api.crearCliente({ nombre }),
+    onSuccess: (c) => { setCliente(c); setBusqueda(""); setRefCliente(uuid()); },
   });
 
   const guardar = useMutation({
@@ -71,7 +78,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
     return () => clearTimeout(t);
   }, [confirmacion]);
 
-  const listo = !!cajaChica && Number(monto) > 0 && (!seleccion?.requiereCliente || !!cliente);
+  const listo = !sinDia && !!cajaChica && Number(monto) > 0 && (!seleccion?.requiereCliente || !!cliente);
 
   return (
     <>
@@ -161,8 +168,6 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                         <div className="esqueleto h-12" aria-label="Buscando…" />
                       ) : clientes.isError ? (
                         <p className="px-1 text-sm text-peligro">No se pudo buscar. Probá de nuevo.</p>
-                      ) : clientes.data?.length === 0 ? (
-                        <p className="px-1 text-sm text-muted-foreground">Nadie con “{busqueda}”.</p>
                       ) : (
                         <ul className="divide-y overflow-hidden rounded-lg border">
                           {clientes.data?.map((c) => (
@@ -181,15 +186,30 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                               </button>
                             </li>
                           ))}
+                          <li>
+                            <button
+                              type="button"
+                              onClick={() => crearCliente.mutate(busqueda)}
+                              disabled={crearCliente.isPending}
+                              className="flex min-h-12 w-full items-center gap-2 px-3 text-left text-sm font-medium transition-colors hover:bg-muted/60 active:bg-muted disabled:opacity-50"
+                            >
+                              <UserPlus className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                              {crearCliente.isPending ? "Creando…" : `Nuevo cliente: “${busqueda}”`}
+                            </button>
+                          </li>
                         </ul>
+                      )}
+                      {crearCliente.isError && (
+                        <p className="mt-1 px-1 text-sm text-peligro">{crearCliente.error instanceof ApiError ? crearCliente.error.detalle : "No se pudo crear el cliente."}</p>
                       )}
                     </div>
                   )}
                 </div>
               )}
 
-              {dia.isError && <Aviso tono="error">No se pudo traer el día. Revisá la conexión.</Aviso>}
-              {dia.isSuccess && !cajaChica && <Aviso tono="aviso">No hay caja chica abierta: hasta que se abra el día no se puede cargar.</Aviso>}
+              {dia.isError && (esSinDia(dia.error) ? <AvisoAbrirDia /> : <Aviso tono="error">No se pudo traer el día. Revisá la conexión.</Aviso>)}
+              {dia.isSuccess && sinDia && <AvisoAbrirDia />}
+              {dia.isSuccess && !sinDia && !cajaChica && <Aviso tono="aviso">No hay caja chica abierta: hasta que se abra el día no se puede cargar.</Aviso>}
               {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo guardar."}</Aviso>}
 
               <Boton type="submit" cargando={guardar.isPending} disabled={!listo} className="h-12 w-full text-base lg:h-10 lg:text-sm">
