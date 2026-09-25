@@ -44,7 +44,12 @@ Reglas:
 - **Contraste medido** (WCAG 2, en los dos temas, con mezcla de alfa): texto 4,5:1 o más;
   íconos y foco, 3:1 o más. Desvíos de shadcn en claro: `muted-foreground` y `ring`, un punto
   más oscuros (los de shadcn dan 4,35 sobre `muted` y menos de 3:1 como foco). Falla conocida,
-  igual que en shadcn: el borde de `input` no llega a 3:1; el campo se reconoce por su etiqueta.
+  igual que en shadcn: el borde de `input` no llega a 3:1 (1,48:1 sobre `card`); el campo se
+  reconoce por su etiqueta. En claro, `background`/`sidebar` son un gris suave (#f5f5f5) y
+  `card`/`popover` quedan blancos encima; `muted` (#e5e5e5) da un paso más oscuro que el fondo
+  para seguir leyéndose sobre él. Medido: `foreground` 18,2:1 sobre `background` y 15,7:1
+  sobre `muted`; `muted-foreground` 4,7:1 sobre `background`, 6,0:1 sobre `card` y 4,8:1 sobre
+  `muted`.
 
 ## 3. Tipografía
 
@@ -74,7 +79,9 @@ bundle, D26). Cifras tabulares en todo el `body`.
 - **Elevación:** la tarjeta es `TARJETA`: borde de 1 px, fondo `card` y la sombra mínima.
   Solo flotan con `shadow-lg` la hoja, el diálogo y el toast. No hay otras sombras.
 - **Toques:** 44 px o más en el celular (guardar y arquear, 48); la escala de escritorio
-  desde `lg`. Márgenes de 16 px en el celular y 32 en escritorio, contenido centrado.
+  desde `lg`. Márgenes de 16 px en el celular y 32 en escritorio; en escritorio el contenido
+  ocupa el ancho junto a la barra lateral (sin centrar), con un tope de 1600 px para
+  monitores muy anchos. Un formulario puede tener su propio ancho máximo dentro de su tarjeta.
 - **Capas (z-index):** barra de arriba 20, barra inferior 30, hoja 40, toast 50. No hay otras.
 
 ## 5. Estructura
@@ -88,7 +95,8 @@ bundle, D26). Cifras tabulares en todo el `body`.
 - **Navegación por hash** (`#arqueo`, `#carga-rapida`, `#cuenta-corriente`): el botón atrás
   funciona y cada pantalla tiene su URL. Cada pantalla, salvo Inicio, abre con título y una
   línea que explica para qué es.
-- **Hoja:** sube desde abajo en el celular (se cierra arrastrándola); diálogo centrado en escritorio.
+- **Hoja:** diálogo centrado en todos los tamaños, con margen a los costados en el celular y
+  alto máximo en dvh para no tapar el teclado.
 
 ## 6. Pantallas
 
@@ -138,8 +146,7 @@ un botón que está guardando, que es funcional.
 | Toque (`presiona`) | Se hunde apenas al apretar | Confirma el toque en el momento |
 | Cambio de pantalla | Solo un fundido corto | Se navega todo el tiempo |
 | Indicadores activos | `layoutId`, resorte sin rebote | Muestra de dónde a dónde |
-| Hoja (celular) | Resorte desde abajo; al soltarla sale con la velocidad del dedo | Sin costura entre arrastre y animación |
-| Diálogo (escritorio) | Opacidad y escala desde 0,96 | Nunca desde escala 0 |
+| Hoja / diálogo | Opacidad y escala desde 0,96 | Nunca desde escala 0 |
 | Aviso | Opacidad y 4 px | Aparece sin empujar |
 | Toast | Baja desde arriba y se va por el mismo lado | Confirma sin tapar la próxima carga |
 | Resultado del arqueo | Resorte de entrada, las filas en cascada corta y el tilde que se dibuja | Es el momento del día y se ve cuatro veces |

@@ -8,14 +8,14 @@
   --font-sans: "Geist Variable", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 
-  --color-background: #ffffff;
+  --color-background: #f5f5f5;
   --color-foreground: #0a0a0a;
   --color-card: #ffffff;
-  --color-sidebar: #fafafa;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #6e6e6e;
-  --color-border: #e5e5e5;
-  --color-input: #e5e5e5;
+  --color-sidebar: #f5f5f5;
+  --color-muted: #e5e5e5;
+  --color-muted-foreground: #636363;
+  --color-border: #d4d4d4;
+  --color-input: #d4d4d4;
   --color-ring: #737373;
   --color-primary: #171717;
   --color-primary-foreground: #fafafa;

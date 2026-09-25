@@ -117,7 +117,7 @@ export function Arqueo() {
           e.preventDefault();
           if (!faltan.length && !sinTicket) guardar.mutate();
         }}
-        className="flex flex-col gap-6 lg:rounded-xl lg:border lg:bg-card lg:p-6 lg:shadow-xs"
+        className="flex flex-col gap-6 lg:max-w-2xl lg:rounded-xl lg:border lg:bg-card lg:p-6 lg:shadow-xs"
       >
         <fieldset>
           <legend className="mb-2 text-sm font-medium">Caja</legend>

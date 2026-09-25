@@ -94,7 +94,7 @@ export function Inicio() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 lg:gap-4 xl:grid-cols-[2fr_2fr_1fr_1fr]">
+      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-[2fr_2fr_1fr_1fr] lg:gap-4">
         {cajas.isLoading && [0, 1].map((i) => <div key={i} className="esqueleto col-span-2 h-[146px] sm:col-span-1" />)}
         {cajas.data?.map((c) => <TarjetaCaja key={c.id} c={c} />)}
         {cajas.isError && (
