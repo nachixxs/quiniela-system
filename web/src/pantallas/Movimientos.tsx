@@ -6,15 +6,15 @@ import type { MovimientoOut } from "../api/tipos";
 import { pesos } from "../util";
 import { Aviso, Boton, Hoja, INSIGNIA, TARJETA, TIPOS, TONOS } from "../ui";
 
-const FILA = "flex min-h-14 items-center gap-3 px-4 py-2.5 lg:px-5";
+export const FILA = "flex min-h-14 items-center gap-3 px-4 py-2.5 lg:px-5";
 const horaFormato = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" });
-const hora = (iso: string) => horaFormato.format(new Date(iso));
+export const hora = (iso: string) => horaFormato.format(new Date(iso));
 // D41: cliente_nombre puede venir null aunque haya cliente_id; en ese caso no se inventa texto.
 const quien = (m: MovimientoOut) => m.contraparte ?? m.cliente_nombre ?? null;
 // Espejo de TIPOS_CARGA (app/operaciones.py:16): lo que el backend rechaza con tipo_no_anulable.
 const NO_ANULABLE = new Set<MovimientoOut["tipo"]>(["apuesta_quiniela", "venta_otro_juego", "traspaso", "traspaso_boletas", "rendicion_boletas"]);
 
-const Reintentar = ({ onClick }: { onClick: () => void }) => (
+export const Reintentar = ({ onClick }: { onClick: () => void }) => (
   <button type="button" onClick={onClick} className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
     Reintentar
   </button>
@@ -61,9 +61,7 @@ function HojaAnular({ mov, onCerrar, onExito }: { mov: MovimientoOut; onCerrar: 
   );
 }
 
-// Últimos movimientos del día (D31): tarjeta siempre presente, con sus tres estados y la
-// acción de anular por fila. Nuevos primero; un movimiento anulado se ve tachado, y su
-// contra-asiento marca a qué movimiento corresponde.
+// Últimos movimientos del día (D31).
 export function TarjetaMovimientos() {
   const [aAnular, setAAnular] = useState<MovimientoOut | null>(null);
   const [avisoExito, setAvisoExito] = useState<string | null>(null);

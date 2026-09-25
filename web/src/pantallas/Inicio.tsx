@@ -8,14 +8,8 @@ import { fechaLarga, pesos } from "../util";
 import { Aviso, Boton, INSIGNIA, TARJETA, TONOS } from "../ui";
 import { BOTONES, Carga, type BotonCarga } from "./CargaRapida";
 import { AccionesDia, TarjetaAbrirDia, type AccionDia } from "./Dia";
-import { TarjetaMovimientos } from "./Movimientos";
+import { FILA, Reintentar, TarjetaMovimientos } from "./Movimientos";
 
-const Reintentar = ({ onClick }: { onClick: () => void }) => (
-  <button type="button" onClick={onClick} className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
-    Reintentar
-  </button>
-);
-const FILA = "flex min-h-14 items-center gap-3 px-4 py-2.5 lg:px-5";
 const diasDesde = (d: number) => (d === 0 ? "Desde hoy" : `Hace ${d} ${d === 1 ? "día" : "días"}`);
 
 // Tarjeta de indicador: título chico con su ícono a la derecha, el dato grande y el detalle debajo.
@@ -69,7 +63,6 @@ export function Inicio() {
   const deudores = useQuery({ queryKey: ["deudores", "monto"], queryFn: () => api.deudores("monto") });
   const conDeuda = deudores.data?.filter((d) => d.saldo > 0);
   const pendientes = dia.data ? dia.data.arqueos_pendientes.length + (dia.data.rendicion_pendiente ? 1 : 0) : 0;
-  const nombreArqueo = (a: string) => `Arqueo ${a.replace(/_/g, " ")}`;
   const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
   // Traspaso disponible una vez que la caja chica se arqueó en algún turno, porque ese arqueo lo cierra (D3).
   const puedeTraspasar = !!dia.data?.turnos.some((t) => t.estado === "cerrado");
@@ -187,7 +180,7 @@ export function Inicio() {
               <li key={a}>
                 <a href="#arqueo" className={`${FILA} transition-colors hover:bg-muted/50 active:bg-muted`}>
                   <Calculator className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="min-w-0 flex-1 text-sm font-medium first-letter:uppercase">{nombreArqueo(a)}</span>
+                  <span className="min-w-0 flex-1 text-sm font-medium first-letter:uppercase">{`Arqueo ${a.replace(/_/g, " ")}`}</span>
                   <span className={`${INSIGNIA} ${TONOS.aviso}`}>Pendiente</span>
                   <ChevronRight className="-mr-1 size-4 text-muted-foreground" aria-hidden />
                 </a>
