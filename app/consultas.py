@@ -2,7 +2,7 @@
 filtra por negocio_id (§7.4) y la plata la cuenta motor.py. Devuelven dicts o filas del ORM con los campos de los
 schemas de salida; lo que no existe es NoEncontrado, como en operaciones.py."""
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from operator import eq, ge, gt, le
 
 from sqlalchemy import func, or_, select
@@ -14,6 +14,10 @@ from app.operaciones import ARGENTINA, VENTAS, NoEncontrado, _mov, control, obte
 
 POR_PAGINA = 50
 PERIODOS = {"dia": "%Y-%m-%d", "semana": "%G-W%V", "mes": "%Y-%m"}  # semana ISO: 2026-W39
+TOTALES_MES = {"cobros_fiado": "cobro_fiado", "cobros_subagente": "cobro_subagente",
+               "ingresos_del_dueno": "ingreso_del_dueno", "premios_pagados": "pago_premio",
+               "cobros_mercado_pago": "cobro_mercado_pago", "pagos_banco": "pago_banco", "sueldos": "sueldo",
+               "gastos": "gasto", "retiros_dueno": "retiro_dueno", "fiado": "fiado"}  # clave del contrato: tipo
 
 
 def _si(*filtros) -> list:
@@ -194,3 +198,36 @@ def rendiciones(db: Session, negocio_id: int, desde: date | None = None,
         LoteRendicion.negocio_id == negocio_id,
         *_si((LoteRendicion.fecha, ge, desde), (LoteRendicion.fecha, le, hasta))
     ).order_by(LoteRendicion.fecha.desc())).all()
+
+
+def _resumen(db: Session, negocio_id: int, desde: date, hasta: date) -> dict:
+    """Un mes de reporte_mes: ventas por juego, un total por tipo sin los internos y los arqueos de sus días."""
+    nombres = dict(db.execute(select(Juego.id, Juego.nombre).where(Juego.negocio_id == negocio_id)).all())
+    tipos = dict(db.execute(select(Movimiento.tipo, func.sum(Movimiento.monto)).where(
+        *_vivos(negocio_id), Movimiento.corresponde_a_fecha.between(desde, hasta)).group_by(Movimiento.tipo)).all())
+    arqueos = db.scalars(_arqueos_por_dia(negocio_id, DiaOperativo.fecha.between(desde, hasta))).all()
+    estados = [a.estado for a in arqueos]
+    efectivo, boletas = sum(a.diferencia_efectivo for a in arqueos), sum(a.diferencia_boletas for a in arqueos)
+    return {"ventas_por_juego": [{"juego_id": v["juego_id"], "nombre": nombres.get(v["juego_id"], "Quiniela"),
+                                  "total": v["total"]} for v in ventas_por_juego(db, negocio_id, desde, hasta, "mes")],
+            "total_vendido": sum(tipos.get(t, 0) for t in VENTAS),
+            **{clave: tipos.get(tipo, 0) for clave, tipo in TOTALES_MES.items()},
+            "arqueos_hechos": len(arqueos), "arqueos_cuadran": estados.count("cuadra"),
+            "arqueos_con_diferencia": estados.count("con_diferencia"), "arqueos_explicados": estados.count("explicada"),
+            "diferencia_efectivo": efectivo, "diferencia_boletas": boletas, "diferencia_total": efectivo + boletas}
+
+
+def reporte_mes(db: Session, negocio_id: int, mes: date) -> dict:
+    """GET /reportes/mes/{mes} (D39), `mes` el primer día: ese mes y el anterior con la misma forma, lo que deben hoy
+    los clientes y las ventas de cada día del mes, 0 si no hubo. Los movimientos van por corresponde_a_fecha y los
+    arqueos por su día operativo; traspasos y rendición quedan afuera (internos)."""
+    siguiente = (mes + timedelta(days=31)).replace(day=1)
+    ultimo = siguiente - timedelta(days=1)
+    por_dia = dict(db.execute(select(Movimiento.corresponde_a_fecha, func.sum(Movimiento.monto)).where(
+        *_vivos(negocio_id), Movimiento.tipo.in_(VENTAS), Movimiento.corresponde_a_fecha.between(mes, ultimo))
+        .group_by(Movimiento.corresponde_a_fecha)).all())
+    dias = (mes + timedelta(days=i) for i in range(ultimo.day))
+    return {"mes": mes.strftime(PERIODOS["mes"]), "actual": _resumen(db, negocio_id, mes, ultimo),
+            "anterior": _resumen(db, negocio_id, (mes - timedelta(days=1)).replace(day=1), mes - timedelta(days=1)),
+            "deuda_total_hoy": sum(d["saldo"] for d in deudores(db, negocio_id)),
+            "ventas_por_dia": [{"fecha": d, "total": por_dia.get(d, 0)} for d in dias]}
