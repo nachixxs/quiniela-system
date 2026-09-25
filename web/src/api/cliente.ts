@@ -1,6 +1,7 @@
 import type {
   ArqueoOut, ArqueoRequest, CajaEstado, ClienteBusqueda, ClienteDetalle,
-  DeudorOut, DiaActualOut, MovimientoCrear, MovimientoOut, MovimientosPagina, Usuario,
+  DeudorOut, DiaActualOut, DiferenciaItem, MovimientoCrear, MovimientoOut, MovimientosPagina,
+  RendicionItem, ReporteMercadoPago, ReporteMes, Usuario,
 } from "./tipos";
 import { ApiError } from "./tipos";
 
@@ -22,6 +23,12 @@ export { ApiError };
 
 export const api = {
   login: (usuario: string, password: string) => pedir<void>("POST", "/auth/login", { usuario, password }),
+  reportesMes: (mes: string) => pedir<ReporteMes>("GET", `/reportes/mes/${mes}`),
+  reportesMercadoPago: () => pedir<ReporteMercadoPago>("GET", "/reportes/mercado-pago"),
+  reportesDiferencias: (p: { desde: string; hasta: string }) =>
+    pedir<DiferenciaItem[]>("GET", `/reportes/diferencias?desde=${p.desde}&hasta=${p.hasta}`),
+  reportesRendiciones: (p: { desde: string; hasta: string }) =>
+    pedir<RendicionItem[]>("GET", `/reportes/rendiciones?desde=${p.desde}&hasta=${p.hasta}`),
   logout: () => pedir<void>("POST", "/auth/logout"),
   yo: () => pedir<Usuario>("GET", "/auth/yo"),
   diaActual: () => pedir<DiaActualOut>("GET", "/dia/actual"),
