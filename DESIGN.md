@@ -20,9 +20,7 @@ color aparece solo cuando algo tiene significado. Nada compite con los montos.
 ## 2. Color
 
 Los colores son **roles**: el tema oscuro reasigna los mismos nombres y ningún componente
-escribe un hex. Los nombres son los de shadcn (`background`, `foreground`, `card`, `sidebar`,
-`muted`, `muted-foreground`, `border`, `input`, `ring`, `primary`, `primary-foreground`) más
-cuatro de significado:
+escribe un hex. Los nombres son los de shadcn más cuatro de significado:
 
 | Token | Significa | Dónde |
 |---|---|---|
@@ -37,7 +35,7 @@ Reglas:
   lleno. Las insignias van tintadas al 8 %, los avisos al 5 % con borde y el texto del aviso
   queda en `foreground`.
 - **La selección es neutra.** Opción elegida: borde en `foreground`. Ítem activo de la
-  barra lateral y fila elegida: `muted`. El segmentado: una pastilla en `background`
+  barra lateral y fila elegida: `muted`. El segmentado: una pastilla en `card`
   sobre `muted`. Ningún color de estado marca selección.
 - **Botón primario:** uno por vista y siempre `primary`. Lo demás es secundario (con borde).
   Deshabilitado = fondo `muted` y texto `muted-foreground`, con el motivo escrito debajo.
@@ -46,7 +44,7 @@ Reglas:
   más oscuros (los de shadcn dan 4,35 sobre `muted` y menos de 3:1 como foco). Falla conocida,
   igual que en shadcn: el borde de `input` no llega a 3:1 (1,48:1 sobre `card`); el campo se
   reconoce por su etiqueta. En claro, `background`/`sidebar` son un gris suave (#f5f5f5) y
-  `card`/`popover` quedan blancos encima; `muted` (#e5e5e5) da un paso más oscuro que el fondo
+  `card` queda blanco encima; `muted` (#e5e5e5) da un paso más oscuro que el fondo
   para seguir leyéndose sobre él. Medido: `foreground` 18,2:1 sobre `background` y 15,7:1
   sobre `muted`; `muted-foreground` 4,7:1 sobre `background`, 6,0:1 sobre `card` y 4,8:1 sobre
   `muted`.
@@ -55,16 +53,6 @@ Reglas:
 
 **Geist** para el texto y **Geist Mono** para toda cifra de plata (las dos variables y en el
 bundle, D26). Cifras tabulares en todo el `body`.
-
-| Uso | Tamaño | Peso |
-|---|---|---|
-| Título de pantalla | 24 px (22 en celular), `tracking-tight` | 600 |
-| Monto de indicador o saldo | 24 a 30 px, mono | 600 |
-| Campo de carga (el monto que se tipea) | 32 px, mono | 600 |
-| Título de tarjeta o de hoja | 14 a 16 px | 500 a 600 |
-| Cuerpo, filas | 14 px | 500 |
-| Descripción, detalle | 12 a 14 px, `muted-foreground` | 400 |
-| Rótulo (`rotulo`) | 11 px, mayúsculas, con aire | 500 |
 
 - **Todo monto** pasa por `pesos()` (`util.ts`), va en `monto` (mono) y en listas se alinea a
   la derecha. Las diferencias llevan signo explícito (`pesos(x, true)`). El frontend no
@@ -95,14 +83,9 @@ bundle, D26). Cifras tabulares en todo el `body`.
 - **Navegación por hash** (`#arqueo`, `#carga-rapida`, `#cuenta-corriente`): el botón atrás
   funciona y cada pantalla tiene su URL. Cada pantalla, salvo Inicio, abre con título y una
   línea que explica para qué es.
-- **Hoja:** diálogo centrado en todos los tamaños, con margen a los costados en el celular y
-  alto máximo en dvh para no tapar el teclado.
 
 ## 6. Pantallas
 
-- **Inicio:** saludo, las cuatro cargas, los indicadores (las dos cajas con su esperado,
-  pendientes y fiados), "Estado del día" (turnos, rendición, arqueos que enlazan al arqueo)
-  y los tres fiados más grandes.
 - **Caja chica sin ticket (D27, SPECS §7.3):** insignia "Sin ticket", Efectivo dice "Al
   cargar el ticket", solo las boletas llevan monto y no hay esperado. Nunca un efectivo
   parcial. Se sabe porque la caja operativa llega con `esperado` nulo.
@@ -111,16 +94,12 @@ bundle, D26). Cifras tabulares en todo el `body`.
   transferencia" (la de por defecto), "Retiro del dueño" y "Gasto". Al guardar aparece un
   toast con el monto y el cliente.
 - **Arqueo:** caja (opciones con radio), turno (segmentado) y los dos conteos. En escritorio
-  son dos columnas: el formulario en tarjeta y el resultado al lado. Es un arqueo a ciegas:
-  el esperado no se ve antes de contar.
+  son dos columnas: el formulario en tarjeta y el resultado al lado.
   Botón bloqueado = motivo a la vista (qué falta, o turno sin ticket). **Resultado (D2):**
   "Cuadra" o "No cuadra"; efectivo y boletas (esperado y diferencia) bajo rótulos, y la
   fila "Diferencia total". Diferencia ≠ 0 en `peligro`; cuadra solo si las dos dan cero.
   Con el resultado a la vista el botón queda deshabilitado; cualquier cambio lo borra.
-- **Cuenta corriente:** un segmentado para el orden y una tabla en tarjeta (Cliente, Días,
-  Saldo) con cabecera en `muted`; a favor, el valor absoluto en `exito`. El detalle (hoja
-  en el celular, panel fijo en escritorio): rótulo "Deuda" o "A favor", saldo, cobro total o
-  parcial y los movimientos con el ícono de cada tipo.
+- **Cuenta corriente:** a favor, el valor absoluto en `exito`.
 
 ## 7. Componentes compartidos
 
