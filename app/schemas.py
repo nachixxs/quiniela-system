@@ -101,6 +101,7 @@ class MovimientoOut(OrmModel):
     caja_id: int
     turno_id: int
     cliente_id: int | None
+    cliente_nombre: str | None = None
     juego_id: int | None
     contraparte: str | None
     nota: str | None
