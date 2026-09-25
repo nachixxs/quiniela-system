@@ -685,6 +685,8 @@ export interface components {
             turno_id: number;
             /** Cliente Id */
             cliente_id: number | null;
+            /** Cliente Nombre */
+            cliente_nombre?: string | null;
             /** Juego Id */
             juego_id: number | null;
             /** Contraparte */

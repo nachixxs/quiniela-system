@@ -2435,6 +2435,17 @@
             ],
             "title": "Cliente Id"
           },
+          "cliente_nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Nombre"
+          },
           "juego_id": {
             "anyOf": [
               {
