@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LazyMotion, MotionConfig, domMax } from "motion/react";
 import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
 import { UsuarioProvider } from "./contexto/usuario";
 import { App } from "./App";
 import "./index.css";
