@@ -15,7 +15,7 @@ import { type Tema, aplicarTema, fechaLarga, temaInicial } from "./util";
 import { Boton, EASE_SALIDA, INSIGNIA, TARJETA, TONOS } from "./ui";
 
 // D46: un error de render no puede dejar la app en blanco (pasó en Reportes, 4.9).
-class LimiteDeError extends Component<{ children: ReactNode }, { error: boolean }> {
+export class LimiteDeError extends Component<{ children: ReactNode }, { error: boolean }> {
   state = { error: false };
   static getDerivedStateFromError(e: unknown) { console.error(e); return { error: true }; }
   render() {
@@ -60,10 +60,6 @@ function Marca({ nombre }: { nombre: string }) {
 }
 
 export function App() {
-  return <LimiteDeError><AppInterna /></LimiteDeError>;
-}
-
-function AppInterna() {
   const { usuario, cargando, setUsuario } = useUsuario();
   const queryClient = useQueryClient();
   const [pantalla, setPantalla] = useState<Pantalla>(pantallaDeHash);
