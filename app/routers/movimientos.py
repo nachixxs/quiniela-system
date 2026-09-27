@@ -1,6 +1,8 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app import consultas, operaciones
@@ -22,7 +24,8 @@ def crear_movimiento(datos: MovimientoCrear, usuario: Usuario = Depends(usuario_
 def listar_movimientos(usuario: Usuario = Depends(usuario_actual), db: Session = Depends(get_db),
                         turno_id: int | None = None, caja_id: int | None = None,
                         tipo: TipoMovimiento | None = None, cliente_id: int | None = None,
-                        desde: date | None = None, hasta: date | None = None, pagina: int = 1):
+                        desde: date | None = None, hasta: date | None = None,
+                        pagina: Annotated[int, Query(lt=2**31)] = 1):
     return consultas.movimientos(db, usuario.negocio_id, turno_id=turno_id, caja_id=caja_id, tipo=tipo,
                                   cliente_id=cliente_id, desde=desde, hasta=hasta, pagina=pagina)
 

@@ -44,7 +44,7 @@ def reporte_rendiciones(usuario: Usuario = Depends(usuario_actual), db: Session 
 
 
 @router.get("/mes/{mes}", response_model=ReporteMes)
-def reporte_mes(mes: Annotated[str, Path(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")],
+def reporte_mes(mes: Annotated[str, Path(pattern=r"^20\d{2}-(0[1-9]|1[0-2])$")],
                  usuario: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)):
     año, mes_num = mes.split("-")
     return consultas.reporte_mes(db, usuario.negocio_id, date(int(año), int(mes_num), 1))
