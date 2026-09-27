@@ -60,10 +60,10 @@ def _mov(m: Movimiento, padres: dict) -> motor.Mov:
 
 def _turno(db: Session, negocio_id: int, abierto: bool = True) -> Turno:
     """Primer turno abierto del día abierto; con `abierto=False` y ninguno abierto, el último (traspaso 20:20).
-    Bloquea los turnos del día hasta el commit: se llama antes de leer, y dos escrituras del negocio van en fila."""
+    Bloquea el día y sus turnos hasta el commit: se llama antes de leer, y dos escrituras del negocio van en fila."""
     turnos = db.scalars(select(Turno).join(DiaOperativo, Turno.dia_id == DiaOperativo.id).where(
         Turno.negocio_id == negocio_id, DiaOperativo.estado == "abierto").order_by(Turno.id)
-        .with_for_update(of=Turno)).all()
+        .with_for_update(of=(Turno, DiaOperativo))).all()
     candidatos = [t for t in turnos if t.estado == "abierto"] or ([] if abierto else turnos[-1:])
     if not candidatos:
         raise Conflicto("sin_turno_abierto", "No hay un turno abierto.")
@@ -122,7 +122,7 @@ def abrir_dia(db: Session, negocio_id: int, fecha: date | None = None) -> tuple[
 
 def cerrar_dia(db: Session, negocio_id: int, dia_id: int) -> None:
     """POST /dia/{id}/cerrar: no cierra con turnos abiertos (§7.7) y no tiene vuelta atrás (§7.8)."""
-    dia = obtener(db, DiaOperativo, negocio_id, dia_id)
+    dia = obtener(db, DiaOperativo, negocio_id, dia_id, bloquear=True)  # en fila con _turno
     if db.scalar(select(Turno.id).where(Turno.negocio_id == negocio_id, Turno.dia_id == dia.id,
                                         Turno.estado == "abierto")):
         raise Conflicto("turnos_abiertos", "Un día no se cierra con turnos abiertos: falta arquear la caja chica.")
@@ -256,6 +256,8 @@ def guardar_arqueo(db: Session, negocio_id: int, caja_id: int, turno_id: int, ef
     if operativa and turno_id != _turno(db, negocio_id).id:
         raise Conflicto("turno_no_actual", "El arqueo de la caja chica cierra el turno abierto.")
     turno = obtener(db, Turno, negocio_id, turno_id, bloquear=True)  # la grande no pasa por _turno
+    if turno.dia_id != db.scalar(select(func.max(DiaOperativo.id)).where(DiaOperativo.negocio_id == negocio_id)):
+        raise Conflicto("turno_no_actual", "El arqueo va en un turno del día actual: un faltante no pasa a otro día.")
     if efectivo_contado < 0 or boletas_contadas < 0:
         raise Invalido("monto_invalido", "Lo contado no puede ser negativo.")
     esperado = motor.esperado(caja.id, *control(db, negocio_id, caja), operativa)
