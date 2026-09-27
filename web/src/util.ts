@@ -14,6 +14,8 @@ const formatoFecha = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "n
 const formatoCorto = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short" });
 export const fechaLarga = (f: string) => formatoFecha.format(new Date(`${f}T12:00:00`)).replace(",", "");
 export const fechaCorta = (f: string) => formatoCorto.format(new Date(`${f}T12:00:00`)).replace(".", "");
+// Instante ISO completo (con hora, ej. de un ingreso del dueño) → fecha corta en el huso horario local.
+export const fechaHoraCorta = (iso: string) => formatoCorto.format(new Date(iso)).replace(".", "");
 
 // Hoy en la zona horaria local (no UTC, a diferencia de Date#toISOString).
 export function fechaHoy(): string {

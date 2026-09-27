@@ -116,7 +116,7 @@ export function Inicio() {
       </div>
 
       <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-2 lg:gap-4">
-        {sinDia ? <TarjetaAbrirDia /> : (
+        {sinDia ? <TarjetaAbrirDia cerrado={dia.data?.dia.estado === "cerrado" ? dia.data.dia : undefined} /> : (
         <section className={`${TARJETA} overflow-hidden`} aria-labelledby="estado-dia">
           <div className="px-4 pb-2 pt-4 lg:px-5 lg:pt-5">
             <h2 id="estado-dia" className="font-medium">Estado del día</h2>

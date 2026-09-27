@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { api, ApiError } from "../api/cliente";
 import type { RendicionOut, Saldo, TicketOut, TurnoOut } from "../api/tipos";
-import { pesos } from "../util";
+import { fechaLarga, pesos } from "../util";
 import { Aviso, Boton, CampoMonto, Hoja, TARJETA } from "../ui";
 
 const BOTON = "h-12 w-full text-base lg:h-10 lg:text-sm";
@@ -18,15 +18,20 @@ export function AvisoAbrirDia() {
 }
 
 // Tarjeta de Inicio cuando no hay día abierto (§3): sin ella no hay turnos, cajas ni nada que cargar.
-export function TarjetaAbrirDia() {
+// `cerrado` llega cuando el día actual existe pero ya se cerró: se ofrece abrir el siguiente.
+export function TarjetaAbrirDia({ cerrado }: { cerrado?: { fecha: string } }) {
   const abrir = useMutation({ mutationFn: api.abrirDia });
   return (
     <section className={`${TARJETA} flex flex-col items-center gap-3 p-8 text-center`}>
-      <h2 className="text-lg font-semibold tracking-tight">Todavía no se abrió el día</h2>
-      <p className="max-w-sm text-sm text-muted-foreground">Abrí el día para crear los turnos de mañana y noche y empezar a cargar movimientos.</p>
+      <h2 className="text-lg font-semibold tracking-tight">
+        {cerrado ? `El día ${fechaLarga(cerrado.fecha)} está cerrado` : "Todavía no se abrió el día"}
+      </h2>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        {cerrado ? "Abrí el día siguiente para crear sus turnos y empezar a cargar movimientos." : "Abrí el día para crear los turnos de mañana y noche y empezar a cargar movimientos."}
+      </p>
       {abrir.isError && <Aviso tono="error">{abrir.error instanceof ApiError ? abrir.error.detalle : "No se pudo abrir el día."}</Aviso>}
       <Boton type="button" cargando={abrir.isPending} onClick={() => abrir.mutate()} className="h-12 px-6 text-base lg:h-10 lg:text-sm">
-        {abrir.isPending ? "Abriendo…" : "Abrir el día"}
+        {abrir.isPending ? "Abriendo…" : cerrado ? "Abrir el día siguiente" : "Abrir el día"}
       </Boton>
     </section>
   );

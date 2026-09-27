@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "../api/cliente";
 import type { MovimientoOut, ResumenMes } from "../api/tipos";
-import { fechaCorta, fechaHoy, pesos } from "../util";
+import { fechaCorta, fechaHoraCorta, fechaHoy, pesos } from "../util";
 import { Aviso, INSIGNIA, TARJETA, TIPOS, TONOS } from "../ui";
 import { hora, Reintentar } from "./Movimientos";
 
@@ -146,8 +146,9 @@ export function Reportes() {
   const mp = useQuery({ queryKey: ["reportes-mp"], queryFn: api.reportesMercadoPago });
   const diferencias = useQuery({ queryKey: ["reportes-diferencias", mes], queryFn: () => api.reportesDiferencias({ desde, hasta }) });
   const rendiciones = useQuery({ queryKey: ["reportes-rendiciones", mes], queryFn: () => api.reportesRendiciones({ desde, hasta }) });
-  const hoy = fechaHoy();
-  const dia = useQuery({ queryKey: ["reportes-dia", hoy], queryFn: () => api.reportesDia(hoy) });
+  const diaActual = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
+  const fechaDia = diaActual.data?.dia.fecha ?? fechaHoy();
+  const dia = useQuery({ queryKey: ["reportes-dia", fechaDia], queryFn: () => api.reportesDia(fechaDia) });
   const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
   const nombreCaja = (id: number) => cajas.data?.find((c) => c.id === id)?.nombre ?? `Caja #${id}`;
   const grupos = cierre.data ? construirGrupos(cierre.data.actual, cierre.data.anterior, cierre.data.deuda_total_hoy) : null;
@@ -193,7 +194,7 @@ export function Reportes() {
         {mp.data && (
           <div className="mt-3">
             <p className="monto text-2xl font-semibold">{pesos(mp.data.acumulado)}</p>
-            <p className="text-xs text-muted-foreground">{mp.data.desde ? `Desde ${fechaCorta(mp.data.desde)}` : "Todavía no hubo ingresos del dueño"}</p>
+            <p className="text-xs text-muted-foreground">{mp.data.desde ? `Desde ${fechaHoraCorta(mp.data.desde)}` : "Todavía no hubo ingresos del dueño"}</p>
           </div>
         )}
       </section>
