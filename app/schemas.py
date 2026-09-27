@@ -59,7 +59,7 @@ class DiaConTurnos(BaseModel):
 
 class JuegoMonto(BaseModel):
     juego_id: int
-    monto: int
+    monto: int = Field(lt=2**31)
 
 
 class TicketRequest(BaseModel):
