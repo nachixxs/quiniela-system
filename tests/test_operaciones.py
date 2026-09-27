@@ -121,6 +121,19 @@ def test_el_dia_no_cierra_con_turnos_abiertos(db, agencia):  # §7.7
     assert db.get(DiaOperativo, agencia.dia).estado == "abierto"
 
 
+def test_el_arqueo_de_la_grande_no_va_a_un_dia_anterior(db, agencia):
+    """Un faltante de hoy arqueado en un turno de ayer saldría del cierre del mes y re-anclaría la caja."""
+    a = agencia
+    for turno, quiniela in ((a.manana, 50000), (a.noche, 80000)):
+        op.cargar_ticket(db, a.n, turno, quiniela, [])
+        op.guardar_arqueo(db, a.n, a.chica, turno, 0, 0)
+    op.cerrar_dia(db, a.n, a.dia)
+    op.guardar_arqueo(db, a.n, a.grande, a.noche, 0, 0)  # con el día cerrado y sin otro abierto, vale
+    op.abrir_dia(db, a.n, date(2026, 9, 23))
+    with pytest.raises(op.Conflicto, match="día actual"):
+        op.guardar_arqueo(db, a.n, a.grande, a.noche, 0, 0)
+
+
 def test_saldo_del_cliente_sin_anulados_y_a_favor(db, agencia):  # §5.6
     a = agencia
     fiado = mov(db, a, "fiado", 4000, cliente_id=a.cliente)

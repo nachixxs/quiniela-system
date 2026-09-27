@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { m } from "motion/react";
@@ -12,7 +12,24 @@ import { Arqueo } from "./pantallas/Arqueo";
 import { CuentaCorriente } from "./pantallas/CuentaCorriente";
 import { Reportes } from "./pantallas/Reportes";
 import { type Tema, aplicarTema, fechaLarga, temaInicial } from "./util";
-import { EASE_SALIDA, INSIGNIA, TONOS } from "./ui";
+import { Boton, EASE_SALIDA, INSIGNIA, TARJETA, TONOS } from "./ui";
+
+// D46: un error de render no puede dejar la app en blanco (pasó en Reportes, 4.9).
+export class LimiteDeError extends Component<{ children: ReactNode }, { error: boolean }> {
+  state = { error: false };
+  static getDerivedStateFromError(e: unknown) { console.error(e); return { error: true }; }
+  render() {
+    return this.state.error ? (
+      <div className="grid min-h-dvh place-items-center p-4">
+        <div className={`${TARJETA} max-w-sm p-6 text-center`}>
+          <h1 className="text-lg font-semibold tracking-tight">Algo falló</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Recargá la página. Si vuelve a pasar, avisá qué estabas haciendo.</p>
+          <Boton onClick={() => location.reload()} className="mt-4 w-full">Recargar</Boton>
+        </div>
+      </div>
+    ) : this.props.children;
+  }
+}
 
 type Pantalla = "inicio" | "carga-rapida" | "arqueo" | "cuenta-corriente" | "reportes";
 const pantallaDeHash = (): Pantalla => {

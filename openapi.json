@@ -533,6 +533,7 @@
             "required": false,
             "schema": {
               "type": "integer",
+              "exclusiveMaximum": 2147483648,
               "default": 1,
               "title": "Pagina"
             }
@@ -1608,7 +1609,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "pattern": "^20\\d{2}-(0[1-9]|1[0-2])$",
               "title": "Mes"
             }
           },
@@ -1803,10 +1804,12 @@
           },
           "efectivo_contado": {
             "type": "integer",
+            "exclusiveMaximum": 2147483648.0,
             "title": "Efectivo Contado"
           },
           "boletas_contadas": {
             "type": "integer",
+            "exclusiveMaximum": 2147483648.0,
             "title": "Boletas Contadas"
           },
           "nota": {
@@ -2241,6 +2244,7 @@
           },
           "monto": {
             "type": "integer",
+            "exclusiveMaximum": 2147483648.0,
             "title": "Monto"
           }
         },
@@ -2313,6 +2317,7 @@
           },
           "monto": {
             "type": "integer",
+            "exclusiveMaximum": 2147483648.0,
             "title": "Monto"
           },
           "caja_id": {
@@ -2667,6 +2672,7 @@
         "properties": {
           "boletas_contadas": {
             "type": "integer",
+            "exclusiveMaximum": 2147483648.0,
             "title": "Boletas Contadas"
           }
         },
@@ -2920,6 +2926,7 @@
         "properties": {
           "quiniela": {
             "type": "integer",
+            "exclusiveMaximum": 2147483648.0,
             "title": "Quiniela"
           },
           "juegos": {

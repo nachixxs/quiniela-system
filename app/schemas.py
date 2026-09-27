@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.modelos import Estado, TipoMovimiento
 
@@ -59,11 +59,11 @@ class DiaConTurnos(BaseModel):
 
 class JuegoMonto(BaseModel):
     juego_id: int
-    monto: int
+    monto: int = Field(lt=2**31)
 
 
 class TicketRequest(BaseModel):
-    quiniela: int
+    quiniela: int = Field(lt=2**31)
     juegos: list[JuegoMonto]
 
 
@@ -85,7 +85,7 @@ class TicketOut(BaseModel):
 class MovimientoCrear(BaseModel):
     ref_cliente: UUID
     tipo: TipoMovimientoCarga
-    monto: int
+    monto: int = Field(lt=2**31)
     caja_id: int
     cliente_id: int | None = None
     contraparte: str | None = None
@@ -130,8 +130,8 @@ class TraspasoRequest(BaseModel):
 class ArqueoRequest(BaseModel):
     caja_id: int
     turno_id: int
-    efectivo_contado: int
-    boletas_contadas: int
+    efectivo_contado: int = Field(lt=2**31)
+    boletas_contadas: int = Field(lt=2**31)
     nota: str | None = None
 
 
@@ -145,7 +145,7 @@ class ArqueoOut(OrmModel):
 
 
 class RendicionRequest(BaseModel):
-    boletas_contadas: int
+    boletas_contadas: int = Field(lt=2**31)
 
 
 class RendicionOut(OrmModel):

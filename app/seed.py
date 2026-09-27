@@ -21,12 +21,14 @@ def obtener_o_crear(db, modelo, **campos):
 
 def main():
     password = os.environ.get("SEED_PASSWORD")
+    negocio_nombre = os.environ.get("SEED_NEGOCIO", "Quiniela La Estrella")
+    usuario = os.environ.get("SEED_USUARIO", "demo")
     if not password:
-        sys.exit("Falta la variable de entorno SEED_PASSWORD: es la clave del usuario demo.")
+        sys.exit(f"Falta la variable de entorno SEED_PASSWORD: es la clave del usuario {usuario}.")
     with SessionLocal() as db:
-        negocio = obtener_o_crear(db, Negocio, nombre="Quiniela La Estrella")
-        if db.scalar(select(Usuario).where(Usuario.usuario == "demo")) is None:
-            db.add(Usuario(negocio_id=negocio.id, usuario="demo", nombre="Operador Demo",
+        negocio = obtener_o_crear(db, Negocio, nombre=negocio_nombre)
+        if db.scalar(select(Usuario).where(Usuario.usuario == usuario)) is None:
+            db.add(Usuario(negocio_id=negocio.id, usuario=usuario, nombre="Operador Demo",
                            password_hash=hasher.hash(password)))
         grande = obtener_o_crear(db, Caja, negocio_id=negocio.id, nombre="Caja grande", tipo="central")
         obtener_o_crear(db, Caja, negocio_id=negocio.id, nombre="Caja chica", tipo="operativa",
@@ -34,7 +36,7 @@ def main():
         for nombre in JUEGOS:
             obtener_o_crear(db, Juego, negocio_id=negocio.id, nombre=nombre, es_quiniela=nombre == "Quiniela")
         db.commit()
-    print("Seed listo: Quiniela La Estrella, usuario demo, dos cajas y siete juegos.")
+    print(f"Seed listo: {negocio_nombre}, usuario {usuario}, dos cajas y siete juegos.")
 
 
 if __name__ == "__main__":
