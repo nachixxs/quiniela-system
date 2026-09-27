@@ -5,7 +5,7 @@ import { LazyMotion, MotionConfig, domMax } from "motion/react";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import { UsuarioProvider } from "./contexto/usuario";
-import { App } from "./App";
+import { App, LimiteDeError } from "./App";
 import "./index.css";
 
 // A esta escala refetchear todo tras cualquier mutación exitosa sale gratis: sin listas de
@@ -22,7 +22,9 @@ createRoot(document.getElementById("root")!).render(
       <LazyMotion features={domMax} strict>
         <MotionConfig reducedMotion="user">
           <UsuarioProvider>
-            <App />
+            <LimiteDeError>
+              <App />
+            </LimiteDeError>
           </UsuarioProvider>
         </MotionConfig>
       </LazyMotion>
