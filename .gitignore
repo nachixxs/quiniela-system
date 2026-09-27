@@ -7,3 +7,5 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/worktrees
 dist
+e2e/test-results
+e2e/playwright-report
