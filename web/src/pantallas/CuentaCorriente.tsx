@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { BookUser, ChevronRight, MousePointerClick } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
+import { esSinDia } from "../api/tipos";
 import { fechaCorta, pesos, useEscritorio, uuid } from "../util";
 import { Aviso, Boton, CampoMonto, Hoja, Segmentado, TARJETA, TIPOS } from "../ui";
+import { AvisoAbrirDia } from "./Dia";
 
 const COLUMNAS = "grid grid-cols-[minmax(0,1fr)_3.5rem_7rem] items-center gap-3 px-4 lg:px-5";
 
@@ -13,25 +15,20 @@ function Detalle({ clienteId }: { clienteId: number }) {
   const [monto, setMonto] = useState("");
   const [refCliente, setRefCliente] = useState(() => uuid());
   const [cobrado, setCobrado] = useState<number | null>(null);
-  const queryClient = useQueryClient();
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
+  const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
   const cajaChica = dia.data?.cajas.find((c) => c.tipo === "operativa");
   const detalle = useQuery({ queryKey: ["cliente", clienteId], queryFn: () => api.cliente(clienteId) });
 
   const cobrar = useMutation({
-    mutationFn: () => {
-      if (!cajaChica) throw new ApiError("sin_caja", "No hay caja chica abierta.");
-      return api.crearMovimiento({
-        ref_cliente: refCliente, tipo: "cobro_fiado", monto: Number(monto),
-        caja_id: cajaChica.id, cliente_id: clienteId,
-      });
-    },
+    mutationFn: () => api.crearMovimiento({
+      ref_cliente: refCliente, tipo: "cobro_fiado", monto: Number(monto),
+      caja_id: cajaChica!.id, cliente_id: clienteId,
+    }),
     onSuccess: (mov) => {
       setRefCliente(uuid());
       setMonto("");
       setCobrado(mov.monto);
-      queryClient.invalidateQueries({ queryKey: ["deudores"] });
-      queryClient.invalidateQueries({ queryKey: ["cliente", clienteId] });
     },
   });
 
@@ -51,7 +48,7 @@ function Detalle({ clienteId }: { clienteId: number }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (Number(monto) > 0 && cajaChica) cobrar.mutate();
+            if (Number(monto) > 0 && cajaChica && !sinDia) cobrar.mutate();
           }}
           className="flex flex-col gap-3"
         >
@@ -60,13 +57,14 @@ function Detalle({ clienteId }: { clienteId: number }) {
             <Boton type="button" variante="secundario" onClick={() => { setMonto(String(c.saldo)); setRefCliente(uuid()); }} className="shrink-0">
               <span>Todo (<span className="monto">{pesos(c.saldo)}</span>)</span>
             </Boton>
-            <Boton type="submit" cargando={cobrar.isPending} disabled={!Number(monto) || !cajaChica} className="flex-1">
+            <Boton type="submit" cargando={cobrar.isPending} disabled={!Number(monto) || !cajaChica || sinDia} className="flex-1">
               {cobrar.isPending ? "Cobrando…" : "Cobrar"}
             </Boton>
           </div>
         </form>
       )}
-      {dia.isSuccess && !cajaChica && c.saldo > 0 && <Aviso tono="aviso">No hay caja chica abierta: hasta que se abra el día no se puede cobrar.</Aviso>}
+      {sinDia && c.saldo > 0 && <AvisoAbrirDia />}
+      {!sinDia && dia.isSuccess && !cajaChica && c.saldo > 0 && <Aviso tono="aviso">No hay caja chica abierta: hasta que se abra el día no se puede cobrar.</Aviso>}
       {cobrar.isError && <Aviso tono="error">{cobrar.error instanceof ApiError ? cobrar.error.detalle : "No se pudo cobrar."}</Aviso>}
       {cobrado !== null && <Aviso tono="exito">Cobro guardado: <span className="monto">{pesos(cobrado)}</span>.</Aviso>}
 

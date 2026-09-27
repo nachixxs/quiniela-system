@@ -1594,6 +1594,65 @@
         }
       }
     },
+    "/api/reportes/mes/{mes}": {
+      "get": {
+        "tags": [
+          "reportes"
+        ],
+        "summary": "Reporte Mes",
+        "operationId": "reporte_mes_api_reportes_mes__mes__get",
+        "parameters": [
+          {
+            "name": "mes",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "title": "Mes"
+            }
+          },
+          {
+            "name": "sesion",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sesion"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteMes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/asistente": {
       "post": {
         "tags": [
@@ -2376,6 +2435,17 @@
             ],
             "title": "Cliente Id"
           },
+          "cliente_nombre": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente Nombre"
+          },
           "juego_id": {
             "anyOf": [
               {
@@ -2672,6 +2742,146 @@
         ],
         "title": "ReporteMercadoPago"
       },
+      "ReporteMes": {
+        "properties": {
+          "mes": {
+            "type": "string",
+            "title": "Mes"
+          },
+          "actual": {
+            "$ref": "#/components/schemas/ResumenMes"
+          },
+          "anterior": {
+            "$ref": "#/components/schemas/ResumenMes"
+          },
+          "deuda_total_hoy": {
+            "type": "integer",
+            "title": "Deuda Total Hoy"
+          },
+          "ventas_por_dia": {
+            "items": {
+              "$ref": "#/components/schemas/VentaDia"
+            },
+            "type": "array",
+            "title": "Ventas Por Dia"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mes",
+          "actual",
+          "anterior",
+          "deuda_total_hoy",
+          "ventas_por_dia"
+        ],
+        "title": "ReporteMes"
+      },
+      "ResumenMes": {
+        "properties": {
+          "ventas_por_juego": {
+            "items": {
+              "$ref": "#/components/schemas/VentaJuegoMes"
+            },
+            "type": "array",
+            "title": "Ventas Por Juego"
+          },
+          "total_vendido": {
+            "type": "integer",
+            "title": "Total Vendido"
+          },
+          "cobros_fiado": {
+            "type": "integer",
+            "title": "Cobros Fiado"
+          },
+          "cobros_subagente": {
+            "type": "integer",
+            "title": "Cobros Subagente"
+          },
+          "ingresos_del_dueno": {
+            "type": "integer",
+            "title": "Ingresos Del Dueno"
+          },
+          "premios_pagados": {
+            "type": "integer",
+            "title": "Premios Pagados"
+          },
+          "cobros_mercado_pago": {
+            "type": "integer",
+            "title": "Cobros Mercado Pago"
+          },
+          "pagos_banco": {
+            "type": "integer",
+            "title": "Pagos Banco"
+          },
+          "sueldos": {
+            "type": "integer",
+            "title": "Sueldos"
+          },
+          "gastos": {
+            "type": "integer",
+            "title": "Gastos"
+          },
+          "retiros_dueno": {
+            "type": "integer",
+            "title": "Retiros Dueno"
+          },
+          "fiado": {
+            "type": "integer",
+            "title": "Fiado"
+          },
+          "arqueos_hechos": {
+            "type": "integer",
+            "title": "Arqueos Hechos"
+          },
+          "arqueos_cuadran": {
+            "type": "integer",
+            "title": "Arqueos Cuadran"
+          },
+          "arqueos_con_diferencia": {
+            "type": "integer",
+            "title": "Arqueos Con Diferencia"
+          },
+          "arqueos_explicados": {
+            "type": "integer",
+            "title": "Arqueos Explicados"
+          },
+          "diferencia_efectivo": {
+            "type": "integer",
+            "title": "Diferencia Efectivo"
+          },
+          "diferencia_boletas": {
+            "type": "integer",
+            "title": "Diferencia Boletas"
+          },
+          "diferencia_total": {
+            "type": "integer",
+            "title": "Diferencia Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ventas_por_juego",
+          "total_vendido",
+          "cobros_fiado",
+          "cobros_subagente",
+          "ingresos_del_dueno",
+          "premios_pagados",
+          "cobros_mercado_pago",
+          "pagos_banco",
+          "sueldos",
+          "gastos",
+          "retiros_dueno",
+          "fiado",
+          "arqueos_hechos",
+          "arqueos_cuadran",
+          "arqueos_con_diferencia",
+          "arqueos_explicados",
+          "diferencia_efectivo",
+          "diferencia_boletas",
+          "diferencia_total"
+        ],
+        "title": "ResumenMes"
+      },
       "Saldo": {
         "properties": {
           "efectivo": {
@@ -2834,6 +3044,25 @@
         ],
         "title": "ValidationError"
       },
+      "VentaDia": {
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date",
+            "title": "Fecha"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fecha",
+          "total"
+        ],
+        "title": "VentaDia"
+      },
       "VentaJuegoItem": {
         "properties": {
           "periodo": {
@@ -2856,6 +3085,29 @@
           "total"
         ],
         "title": "VentaJuegoItem"
+      },
+      "VentaJuegoMes": {
+        "properties": {
+          "juego_id": {
+            "type": "integer",
+            "title": "Juego Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "juego_id",
+          "nombre",
+          "total"
+        ],
+        "title": "VentaJuegoMes"
       }
     }
   }

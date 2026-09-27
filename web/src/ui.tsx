@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { m } from "motion/react";
 import {
-  CircleAlert, CircleCheck, HandCoins, LoaderCircle, NotebookPen, ReceiptText, ShoppingBag,
-  Smartphone, TriangleAlert, Trophy, Wallet, X, type LucideIcon,
+  Banknote, CircleAlert, CircleCheck, HandCoins, Landmark, LoaderCircle, NotebookPen, PiggyBank,
+  ReceiptText, ShoppingBag, Smartphone, TriangleAlert, Trophy, Users, Wallet, X, type LucideIcon,
 } from "lucide-react";
 import type { MovimientoOut } from "./api/tipos";
 
@@ -13,7 +13,6 @@ export const TARJETA = "rounded-xl border bg-card shadow-xs";
 export const INSIGNIA = "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium whitespace-nowrap";
 export const TONOS = {
   exito: "bg-exito/8 text-exito",
-  peligro: "bg-peligro/8 text-peligro",
   aviso: "bg-aviso/8 text-aviso",
   neutro: "bg-muted text-muted-foreground",
 } as const;
@@ -37,10 +36,11 @@ export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   pago_premio: T("Premio", Trophy, "text-premio"),
   apuesta_quiniela: T("Apuesta de quiniela"),
   venta_otro_juego: T("Venta de otro juego"),
-  cobro_subagente: T("Cobro de subagente"),
-  ingreso_del_dueno: T("Ingreso del dueño"),
-  pago_banco: T("Pago al banco"),
-  sueldo: T("Sueldo"),
+  // D42: cobro_subagente e ingreso_del_dueno van a la caja grande, junto con pago_banco y sueldo.
+  cobro_subagente: T("Subagente", Users, "text-exito"),
+  ingreso_del_dueno: T("Lo trae el dueño", PiggyBank, "text-exito"),
+  pago_banco: T("Banco", Landmark, "text-peligro"),
+  sueldo: T("Sueldo", Banknote, "text-peligro"),
   traspaso: T("Traspaso"),
   traspaso_boletas: T("Traspaso de boletas"),
   rendicion_boletas: T("Rendición de boletas"),
@@ -162,10 +162,13 @@ export function Hoja({
   const panel = useRef<HTMLDivElement>(null);
   const cerrar = useRef(onCerrar);
   cerrar.current = onCerrar;
+  // Se guarda en el render, no en el efecto: los efectos de los hijos (CampoMonto con
+  // autoFocus) corren antes que este, así que para cuando se ejecuta el foco ya se movió.
+  const previo = useRef(document.activeElement as HTMLElement | null);
 
   useEffect(() => {
-    const previo = document.activeElement as HTMLElement | null;
-    panel.current?.focus({ preventScroll: true });
+    // Si un hijo ya enfocó algo adentro (CampoMonto con autoFocus), no se lo robamos.
+    if (!panel.current?.contains(document.activeElement)) panel.current?.focus({ preventScroll: true });
     const tecla = (e: KeyboardEvent) => e.key === "Escape" && cerrar.current();
     document.addEventListener("keydown", tecla);
 
@@ -187,7 +190,7 @@ export function Hoja({
       style.width = previoAncho;
       document.documentElement.style.overflow = previoOverflowHtml;
       window.scrollTo(0, scrollY);
-      previo?.focus();
+      previo.current?.focus();
     };
   }, []);
 
@@ -207,7 +210,7 @@ export function Hoja({
         aria-modal="true"
         aria-labelledby={idTitulo}
         tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full max-w-md flex-col overscroll-contain rounded-xl border bg-card shadow-lg"
+        className="relative flex max-h-[92dvh] w-full max-w-md flex-col rounded-xl border bg-card shadow-lg"
         initial={{ opacity: 0, transform: "scale(0.96)" }}
         animate={{ opacity: 1, transform: "scale(1)" }}
         exit={{ opacity: 0, transform: "scale(0.96)", transition: { duration: 0.15, ease: EASE_SALIDA } }}

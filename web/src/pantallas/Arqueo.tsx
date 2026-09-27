@@ -3,9 +3,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
 import { Info, Landmark, Sparkles, Store, TriangleAlert } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
-import type { ArqueoOut } from "../api/tipos";
+import { esSinDia, type ArqueoOut } from "../api/tipos";
 import { pesos } from "../util";
 import { Aviso, Boton, CampoMonto, EASE_SALIDA, OPCION, PUNTO_RADIO, Segmentado, TARJETA } from "../ui";
+import { AccionesDia, AvisoAbrirDia, type AccionDia } from "./Dia";
 
 // Las filas del resultado entran en cascada corta: el arqueo se ve cuatro veces por día, no decenas.
 const fila = (i: number) => ({
@@ -83,13 +84,16 @@ export function Arqueo() {
   const [efectivo, setEfectivo] = useState("");
   const [boletas, setBoletas] = useState("");
   const [resultado, setResultado] = useState<ArqueoOut | null>(null);
+  const [accion, setAccion] = useState<AccionDia | null>(null);
 
   const cajas = dia.data?.cajas ?? [];
   const turnos = dia.data?.turnos ?? [];
-  // Con un solo turno abierto, ya queda elegido.
-  const abiertos = turnos.filter((t) => t.estado === "abierto");
-  const turnoId = turnoElegido ?? (abiertos.length === 1 ? abiertos[0].id : null);
   const caja = cajas.find((c) => c.id === cajaId);
+  // La caja grande acepta cualquier turno, abierto o cerrado (D5); la chica solo el abierto, porque lo cierra.
+  const esChica = caja?.tipo === "operativa";
+  const abiertos = turnos.filter((t) => t.estado === "abierto");
+  // Con un solo turno abierto ya queda elegido; en la grande, sin elección, el último turno (noche si mañana ya cerró).
+  const turnoId = turnoElegido ?? (esChica ? (abiertos.length === 1 ? abiertos[0].id : null) : (turnos[turnos.length - 1]?.id ?? null));
   const turno = turnos.find((t) => t.id === turnoId);
 
   const guardar = useMutation({
@@ -122,7 +126,7 @@ export function Arqueo() {
         <fieldset>
           <legend className="mb-2 text-sm font-medium">Caja</legend>
           {dia.isLoading && <div className="esqueleto h-[76px]" />}
-          {dia.isError && <Aviso tono="error">No se pudo traer el día. Revisá la conexión.</Aviso>}
+          {dia.isError && (esSinDia(dia.error) ? <AvisoAbrirDia /> : <Aviso tono="error">No se pudo traer el día. Revisá la conexión.</Aviso>)}
           <div className="grid grid-cols-2 gap-3">
             {cajas.map((c) => {
               const Icono = c.tipo === "operativa" ? Store : Landmark;
@@ -147,13 +151,20 @@ export function Arqueo() {
               etiqueta="Turno"
               valor={turnoId}
               onCambio={cambiar(setTurnoId)}
-              opciones={turnos.map((t) => ({ valor: t.id, texto: t.nombre.charAt(0).toUpperCase() + t.nombre.slice(1), detalle: t.estado, deshabilitada: t.estado !== "abierto" }))}
+              opciones={turnos.map((t) => ({ valor: t.id, texto: t.nombre.charAt(0).toUpperCase() + t.nombre.slice(1), detalle: t.estado, deshabilitada: esChica && t.estado !== "abierto" }))}
             />
           </div>
         )}
 
         {sinTicket && (
-          <Aviso tono="aviso">El turno {turno.nombre} todavía no tiene el ticket cargado: sin ticket, la caja chica no se puede arquear.</Aviso>
+          <Aviso tono="aviso" accion={
+            <button type="button" onClick={() => setAccion({ tipo: "ticket", turno })}
+              className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
+              Cargar ticket
+            </button>
+          }>
+            El turno {turno.nombre} todavía no tiene el ticket cargado: sin ticket, la caja chica no se puede arquear.
+          </Aviso>
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -189,6 +200,7 @@ export function Arqueo() {
           )}
         </AnimatePresence>
       </div>
+      <AccionesDia accion={accion} onCerrar={() => setAccion(null)} />
     </div>
   );
 }

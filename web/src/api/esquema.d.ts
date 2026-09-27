@@ -380,6 +380,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/reportes/mes/{mes}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reporte Mes */
+        get: operations["reporte_mes_api_reportes_mes__mes__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/asistente": {
         parameters: {
             query?: never;
@@ -470,6 +487,10 @@ export interface components {
         };
         /** CajaEstado */
         CajaEstado: {
+            /** Efectivo */
+            efectivo: number;
+            /** Boletas */
+            boletas: number;
             /** Id */
             id: number;
             /** Nombre */
@@ -479,10 +500,6 @@ export interface components {
              * @enum {string}
              */
             tipo: "operativa" | "central";
-            /** Efectivo */
-            efectivo: number;
-            /** Boletas */
-            boletas: number;
             esperado?: components["schemas"]["Saldo"] | null;
         };
         /** ClienteBusqueda */
@@ -668,6 +685,8 @@ export interface components {
             turno_id: number;
             /** Cliente Id */
             cliente_id: number | null;
+            /** Cliente Nombre */
+            cliente_nombre?: string | null;
             /** Juego Id */
             juego_id: number | null;
             /** Contraparte */
@@ -713,11 +732,6 @@ export interface components {
         RendicionItem: {
             /** Id */
             id: number;
-            /**
-             * Fecha
-             * Format: date
-             */
-            fecha: string;
             /** Total Esperado */
             total_esperado: number;
             /** Total Contado */
@@ -726,6 +740,11 @@ export interface components {
             diferencia: number;
             /** Cantidad Boletas */
             cantidad_boletas: number;
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
         };
         /** RendicionOut */
         RendicionOut: {
@@ -769,6 +788,58 @@ export interface components {
             acumulado: number;
             /** Desde */
             desde: string | null;
+        };
+        /** ReporteMes */
+        ReporteMes: {
+            /** Mes */
+            mes: string;
+            actual: components["schemas"]["ResumenMes"];
+            anterior: components["schemas"]["ResumenMes"];
+            /** Deuda Total Hoy */
+            deuda_total_hoy: number;
+            /** Ventas Por Dia */
+            ventas_por_dia: components["schemas"]["VentaDia"][];
+        };
+        /** ResumenMes */
+        ResumenMes: {
+            /** Ventas Por Juego */
+            ventas_por_juego: components["schemas"]["VentaJuegoMes"][];
+            /** Total Vendido */
+            total_vendido: number;
+            /** Cobros Fiado */
+            cobros_fiado: number;
+            /** Cobros Subagente */
+            cobros_subagente: number;
+            /** Ingresos Del Dueno */
+            ingresos_del_dueno: number;
+            /** Premios Pagados */
+            premios_pagados: number;
+            /** Cobros Mercado Pago */
+            cobros_mercado_pago: number;
+            /** Pagos Banco */
+            pagos_banco: number;
+            /** Sueldos */
+            sueldos: number;
+            /** Gastos */
+            gastos: number;
+            /** Retiros Dueno */
+            retiros_dueno: number;
+            /** Fiado */
+            fiado: number;
+            /** Arqueos Hechos */
+            arqueos_hechos: number;
+            /** Arqueos Cuadran */
+            arqueos_cuadran: number;
+            /** Arqueos Con Diferencia */
+            arqueos_con_diferencia: number;
+            /** Arqueos Explicados */
+            arqueos_explicados: number;
+            /** Diferencia Efectivo */
+            diferencia_efectivo: number;
+            /** Diferencia Boletas */
+            diferencia_boletas: number;
+            /** Diferencia Total */
+            diferencia_total: number;
         };
         /** Saldo */
         Saldo: {
@@ -829,12 +900,31 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** VentaDia */
+        VentaDia: {
+            /**
+             * Fecha
+             * Format: date
+             */
+            fecha: string;
+            /** Total */
+            total: number;
+        };
         /** VentaJuegoItem */
         VentaJuegoItem: {
             /** Periodo */
             periodo: string;
             /** Juego Id */
             juego_id: number;
+            /** Total */
+            total: number;
+        };
+        /** VentaJuegoMes */
+        VentaJuegoMes: {
+            /** Juego Id */
+            juego_id: number;
+            /** Nombre */
+            nombre: string;
             /** Total */
             total: number;
         };
@@ -1636,6 +1726,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RendicionItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reporte_mes_api_reportes_mes__mes__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mes: string;
+            };
+            cookie?: {
+                sesion?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReporteMes"];
                 };
             };
             /** @description Validation Error */

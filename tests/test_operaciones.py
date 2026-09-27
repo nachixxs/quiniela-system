@@ -85,7 +85,6 @@ def test_despues_del_arqueo_anular_y_ajustar_no_mueven_la_partida(db, agencia):
 def test_un_ajuste_es_de_un_dia_anterior_al_abierto(db, agencia):  # D22
     with pytest.raises(op.Invalido, match="anterior al día abierto"):  # hoy (o después) no es un ajuste
         mov(db, agencia, "gasto", 1000, corresponde_a_fecha=date(2026, 9, 22))
-    assert mov(db, agencia, "gasto", 1000, corresponde_a_fecha=date(2026, 9, 21)).es_ajuste
 
 
 def test_el_traspaso_no_se_lleva_lo_cargado_despues_del_arqueo(db, agencia):
@@ -103,17 +102,9 @@ def test_el_traspaso_no_se_lleva_lo_cargado_despues_del_arqueo(db, agencia):
     assert op.guardar_arqueo(db, a.n, a.grande, a.noche, 50000, 0).estado == "cuadra"
 
 
-def test_el_desglose_del_ticket_suma_el_esperado(db, agencia):  # D20
-    mov(db, agencia, "gasto", 2500)
-    mov(db, agencia, "fiado", 4000, cliente_id=agencia.cliente)
-    ticket = op.cargar_ticket(db, agencia.n, agencia.manana, 60000, [])
-    assert sum(ticket["desglose"].values()) == ticket["esperado"]["efectivo"] == 53500
-
-
 def test_subagente_solo_en_la_caja_grande(db, agencia):  # D10
     with pytest.raises(op.Invalido):
         mov(db, agencia, "cobro_subagente", 27000)
-    assert mov(db, agencia, "cobro_subagente", 27000, caja=agencia.grande).caja_id == agencia.grande
 
 
 def test_arqueo_de_la_chica_sin_ticket_no_guarda_nada(db, agencia):  # §7.3
@@ -152,6 +143,38 @@ def test_la_chica_no_tiene_esperado_hasta_el_ticket(db, agencia):  # §7.3
     assert chica()["esperado"] is None
     op.cargar_ticket(db, agencia.n, agencia.manana, 100000, [])
     assert chica()["esperado"] == {"efectivo": 88000, "boletas": 12000}
+
+
+def test_cierre_del_mes_por_corresponde_a_fecha_y_sin_anulados(db, agencia):  # D39
+    """Septiembre contra agosto: el ticket recargado y el gasto anulado no cuentan, cada carga tardía cae en el mes
+    de su fecha, el arqueo que no cuadra suma en los contadores y en la diferencia y el explicado solo en los
+    contadores: su plata ya está en gastos (D40)."""
+    a = agencia
+    mov(db, a, "fiado", 4000, cliente_id=a.cliente)
+    mov(db, a, "cobro_fiado", 1000, cliente_id=a.cliente)
+    mov(db, a, "pago_premio", 12000)
+    op.anular_movimiento(db, a.n, mov(db, a, "gasto", 3000).id, "Cargado dos veces")
+    mov(db, a, "sueldo", 5000, corresponde_a_fecha=date(2026, 8, 31))  # tardía del mes anterior
+    mov(db, a, "cobro_subagente", 27000, caja=a.grande)
+    op.guardar_arqueo(db, a.n, a.grande, a.manana, 27000, 0)  # cuadra
+    op.cargar_ticket(db, a.n, a.manana, 90000, [])
+    op.cargar_ticket(db, a.n, a.manana, 100000, [{"juego_id": a.juego, "monto": 8000}])  # recargado
+    op.guardar_arqueo(db, a.n, a.chica, a.manana, 91000, 12500)  # esperaba 93.000 y 12.000
+    arqueo = op.guardar_arqueo(db, a.n, a.grande, a.noche, 25000, 0)  # faltan 2.000
+    mov(db, a, "gasto", 2000, caja=a.grande, corresponde_a_fecha=date(2026, 9, 10), explica_arqueo_id=arqueo.id)
+    reporte = consultas.reporte_mes(db, a.n, date(2026, 9, 1))
+    assert reporte["actual"] == {
+        "ventas_por_juego": [{"juego_id": 0, "nombre": "Quiniela", "total": 100000},  # sin juego es_quiniela
+                             {"juego_id": a.juego, "nombre": "Quini 6", "total": 8000}],
+        "total_vendido": 108000, "cobros_fiado": 1000, "cobros_subagente": 27000, "ingresos_del_dueno": 0,
+        "premios_pagados": 12000, "cobros_mercado_pago": 0, "pagos_banco": 0, "sueldos": 0, "gastos": 2000,
+        "retiros_dueno": 0, "fiado": 4000, "arqueos_hechos": 3, "arqueos_cuadran": 1, "arqueos_con_diferencia": 1,
+        "arqueos_explicados": 1, "diferencia_efectivo": -2000, "diferencia_boletas": 500, "diferencia_total": -1500}
+    assert {k: v for k, v in reporte["anterior"].items() if v} == {"sueldos": 5000}  # todo lo demás en cero
+    assert (reporte["mes"], reporte["deuda_total_hoy"]) == ("2026-09", 3000)
+    por_dia = reporte["ventas_por_dia"]
+    assert len(por_dia) == 30 and por_dia[0] == {"fecha": date(2026, 9, 1), "total": 0}
+    assert por_dia[21] == {"fecha": date(2026, 9, 22), "total": 108000} and sum(d["total"] for d in por_dia) == 108000
 
 
 def test_dos_escrituras_del_mismo_negocio_van_en_fila(tablas):

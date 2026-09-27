@@ -1,20 +1,25 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, m } from "motion/react";
-import { Banknote, CircleCheck, Search, X } from "lucide-react";
+import { Banknote, CircleCheck, Search, UserPlus, X } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
-import type { ClienteBusqueda, MovimientoCrear } from "../api/tipos";
+import { esSinDia, type ClienteBusqueda, type MovimientoCrear } from "../api/tipos";
 import { pesos, uuid } from "../util";
 import { Aviso, Boton, CampoMonto, Hoja, OPCION, PUNTO_RADIO, TARJETA, TIPOS } from "../ui";
+import { AvisoAbrirDia } from "./Dia";
 
-// D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja.
-const TIPOS_PAGO: MovimientoCrear["tipo"][] = ["cobro_mercado_pago", "retiro_dueno", "gasto"];
+// D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja. D42: Cobro tampoco.
+const OPCIONES_COBRO: MovimientoCrear["tipo"][] = ["cobro_fiado", "cobro_subagente", "ingreso_del_dueno"];
+const OPCIONES_PAGO: MovimientoCrear["tipo"][] = ["cobro_mercado_pago", "retiro_dueno", "gasto", "pago_banco", "sueldo"];
+// D42: estos van a la caja grande; el resto sigue en la chica.
+const CAJA_GRANDE = new Set<MovimientoCrear["tipo"]>(["cobro_subagente", "ingreso_del_dueno", "pago_banco", "sueldo"]);
+const CON_CLIENTE = new Set<MovimientoCrear["tipo"]>(["fiado", "cobro_fiado"]);
 
 export const BOTONES = [
-  { etiqueta: "Fiado", tipo: "fiado", requiereCliente: true, ayuda: "Suma a la cuenta del cliente", icono: TIPOS.fiado.icono, tono: TIPOS.fiado.tono },
-  { etiqueta: "Cobro", tipo: "cobro_fiado", requiereCliente: true, ayuda: "El cliente paga su fiado", icono: TIPOS.cobro_fiado.icono, tono: TIPOS.cobro_fiado.tono },
-  { etiqueta: "Pago", tipo: null, requiereCliente: false, ayuda: "MP, retiro del dueño o gasto", icono: Banknote, tono: TIPOS.gasto.tono },
-  { etiqueta: "Premio", tipo: "pago_premio", requiereCliente: false, ayuda: "Sale efectivo, entra la boleta", icono: TIPOS.pago_premio.icono, tono: TIPOS.pago_premio.tono },
+  { etiqueta: "Fiado", tipo: "fiado", opciones: null, ayuda: "Suma a la cuenta del cliente", icono: TIPOS.fiado.icono, tono: TIPOS.fiado.tono },
+  { etiqueta: "Cobro", tipo: null, opciones: OPCIONES_COBRO, ayuda: "Fiado, subagente o lo trae el dueño", icono: TIPOS.cobro_fiado.icono, tono: TIPOS.cobro_fiado.tono },
+  { etiqueta: "Pago", tipo: null, opciones: OPCIONES_PAGO, ayuda: "MP, banco, sueldo, retiro o gasto", icono: Banknote, tono: TIPOS.gasto.tono },
+  { etiqueta: "Premio", tipo: "pago_premio", opciones: null, ayuda: "Sale efectivo, entra la boleta", icono: TIPOS.pago_premio.icono, tono: TIPOS.pago_premio.tono },
 ] as const;
 export type BotonCarga = (typeof BOTONES)[number];
 
@@ -25,34 +30,43 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
   const [monto, setMonto] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [cliente, setCliente] = useState<ClienteBusqueda | null>(null);
+  const [contraparte, setContraparte] = useState("");
   const [refCliente, setRefCliente] = useState(() => uuid());
-  const [tipoPago, setTipoPago] = useState(TIPOS_PAGO[0]);
+  const [subtipo, setSubtipo] = useState<MovimientoCrear["tipo"] | null>(null);
   const [confirmacion, setConfirmacion] = useState<{ id: number; titulo: string; texto: string } | null>(null);
-  const queryClient = useQueryClient();
 
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
-  const cajaChica = dia.data?.cajas.find((c) => c.tipo === "operativa");
+  const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
+  // El tipo elegido: fijo (Fiado, Premio) o el de la opción marcada en Cobro/Pago.
+  const tipoFinal = seleccion?.tipo ?? subtipo ?? seleccion?.opciones?.[0] ?? null;
+  const requiereCliente = !!tipoFinal && CON_CLIENTE.has(tipoFinal);
+  const requiereContraparte = tipoFinal === "cobro_subagente";
+  const caja = dia.data?.cajas.find((c) => c.tipo === (tipoFinal && CAJA_GRANDE.has(tipoFinal) ? "central" : "operativa"));
   const clientes = useQuery({
     queryKey: ["clientes-busqueda", busqueda],
     queryFn: () => api.clientes(busqueda),
     enabled: busqueda.length > 0,
   });
+  // Sin esto, con la base real vacía no se puede fiar a nadie: crea y selecciona en el mismo paso.
+  const crearCliente = useMutation({
+    mutationFn: (nombre: string) => api.crearCliente({ nombre }),
+    onSuccess: (c) => { setCliente(c); setBusqueda(""); setRefCliente(uuid()); },
+  });
 
   const guardar = useMutation({
     mutationFn: () => {
-      if (!cajaChica) throw new ApiError("sin_caja", "No hay caja chica abierta.");
       const mov: MovimientoCrear = {
-        ref_cliente: refCliente, tipo: seleccion!.tipo ?? tipoPago, monto: Number(monto),
-        caja_id: cajaChica.id, cliente_id: cliente?.id ?? null,
+        ref_cliente: refCliente, tipo: tipoFinal!, monto: Number(monto),
+        caja_id: caja!.id, cliente_id: requiereCliente ? cliente?.id ?? null : null,
+        contraparte: requiereContraparte ? contraparte.trim() : null,
       };
       return api.crearMovimiento(mov);
     },
     onSuccess: (mov) => {
       const etiqueta = seleccion?.tipo ? seleccion.etiqueta : TIPOS[mov.tipo].etiqueta;
-      setConfirmacion({ id: Date.now(), titulo: `${etiqueta} guardado`, texto: `${pesos(mov.monto)}${cliente ? ` · ${cliente.nombre}` : ""}` });
+      const quien = requiereCliente ? cliente?.nombre : mov.contraparte;
+      setConfirmacion({ id: Date.now(), titulo: `${etiqueta} guardado`, texto: `${pesos(mov.monto)}${quien ? ` · ${quien}` : ""}` });
       cerrar();
-      // El inicio y los fiados muestran el saldo nuevo que calcula el servidor.
-      for (const clave of ["dia-actual", "cajas", "deudores"]) queryClient.invalidateQueries({ queryKey: [clave] });
     },
   });
 
@@ -61,7 +75,8 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
     setMonto("");
     setBusqueda("");
     setCliente(null);
-    setTipoPago(TIPOS_PAGO[0]);
+    setContraparte("");
+    setSubtipo(null);
     setRefCliente(uuid());
     guardar.reset();
   }
@@ -72,12 +87,12 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
     return () => clearTimeout(t);
   }, [confirmacion]);
 
-  const listo = !!cajaChica && Number(monto) > 0 && (!seleccion?.requiereCliente || !!cliente);
+  const listo = !sinDia && !!caja && Number(monto) > 0 && (!requiereCliente || !!cliente) && (!requiereContraparte || contraparte.trim().length > 0);
 
   return (
     <>
       {/* Confirmación: baja desde arriba y se va por el mismo lado, sin tapar la próxima carga. */}
-      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex justify-center lg:inset-x-auto lg:right-6 lg:top-4">
+      <div role="status" className="pointer-events-none fixed inset-x-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-50 flex justify-center lg:inset-x-auto lg:right-6 lg:top-4">
         <AnimatePresence>
           {confirmacion && (
             <m.button
@@ -111,14 +126,14 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
               }}
               className="flex flex-col gap-5"
             >
-              {seleccion.tipo === null && (
+              {seleccion.opciones && (
                 <fieldset className="grid gap-2">
                   <legend className="mb-2 text-sm font-medium">Qué fue</legend>
-                  {TIPOS_PAGO.map((tipo) => {
-                    const t = TIPOS[tipo];
+                  {seleccion.opciones.map((op) => {
+                    const t = TIPOS[op];
                     return (
-                      <label key={tipo} className={`${OPCION} min-h-12 px-3`}>
-                        <input type="radio" name="tipo-pago" className="sr-only" checked={tipoPago === tipo} onChange={() => { setTipoPago(tipo); setRefCliente(uuid()); }} />
+                      <label key={op} className={`${OPCION} min-h-12 px-3`}>
+                        <input type="radio" name="subtipo" className="sr-only" checked={tipoFinal === op} onChange={() => { setSubtipo(op); setRefCliente(uuid()); }} />
                         <t.icono className={`size-4 ${t.tono}`} aria-hidden />
                         <span className="flex-1 text-sm font-medium">{t.etiqueta}</span>
                         {PUNTO_RADIO}
@@ -128,9 +143,28 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                 </fieldset>
               )}
 
-              <CampoMonto etiqueta="Monto" valor={monto} onValor={(v) => { setMonto(v); setRefCliente(uuid()); }} grande autoFocus enterKeyHint={seleccion.requiereCliente ? "next" : "done"} />
+              <CampoMonto etiqueta="Monto" valor={monto} onValor={(v) => { setMonto(v); setRefCliente(uuid()); }} grande autoFocus enterKeyHint={requiereCliente || requiereContraparte ? "next" : "done"} />
 
-              {seleccion.requiereCliente && (
+              {requiereContraparte && (
+                <div>
+                  <label htmlFor="carga-contraparte" className="mb-2 block text-sm font-medium">Nombre</label>
+                  <div className={`${CAJA} transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20`}>
+                    <input
+                      id="carga-contraparte"
+                      name="contraparte"
+                      value={contraparte}
+                      onChange={(e) => { setContraparte(e.target.value); setRefCliente(uuid()); }}
+                      placeholder="Nombre del subagente"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      className="h-full min-w-0 flex-1 bg-transparent text-base focus-visible:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {requiereCliente && (
                 <div>
                   <label htmlFor="carga-cliente" className="mb-2 block text-sm font-medium">Cliente</label>
                   {cliente ? (
@@ -162,8 +196,6 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                         <div className="esqueleto h-12" aria-label="Buscando…" />
                       ) : clientes.isError ? (
                         <p className="px-1 text-sm text-peligro">No se pudo buscar. Probá de nuevo.</p>
-                      ) : clientes.data?.length === 0 ? (
-                        <p className="px-1 text-sm text-muted-foreground">Nadie con “{busqueda}”.</p>
                       ) : (
                         <ul className="divide-y overflow-hidden rounded-lg border">
                           {clientes.data?.map((c) => (
@@ -182,15 +214,30 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                               </button>
                             </li>
                           ))}
+                          <li>
+                            <button
+                              type="button"
+                              onClick={() => crearCliente.mutate(busqueda)}
+                              disabled={crearCliente.isPending}
+                              className="flex min-h-12 w-full items-center gap-2 px-3 text-left text-sm font-medium transition-colors hover:bg-muted/60 active:bg-muted disabled:opacity-50"
+                            >
+                              <UserPlus className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                              {crearCliente.isPending ? "Creando…" : `Nuevo cliente: “${busqueda}”`}
+                            </button>
+                          </li>
                         </ul>
+                      )}
+                      {crearCliente.isError && (
+                        <p className="mt-1 px-1 text-sm text-peligro">{crearCliente.error instanceof ApiError ? crearCliente.error.detalle : "No se pudo crear el cliente."}</p>
                       )}
                     </div>
                   )}
                 </div>
               )}
 
-              {dia.isError && <Aviso tono="error">No se pudo traer el día. Revisá la conexión.</Aviso>}
-              {dia.isSuccess && !cajaChica && <Aviso tono="aviso">No hay caja chica abierta: hasta que se abra el día no se puede cargar.</Aviso>}
+              {dia.isError && (esSinDia(dia.error) ? <AvisoAbrirDia /> : <Aviso tono="error">No se pudo traer el día. Revisá la conexión.</Aviso>)}
+              {dia.isSuccess && sinDia && <AvisoAbrirDia />}
+              {dia.isSuccess && !sinDia && !caja && <Aviso tono="aviso">No hay caja abierta: hasta que se abra el día no se puede cargar.</Aviso>}
               {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo guardar."}</Aviso>}
 
               <Boton type="submit" cargando={guardar.isPending} disabled={!listo} className="h-12 w-full text-base lg:h-10 lg:text-sm">

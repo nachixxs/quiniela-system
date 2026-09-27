@@ -14,6 +14,14 @@ const formatoFecha = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "n
 const formatoCorto = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short" });
 export const fechaLarga = (f: string) => formatoFecha.format(new Date(`${f}T12:00:00`)).replace(",", "");
 export const fechaCorta = (f: string) => formatoCorto.format(new Date(`${f}T12:00:00`)).replace(".", "");
+// Instante ISO completo (con hora, ej. de un ingreso del dueño) → fecha corta en el huso horario local.
+export const fechaHoraCorta = (iso: string) => formatoCorto.format(new Date(iso)).replace(".", "");
+
+// Hoy en la zona horaria local (no UTC, a diferencia de Date#toISOString).
+export function fechaHoy(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 const CLAVE_TEMA = "quiniela-tema";
 export type Tema = "claro" | "oscuro";
@@ -39,7 +47,7 @@ export function aplicarTema(tema: Tema): void {
   }
 }
 
-// Escritorio: barra lateral, hojas como diálogo centrado y detalle al costado de la lista.
+// Punto de corte de escritorio: barra lateral y, en cuenta corriente, detalle al costado de la lista.
 const CONSULTA_ESCRITORIO = "(min-width: 1024px)";
 export function useEscritorio(): boolean {
   const [es, setEs] = useState(() => matchMedia(CONSULTA_ESCRITORIO).matches);

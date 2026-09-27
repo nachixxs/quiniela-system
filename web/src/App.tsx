@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { m } from "motion/react";
-import { BookUser, Calculator, CircleUser, House, LogOut, Moon, Star, Sun, Zap, type LucideIcon } from "lucide-react";
+import { BookUser, Calculator, ChartColumn, CircleUser, House, LogOut, Moon, Star, Sun, Zap, type LucideIcon } from "lucide-react";
 import { api } from "./api/cliente";
 import { useUsuario } from "./contexto/usuario";
 import { Login } from "./pantallas/Login";
@@ -10,13 +10,14 @@ import { Inicio } from "./pantallas/Inicio";
 import { CargaRapida } from "./pantallas/CargaRapida";
 import { Arqueo } from "./pantallas/Arqueo";
 import { CuentaCorriente } from "./pantallas/CuentaCorriente";
+import { Reportes } from "./pantallas/Reportes";
 import { type Tema, aplicarTema, fechaLarga, temaInicial } from "./util";
 import { EASE_SALIDA, INSIGNIA, TONOS } from "./ui";
 
-type Pantalla = "inicio" | "carga-rapida" | "arqueo" | "cuenta-corriente";
+type Pantalla = "inicio" | "carga-rapida" | "arqueo" | "cuenta-corriente" | "reportes";
 const pantallaDeHash = (): Pantalla => {
   const h = location.hash.slice(1);
-  return h === "carga-rapida" || h === "arqueo" || h === "cuenta-corriente" ? h : "inicio";
+  return h === "carga-rapida" || h === "arqueo" || h === "cuenta-corriente" || h === "reportes" ? h : "inicio";
 };
 
 const NAV: { id: Pantalla; texto: string; corto: string; icono: LucideIcon; detalle?: string }[] = [
@@ -24,8 +25,9 @@ const NAV: { id: Pantalla; texto: string; corto: string; icono: LucideIcon; deta
   { id: "carga-rapida", texto: "Carga rápida", corto: "Cargar", icono: Zap, detalle: "Las ventas en efectivo no se cargan acá: salen del ticket al cierre." },
   { id: "arqueo", texto: "Arqueo", corto: "Arqueo", icono: Calculator, detalle: "Contá el efectivo y las boletas de la caja. El sistema compara con lo esperado." },
   { id: "cuenta-corriente", texto: "Cuenta corriente", corto: "Fiados", icono: BookUser, detalle: "Quién debe, desde cuándo y cuánto. Cobros totales o parciales." },
+  { id: "reportes", texto: "Reportes", corto: "Reportes", icono: ChartColumn, detalle: "El cierre del mes: ventas, entradas, salidas, fiados y arqueos, con el mes anterior al lado." },
 ];
-const PANTALLAS = { inicio: Inicio, "carga-rapida": CargaRapida, arqueo: Arqueo, "cuenta-corriente": CuentaCorriente };
+const PANTALLAS = { inicio: Inicio, "carga-rapida": CargaRapida, arqueo: Arqueo, "cuenta-corriente": CuentaCorriente, reportes: Reportes };
 const ICONO_BOTON = "presiona grid size-11 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:size-8";
 const ITEM_LATERAL = "presiona relative flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm";
 
@@ -148,7 +150,7 @@ export function App() {
       </div>
 
       <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-30 border-t bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-4">
+        <div className="mx-auto grid max-w-md grid-cols-5">
           {NAV.map((n) => (
             <a key={n.id} href={enlace(n.id)} aria-current={n.id === pantalla ? "page" : undefined}
               className={`presiona relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium ${n.id === pantalla ? "text-foreground" : "text-muted-foreground"}`}>
