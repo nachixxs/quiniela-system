@@ -10,7 +10,6 @@ test.beforeAll(async ({ browser }) => {
   page = await context.newPage(); });
 test.afterAll(async () => { await context.close(); });
 
-// Carga rápida (§8.1): abre el botón grande, elige el subtipo si hay opciones y guarda.
 async function cargar(boton: string, monto: string, opcion?: string) {
   await page.getByRole("button", { name: new RegExp(`^${boton}`) }).click();
   if (opcion) await page.locator("label", { hasText: opcion }).click();
@@ -35,7 +34,7 @@ async function cargarTicket(turno: string, quinielaAcumulada: string) {
   await page.getByRole("button", { name: "Guardar ticket" }).click(); await page.getByRole("button", { name: "Listo" }).click();
 }
 
-// Arqueo (§6, §8.3): dos campos, resultado inmediato. `exacto` compara contra lo esperado a mano.
+// Arqueo (§6, §8.3): dos campos, resultado inmediato.
 async function arquear(caja: string, turno: string, efectivo: string, boletas: string) {
   await page.getByRole("link", { name: "Arqueo", exact: true }).click();
   await page.locator("label", { hasText: caja }).click();

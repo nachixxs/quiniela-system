@@ -1,9 +1,8 @@
-// Reset de `quiniela_e2e` antes de cada corrida local (modo remoto: no se usa, ver playwright.config.ts).
 import { execFileSync } from "node:child_process";
 import path from "node:path"; import { fileURLToPath } from "node:url";
 
-const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const PYTHON = path.join(RAIZ, ".venv", "Scripts", "python.exe");
+export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+export const PYTHON = path.join(RAIZ, ".venv", "Scripts", "python.exe");
 export const DB_URL = "postgresql+psycopg://quiniela_test:quiniela_test@127.0.0.1:5433/quiniela_e2e";
 export const SEED_PASSWORD = "quiniela-e2e-2026-ficticia";
 
