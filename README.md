@@ -84,7 +84,7 @@ npm run dev        # http://localhost:5173
 
 ## Tests
 
-65 tests (collected and passing in the latest CI run on `main`), focused on what can cost money:
+A pytest suite, run in CI against PostgreSQL 16 on every push, focused on what can cost money:
 the effect of every movement type, reversing entries, expected values and count results,
 customer balances, late adjustments, idempotency, tenant isolation, concurrent writes, and a
 full simulated day through the HTTP API.
@@ -102,6 +102,11 @@ python -m venv .venv
 CI (`.github/workflows/ci.yml`) runs the test suite against a PostgreSQL 16 service and builds
 the frontend on every push.
 
+A Playwright end-to-end suite (`e2e/flujo-critico.spec.ts`, 8 steps) walks a full simulated
+day in a real browser: login, opening the day, morning and night shifts with their cash
+counts, reports, a customer balance, voiding a movement, and closing the day. It runs locally
+against a throwaway database (`cd e2e && npx playwright test`), not in CI.
+
 ## Deployment
 
 The repo includes the configuration, not a public instance:
@@ -109,10 +114,15 @@ The repo includes the configuration, not a public instance:
 - `render.yaml`: a Render web service built from the `Dockerfile`, with a health check on
   `/api/salud`. The database URL is set outside the repo.
 - `.github/workflows/backup.yml`: a daily scheduled job that runs `pg_dump` on the Neon
-  PostgreSQL database, encrypts the dump with GPG and uploads it to Backblaze B2.
+  PostgreSQL database, encrypts the dump with GPG and uploads it to Backblaze B2. It is
+  disabled until the production database exists.
 
 ## Project status
 
 In active development. The core ledger, cash counts, day and shift flow, customer credit and
 reports are implemented and connected to the web app. `POST /api/asistente` is a placeholder
 for a future assistant and currently returns 501 Not Implemented.
+
+## License
+
+[MIT](LICENSE)
