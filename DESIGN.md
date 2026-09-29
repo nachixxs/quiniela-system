@@ -10,7 +10,7 @@ Si no coinciden, vale el código y se corrige este archivo.
 grises sin tinte, bordes de 1 px, una sola acción oscura (o clara, en oscuro) por vista. El
 color aparece solo cuando algo tiene significado. Nada compite con los montos.
 
-- **Quién la usa:** Marisa y el dueño, casi siempre en el celular detrás del mostrador,
+- **Quién la usa:** la cajera y el dueño, casi siempre en el celular detrás del mostrador,
   decenas de veces por turno; a veces en la computadora.
 - **Qué tiene que sentirse:** una herramienta de banco: números que se leen de un vistazo,
   toque que responde en el acto, nada que mirar dos veces.
