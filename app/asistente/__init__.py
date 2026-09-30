@@ -13,6 +13,10 @@ from app.operaciones import ARGENTINA
 MODELO = "claude-sonnet-5-5"
 MAX_TOKENS = 2000
 MAX_VUELTAS = 5
+# D57, tope de costo por pregunta: MAX_VUELTAS no limita cuántas tools pide cada vuelta ni cuánto crece lo reenviado.
+MAX_TOOLS = 10  # en total, contando el diagnóstico armado
+MAX_ENTRADA = 60_000  # tokens de entrada de una vuelta, con la caché leída y escrita
+AMPLIA = "La pregunta es demasiado amplia. Probá con un día o un cliente."
 BETA_FALLBACK = "server-side-fallback-2026-07-01"
 log = logging.getLogger("uvicorn.error")  # el único logger con INFO visible en docker compose logs
 
@@ -46,14 +50,20 @@ def cliente() -> anthropic.Anthropic:
     return anthropic.Anthropic(timeout=30.0, max_retries=1)  # la clave, de ANTHROPIC_API_KEY
 
 
+def _escapado(s: str) -> str:
+    """Un `</diagnostico>` en una nota o un `</pregunta>` en la pregunta no cierra la etiqueta (json.dumps no
+    escapa `<`)."""
+    return s.replace("<", "\\u003c")
+
+
 def responder(db: Session, negocio_id: int, pregunta: str, arqueo_id: int | None = None) -> tuple[str, list[str]]:
     """(respuesta, tools usadas en orden). Con `arqueo_id`, el diagnóstico va armado en el mensaje (un arqueo de
     otro negocio es NoEncontrado, antes de llamar a la API) y el esfuerzo sube a medium."""
-    usadas, texto = [], f"Hoy es {datetime.now(ARGENTINA):%Y-%m-%d}.\n\n<pregunta>{pregunta}</pregunta>"
+    usadas, texto = [], f"Hoy es {datetime.now(ARGENTINA):%Y-%m-%d}.\n\n<pregunta>{_escapado(pregunta)}</pregunta>"
     if arqueo_id is not None:
-        diagnostico = tools.diagnosticar_arqueo(db, negocio_id, arqueo_id)
+        diagnostico = json.dumps(tools.diagnosticar_arqueo(db, negocio_id, arqueo_id), ensure_ascii=False, default=str)
         usadas.append("diagnosticar_arqueo")
-        texto += f"\n\n<diagnostico>{json.dumps(diagnostico, ensure_ascii=False, default=str)}</diagnostico>"
+        texto += f"\n\n<diagnostico>{_escapado(diagnostico)}</diagnostico>"
     mensajes, api = [{"role": "user", "content": texto}], cliente()
     for _ in range(MAX_VUELTAS):
         db.rollback()  # todo es lectura: suelta la conexión mientras espera a la API, no retiene el pool (§11.3)
@@ -70,7 +80,10 @@ def responder(db: Session, negocio_id: int, pregunta: str, arqueo_id: int | None
         if r.stop_reason != "tool_use":
             texto = "".join(b.text for b in r.content if b.type == "text").strip()
             return texto or "No tengo una respuesta para eso con los datos del sistema.", usadas
-        pedidos = [b for b in r.content if b.type == "tool_use"]
+        pedidos = [b for b in r.content if b.type == "tool_use"]  # el tope va acá: una respuesta ya pagada se da
+        entrada = u.input_tokens + (u.cache_read_input_tokens or 0) + (u.cache_creation_input_tokens or 0)
+        if len(usadas) + len(pedidos) > MAX_TOOLS or entrada > MAX_ENTRADA:
+            raise NoDisponible(AMPLIA)
         usadas += [b.name for b in pedidos]
         mensajes += [{"role": "assistant", "content": r.content},
                      {"role": "user", "content": [tools.ejecutar(db, negocio_id, b) for b in pedidos]}]
