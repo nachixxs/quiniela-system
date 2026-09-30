@@ -74,11 +74,11 @@ bundle, D26). Cifras tabulares en todo el `body`.
 
 ## 5. Estructura
 
-- **Escritorio (lg y más):** barra lateral fija con la marca, los cuatro destinos (el
+- **Escritorio (lg y más):** barra lateral fija con la marca, los seis destinos (el
   activo en `muted`, con indicador que viaja) y al pie el usuario y "Cerrar sesión". Arriba,
   una barra mínima con borde inferior: fecha, estado del día y tema.
 - **Celular:** arriba, marca, tema y salida. Abajo, la barra en `card` con borde superior y
-  cuatro destinos. El activo no lleva pastilla: texto en `foreground`, trazo más grueso y
+  seis destinos. El activo no lleva pastilla: texto en `foreground`, trazo más grueso y
   una raya fina arriba que viaja.
 - **Navegación por hash** (`#arqueo`, `#carga-rapida`, `#cuenta-corriente`): el botón atrás
   funciona y cada pantalla tiene su URL. Cada pantalla, salvo Inicio, abre con título y una
