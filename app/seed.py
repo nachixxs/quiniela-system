@@ -25,9 +25,13 @@ def main():
     usuario = os.environ.get("SEED_USUARIO", "demo")
     if not password:
         sys.exit(f"Falta la variable de entorno SEED_PASSWORD: es la clave del usuario {usuario}.")
+    if os.environ.get("SEED_NEGOCIO") and not os.environ.get("SEED_USUARIO"):
+        sys.exit("Vino SEED_NEGOCIO sin SEED_USUARIO: se crearía el usuario 'demo' en ese negocio. "
+                 "Definí SEED_USUARIO con el usuario que va a entrar.")
     with SessionLocal() as db:
         negocio = obtener_o_crear(db, Negocio, nombre=negocio_nombre)
-        if db.scalar(select(Usuario).where(Usuario.usuario == usuario)) is None:
+        existia = db.scalar(select(Usuario).where(Usuario.usuario == usuario)) is not None
+        if not existia:
             db.add(Usuario(negocio_id=negocio.id, usuario=usuario, nombre="Operador Demo",
                            password_hash=hasher.hash(password)))
         grande = obtener_o_crear(db, Caja, negocio_id=negocio.id, nombre="Caja grande", tipo="central")
@@ -36,7 +40,8 @@ def main():
         for nombre in JUEGOS:
             obtener_o_crear(db, Juego, negocio_id=negocio.id, nombre=nombre, es_quiniela=nombre == "Quiniela")
         db.commit()
-    print(f"Seed listo: {negocio_nombre}, usuario {usuario}, dos cajas y siete juegos.")
+    estado = "ya existía (no se tocó su clave ni su negocio)" if existia else "creado"
+    print(f"Seed listo: {negocio_nombre}, usuario {usuario} {estado}, dos cajas y siete juegos.")
 
 
 if __name__ == "__main__":
