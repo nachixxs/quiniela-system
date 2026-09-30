@@ -4,18 +4,17 @@ el diagnóstico de un arqueo (6.2) arma acá los candidatos y el modelo solo los
 import json
 from collections import Counter
 from datetime import date, datetime
+from typing import get_args
 
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from app import consultas
-from app.modelos import Arqueo, Caja, DiaOperativo, Movimiento, Turno
+from app.modelos import Arqueo, Caja, DiaOperativo, Movimiento, TipoMovimiento, Turno
 from app.operaciones import ARGENTINA, NoEncontrado, obtener
 
 FECHA = {"type": "string", "description": "YYYY-MM-DD"}
-TIPOS = ["apuesta_quiniela", "venta_otro_juego", "fiado", "cobro_fiado", "cobro_subagente", "ingreso_del_dueno",
-         "cobro_mercado_pago", "pago_premio", "pago_banco", "sueldo", "gasto", "retiro_dueno", "traspaso",
-         "traspaso_boletas", "rendicion_boletas"]
+TIPOS = list(get_args(TipoMovimiento))
 
 
 def _schema(**props) -> dict:
@@ -139,7 +138,7 @@ def diagnosticar_arqueo(db: Session, n: int, arqueo_id: int) -> dict:
                      .order_by(DiaOperativo.fecha.desc()).limit(1))
     montos = {abs(d) for d in (a.diferencia_efectivo, a.diferencia_boletas) if d}
     del_turno = and_(Movimiento.turno_id == turno.id, Movimiento.caja_id == a.caja_id)
-    candidatos = db.scalars(select(Movimiento).where(Movimiento.negocio_id == n, Movimiento.monto.in_(montos), or_(
+    candidatos = db.scalars(select(Movimiento).where(*consultas._vivos(n), Movimiento.monto.in_(montos), or_(
         del_turno, and_(Movimiento.dia_id == dia.id, Movimiento.tipo == "fiado"),
         and_(Movimiento.dia_id == ayer, Movimiento.tipo == "cobro_fiado"))).order_by(Movimiento.id)).all()
     previos = db.scalars(select(Turno.id).join(DiaOperativo, Turno.dia_id == DiaOperativo.id).where(
