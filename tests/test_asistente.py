@@ -1,18 +1,17 @@
 """Asistente (§11) con un cliente falso de Anthropic: ningún test llama a la API real."""
 import json
-from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace as NS
 from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from test_api import _sesion
 
 from app import asistente, operaciones as op
 from app.asistente import tools
-from app.auth import hash_token
 from app.db import get_db
 from app.main import app
-from app.modelos import Negocio, Sesion, Usuario
+from app.modelos import Negocio
 
 
 def _resp(stop, *bloques):
@@ -33,15 +32,8 @@ def _falso(*respuestas):  # hace de anthropic.Anthropic: respuestas grabadas en 
 @pytest.fixture
 def http(db, monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "clave-falsa")
-    def sesion(negocio_id):
-        usuario = Usuario(negocio_id=negocio_id, usuario=f"op-{uuid4()}", nombre="Operador", password_hash="x")
-        db.add(usuario)
-        db.flush()
-        db.add(Sesion(id=hash_token(f"t-{usuario.id}"), usuario_id=usuario.id, negocio_id=negocio_id,
-                      expira=datetime.now(UTC) + timedelta(hours=1)))
-        return TestClient(app, base_url="https://testserver", cookies={"sesion": f"t-{usuario.id}"})
     app.dependency_overrides[get_db] = lambda: db
-    yield sesion
+    yield lambda n: TestClient(app, base_url="https://testserver", cookies={"sesion": _sesion(db, n)})
     app.dependency_overrides.clear()
 
 
@@ -93,6 +85,9 @@ def test_loop_de_tools_y_tope_de_vueltas(db, arqueo, agencia, http, monkeypatch)
 
 
 def test_diagnostico_encuentra_el_movimiento_por_el_monto_exacto(db, arqueo, agencia):
+    anulado = op.crear_movimiento(db, agencia.n, ref_cliente=uuid4(), tipo="fiado", monto=30000,
+                                  caja_id=agencia.chica, cliente_id=agencia.cliente)
+    op.anular_movimiento(db, agencia.n, anulado.id, "cargado dos veces")
     diag = tools.diagnosticar_arqueo(db, agencia.n, arqueo.id)
-    assert [(m["tipo"], m["monto"], m["cliente"]) for m in diag["movimientos_por_el_monto"]] == [
-        ("fiado", 30000, "Rubén Ficticio")]  # el gasto de 5.000 no
+    assert [(m["tipo"], m["monto"], m.get("anulado")) for m in diag["movimientos_por_el_monto"]] == [
+        ("fiado", 30000, None)]  # ni el anulado ni su contra-asiento ni el gasto de 5.000

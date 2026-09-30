@@ -56,6 +56,7 @@ def responder(db: Session, negocio_id: int, pregunta: str, arqueo_id: int | None
         texto += f"\n\n<diagnostico>{json.dumps(diagnostico, ensure_ascii=False, default=str)}</diagnostico>"
     mensajes, api = [{"role": "user", "content": texto}], cliente()
     for _ in range(MAX_VUELTAS):
+        db.rollback()  # todo es lectura: suelta la conexión mientras espera a la API, no retiene el pool (§11.3)
         r = api.beta.messages.create(
             model=MODELO, max_tokens=MAX_TOKENS, system=SYSTEM, tools=tools.TOOLS, messages=mensajes,
             output_config={"effort": "medium" if arqueo_id else "low"}, betas=[BETA_FALLBACK], fallbacks="default")

@@ -1,4 +1,3 @@
-import logging
 import os
 
 import anthropic
@@ -13,7 +12,6 @@ from app.schemas import AsistenteOut, AsistenteRequest
 
 MAX_PREGUNTA = 500  # D57
 router = APIRouter()
-log = logging.getLogger(__name__)
 
 
 def _no_disponible(detalle: str) -> HTTPException:
@@ -34,6 +32,6 @@ def preguntar(datos: AsistenteRequest, usuario: Usuario = Depends(usuario_actual
     except asistente.NoDisponible as e:
         raise _no_disponible(str(e))
     except anthropic.AnthropicError as e:  # conexión, timeout, 429, 5xx, clave inválida
-        log.warning("asistente: falla de la API (%s)", type(e).__name__)
+        asistente.log.warning("asistente: falla de la API (%s)", type(e).__name__)
         raise _no_disponible("El asistente no está disponible ahora. El resto del sistema funciona igual.")
     return {"respuesta": respuesta, "tools_usadas": usadas}
