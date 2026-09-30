@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app import operaciones
@@ -8,6 +9,14 @@ from app.auth import hash_token
 from app.db import get_db
 from app.main import app
 from app.modelos import Caja, Cliente, Negocio, Sesion, Usuario, hasher
+from app.routers.auth import FALLOS
+
+
+@pytest.fixture(autouse=True)
+def _limpiar_fallos_login():
+    FALLOS.clear()
+    yield
+    FALLOS.clear()
 
 
 def _sesion(db, negocio_id: int, nombre: str = "Operador") -> str:
@@ -44,6 +53,22 @@ def test_flujo_login_yo_logout(db, usuario_test):
     assert cliente.get("/api/auth/yo").status_code == 401
 
     app.dependency_overrides.clear()
+
+
+def test_login_bloquea_tras_5_fallidos_aunque_la_clave_sea_correcta(db, usuario_test):
+    _, usuario, password = usuario_test
+    app.dependency_overrides[get_db] = lambda: db
+    cliente = TestClient(app, base_url="https://testserver")
+    datos = {"usuario": usuario.usuario, "password": "mala"}
+    try:
+        assert [cliente.post("/api/auth/login", json=datos).status_code for _ in range(5)] == [401] * 5
+        resp = cliente.post("/api/auth/login", json={**datos, "password": password})
+        assert resp.status_code == 429
+        assert resp.json()["error"] == "demasiados_intentos"
+        # otro usuario desde la misma IP también queda bloqueado
+        assert cliente.post("/api/auth/login", json={"usuario": "otro", "password": "x"}).status_code == 429
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_negocio_id_rechazado_en_body_y_query(db):
