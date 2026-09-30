@@ -17,7 +17,7 @@ HASH_DUMMY = hasher.hash(secrets.token_urlsafe(32))
 
 
 class LoginRequest(BaseModel):
-    usuario: str
+    usuario: str = Field(max_length=64)
     password: str = Field(max_length=128)
 
 
@@ -28,20 +28,21 @@ MAX_FALLOS, VENTANA_SEG = 5, 15 * 60
 @router.post("/login", status_code=204)
 def login(datos: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> None:
     # Último valor de X-Forwarded-For: lo agrega el proxy de Render; los anteriores los inventa el cliente.
-    ip = request.headers.get("x-forwarded-for", "").split(",")[-1].strip() or request.client.host
+    ip = ",".join(request.headers.getlist("x-forwarded-for")).split(",")[-1].strip() or request.client.host
     claves, ahora = (f"u:{datos.usuario}", f"ip:{ip}"), time.monotonic()
-    for c in claves:
-        FALLOS[c] = [t for t in FALLOS.get(c, []) if ahora - t < VENTANA_SEG]
-    if any(len(FALLOS[c]) >= MAX_FALLOS for c in claves):
+    recientes = {c: [t for t in FALLOS.get(c, []) if ahora - t < VENTANA_SEG] for c in claves}
+    if any(len(r) >= MAX_FALLOS for r in recientes.values()):
         raise HTTPException(429, {"error": "demasiados_intentos", "detalle": "Demasiados intentos. Probá de nuevo en unos minutos."})
     usuario = db.query(Usuario).filter_by(usuario=datos.usuario).first()
     hash_verificar = usuario.password_hash if usuario else HASH_DUMMY
     db.commit()  # libera la conexión antes del hash de argon2 (auditoría 3.C2); rollback() perdería lo pendiente
     if usuario is None or not verificar_password(datos.password, hash_verificar):
-        for c in claves:
-            FALLOS[c].append(ahora)
+        for c, r in recientes.items():
+            FALLOS[c] = [*r, ahora]
         raise HTTPException(401, {"error": "credenciales_invalidas", "detalle": "Usuario o contraseña incorrectos."})
     FALLOS.pop(claves[0], None)
+    if not recientes[claves[1]]:
+        FALLOS.pop(claves[1], None)
     token = secrets.token_urlsafe(32)
     sesion = Sesion(id=hash_token(token), usuario_id=usuario.id, negocio_id=usuario.negocio_id,
                      expira=datetime.now(UTC) + timedelta(hours=DURACION_SESION_HORAS))

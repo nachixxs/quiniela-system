@@ -15,8 +15,6 @@ from app.routers.auth import FALLOS
 @pytest.fixture(autouse=True)
 def _limpiar_fallos_login():
     FALLOS.clear()
-    yield
-    FALLOS.clear()
 
 
 def _sesion(db, negocio_id: int, nombre: str = "Operador") -> str:
@@ -67,6 +65,7 @@ def test_login_bloquea_tras_5_fallidos_aunque_la_clave_sea_correcta(db, usuario_
         assert resp.json()["error"] == "demasiados_intentos"
         # otro usuario desde la misma IP también queda bloqueado
         assert cliente.post("/api/auth/login", json={"usuario": "otro", "password": "x"}).status_code == 429
+        assert "u:otro" not in FALLOS  # un 429 no agrega claves
     finally:
         app.dependency_overrides.clear()
 
