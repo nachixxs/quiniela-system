@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle, Sparkles } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
@@ -11,7 +11,6 @@ const NO_DISPONIBLE = "El asistente no está disponible ahora. El resto del sist
 export function Asistente() {
   const qc = useQueryClient();
   const [texto, setTexto] = useState("");
-  const enviadaDesdeArqueo = useRef(false);
   // Sin historial hacia el servidor: la sesión vive en el caché (sobrevive al cambio de pantalla, se borra al salir).
   const { data: turnos = [] } = useQuery({ queryKey: ["asistente"], queryFn: () => [] as Turno[], staleTime: Infinity, gcTime: Infinity });
   const agregar = (t: Turno) => qc.setQueryData<Turno[]>(["asistente"], (v = []) => [t, ...v]);
@@ -19,14 +18,13 @@ export function Asistente() {
   const preguntar = useMutation({
     mutationFn: (p: { pregunta: string; arqueo_id?: number }) => api.asistente(p),
     onSuccess: (r, p) => agregar({ pregunta: p.pregunta, respuesta: r.respuesta }),
-    onError: (e, p) => agregar({ pregunta: p.pregunta, error: e instanceof ApiError && e.status === 503 ? NO_DISPONIBLE : "No se pudo obtener la respuesta. Probá de nuevo." }),
+    onError: (e, p) => agregar({ pregunta: p.pregunta, error: e instanceof ApiError && e.status === 503 ? e.detalle || NO_DISPONIBLE : "No se pudo obtener la respuesta. Probá de nuevo." }),
   });
 
   // Desde el arqueo que no cuadra llega #asistente?arqueo=ID: la pregunta sale sola, una vez.
   useEffect(() => {
     const id = Number(new URLSearchParams(location.hash.split("?")[1]).get("arqueo"));
-    if (!id || enviadaDesdeArqueo.current) return;
-    enviadaDesdeArqueo.current = true;
+    if (!id) return;
     history.replaceState(null, "", "#asistente");
     preguntar.mutate({ pregunta: "¿Por qué no cuadra este arqueo?", arqueo_id: id });
   }, []);
@@ -46,7 +44,7 @@ export function Asistente() {
           <input
             value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={500} autoComplete="off" enterKeyHint="send"
             aria-label="Pregunta para el asistente" placeholder="¿Cuánto debe Pérez?"
-            className="h-12 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-base shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/20 dark:bg-input/30 lg:h-10"
+            className="h-12 min-w-0 sm:flex-1 rounded-md border border-input bg-background px-3 text-base shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/20 dark:bg-input/30 lg:h-10"
           />
           <Boton type="submit" cargando={preguntar.isPending} disabled={!texto.trim()} className="h-12 sm:w-32 lg:h-10">Preguntar</Boton>
         </div>
