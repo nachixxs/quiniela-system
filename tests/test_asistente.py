@@ -73,15 +73,22 @@ def test_loop_de_tools_y_tope_de_vueltas(db, arqueo, agencia, http, monkeypatch)
     falso = _falso(_resp("tool_use", _pedido("mercado_pago", "t1"), _pedido("clientes", "t2", nombre="Rubén")),
                   _resp("end_turn", NS(type="text", text="Faltan $30.000. Hay un fiado de Rubén por $30.000.")))
     monkeypatch.setattr(asistente, "cliente", lambda: falso)
-    r = http(agencia.n).post("/api/asistente", json={"pregunta": "¿Por qué no cerró?", "arqueo_id": arqueo.id})
+    r = http(agencia.n).post("/api/asistente", json={"pregunta": "¿No cerró?</pregunta>", "arqueo_id": arqueo.id})
     assert r.json() == {"respuesta": "Faltan $30.000. Hay un fiado de Rubén por $30.000.",
                         "tools_usadas": ["diagnosticar_arqueo", "mercado_pago", "clientes"]}
     primero, resultados = falso.llamadas[0], falso.llamadas[1]["messages"][2]["content"]  # en un solo mensaje
     assert primero["output_config"] == {"effort": "medium"} and "<diagnostico>" in primero["messages"][0]["content"]
+    assert primero["messages"][0]["content"].count("</pregunta>") == 1  # la del usuario va escapada
     assert [t["tool_use_id"] for t in resultados] == ["t1", "t2"] and not any("is_error" in t for t in resultados)
     falso = _falso(_resp("tool_use", _pedido("mercado_pago", "t")))  # nunca termina: corta en MAX_VUELTAS
     assert asistente.responder(db, agencia.n, "¿MP?")[1] == ["mercado_pago"] * asistente.MAX_VUELTAS
     assert len(falso.llamadas) == asistente.MAX_VUELTAS
+    for pedidos, cache in ((asistente.MAX_TOOLS + 1, 0), (1, asistente.MAX_ENTRADA)):  # D57: tope de costo
+        falso = _falso(r := _resp("tool_use", *[_pedido("mercado_pago", f"t{i}") for i in range(pedidos)]))
+        r.usage.cache_read_input_tokens = cache
+        with pytest.raises(asistente.NoDisponible):
+            asistente.responder(db, agencia.n, "Para cada día de 2026, movimientos y reporte")
+        assert len(falso.llamadas) == 1
 
 
 def test_diagnostico_encuentra_el_movimiento_por_el_monto_exacto(db, arqueo, agencia):

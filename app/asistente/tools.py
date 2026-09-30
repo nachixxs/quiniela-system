@@ -15,6 +15,7 @@ from app.operaciones import ARGENTINA, NoEncontrado, obtener
 
 FECHA = {"type": "string", "description": "YYYY-MM-DD"}
 TIPOS = list(get_args(TipoMovimiento))
+MAX_TEXTO = 200
 
 
 def _schema(**props) -> dict:
@@ -47,14 +48,20 @@ def _hora(momento) -> str:
     return momento.astimezone(ARGENTINA).strftime("%H:%M")
 
 
+def _corto(s: str | None) -> str | None:
+    """Notas, contrapartes y nombres no tienen tope en la base: cada uno viaja a la API y se paga (D57)."""
+    return s[:MAX_TEXTO] + "…" if s and len(s) > MAX_TEXTO else s
+
+
 def _movs(db: Session, n: int, movs) -> list[dict]:
     """Compacto y sin vacíos. `anulado`: tiene contra-asiento; `anula_a`: es el contra-asiento de otro (§7.1)."""
     anulados = set(db.scalars(select(Movimiento.anula_id).where(
         Movimiento.negocio_id == n, Movimiento.anula_id.in_([m.id for m in movs]))))
     cajas = dict(db.execute(select(Caja.id, Caja.nombre).where(Caja.negocio_id == n)).all())
     filas = [{"id": m.id, "fecha": str(m.corresponde_a_fecha), "hora": _hora(m.creado_en), "caja": cajas[m.caja_id],
-              "tipo": m.tipo, "monto": m.monto, "cliente": m.cliente_nombre, "contraparte": m.contraparte,
-              "nota": m.nota, "ajuste_tardio": m.es_ajuste, "anula_a": m.anula_id, "anulado": m.id in anulados}
+              "tipo": m.tipo, "monto": m.monto, "cliente": _corto(m.cliente_nombre),
+              "contraparte": _corto(m.contraparte), "nota": _corto(m.nota), "ajuste_tardio": m.es_ajuste,
+              "anula_a": m.anula_id, "anulado": m.id in anulados}
              for m in movs]
     return [{k: v for k, v in f.items() if v not in (None, False)} for f in filas]
 
@@ -71,20 +78,22 @@ def _arqueos(db: Session, n: int, arqueos) -> list[dict]:
                       "efectivo_esperado": a.efectivo_esperado, "efectivo_contado": a.efectivo_contado,
                       "diferencia_efectivo": a.diferencia_efectivo, "boletas_esperadas": a.boletas_esperadas,
                       "boletas_contadas": a.boletas_contadas, "diferencia_boletas": a.diferencia_boletas,
-                      "estado": a.estado, "nota": a.nota,
+                      "estado": a.estado, "nota": _corto(a.nota),
                       "explicado_por": _movs(db, n, [m for m in ajustes if m.explica_arqueo_id == a.id])})
     return filas
 
 
 def clientes(db: Session, n: int, nombre: str = "", orden: str = "monto") -> dict:
     if not nombre.strip():
-        return {"deudores": [{k: d[k] for k in ("nombre", "saldo", "dias_deuda_mas_vieja")}
+        return {"deudores": [{"nombre": _corto(d["nombre"]), "saldo": d["saldo"],
+                              "dias_deuda_mas_vieja": d["dias_deuda_mas_vieja"]}
                              for d in consultas.deudores(db, n, orden)[:30]]}
     encontrados = consultas.buscar_clientes(db, n, nombre)[:5]
     if len(encontrados) != 1:
-        return {"clientes": [{"nombre": c["nombre"], "saldo": c["saldo"]} for c in encontrados]}
+        return {"clientes": [{"nombre": _corto(c["nombre"]), "saldo": c["saldo"]} for c in encontrados]}
     c = consultas.cliente(db, n, encontrados[0]["id"])
-    return {"cliente": c["nombre"], "saldo": c["saldo"], "ultimos_movimientos": _movs(db, n, c["movimientos"][:10])}
+    return {"cliente": _corto(c["nombre"]), "saldo": c["saldo"],
+            "ultimos_movimientos": _movs(db, n, c["movimientos"][:10])}
 
 
 def movimientos(db: Session, n: int, fecha: str | None = None, turno: str | None = None, caja: str | None = None,
