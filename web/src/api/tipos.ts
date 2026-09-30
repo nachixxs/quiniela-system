@@ -26,6 +26,8 @@ export type Saldo = components["schemas"]["Saldo"];
 export type RendicionRequest = components["schemas"]["RendicionRequest"];
 export type RendicionOut = components["schemas"]["RendicionOut"];
 export type ClienteCrear = components["schemas"]["ClienteCrear"];
+export type AsistenteRequest = components["schemas"]["AsistenteRequest"];
+export type AsistenteOut = components["schemas"]["AsistenteOut"];
 
 // GET /auth/yo no está tipado en el contrato (additionalProperties), CONTRATO-API.md fija esta forma
 export interface Usuario {
@@ -35,7 +37,7 @@ export interface Usuario {
 }
 
 export class ApiError extends Error {
-  constructor(public codigo: string, public detalle: string) {
+  constructor(public codigo: string, public detalle: string, public status = 0) {
     super(detalle);
   }
 }
