@@ -11,3 +11,5 @@ services:
         value: "1"
       - key: DATABASE_URL
         sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
