@@ -406,7 +406,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Preguntar */
+        /**
+         * Preguntar
+         * @description §11.3: fuera del camino crítico. Sin clave (o vacía, como la pasa compose) o con la API caída, 503 y el resto
+         *     del sistema sigue igual. No se loguean preguntas ni respuestas: traen datos de clientes.
+         */
         post: operations["preguntar_api_asistente_post"];
         delete?: never;
         options?: never;
