@@ -1660,6 +1660,7 @@
           "asistente"
         ],
         "summary": "Preguntar",
+        "description": "§11.3: fuera del camino crítico. Sin clave (o vacía, como la pasa compose) o con la API caída, 503 y el resto\ndel sistema sigue igual. No se loguean preguntas ni respuestas: traen datos de clientes.",
         "operationId": "preguntar_api_asistente_post",
         "parameters": [
           {
