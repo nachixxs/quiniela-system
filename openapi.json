@@ -2278,6 +2278,7 @@
         "properties": {
           "usuario": {
             "type": "string",
+            "maxLength": 64,
             "title": "Usuario"
           },
           "password": {

@@ -1,7 +1,8 @@
 import secrets
+import time
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -16,17 +17,32 @@ HASH_DUMMY = hasher.hash(secrets.token_urlsafe(32))
 
 
 class LoginRequest(BaseModel):
-    usuario: str
+    usuario: str = Field(max_length=64)
     password: str = Field(max_length=128)
 
 
+FALLOS: dict[str, list[float]] = {}  # clave "u:usuario|ip:x" o "ip:x" -> momentos de intentos fallidos (D58; una sola instancia)
+MAX_FALLOS, MAX_FALLOS_IP, VENTANA_SEG = 5, 20, 15 * 60
+
+
 @router.post("/login", status_code=204)
-def login(datos: LoginRequest, response: Response, db: Session = Depends(get_db)) -> None:
+def login(datos: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> None:
+    # Último valor de X-Forwarded-For: lo agrega el proxy de Render; los anteriores los inventa el cliente.
+    ip = ",".join(request.headers.getlist("x-forwarded-for")).split(",")[-1].strip() or request.client.host
+    claves, ahora = (f"u:{datos.usuario}|ip:{ip}", f"ip:{ip}"), time.monotonic()
+    recientes = {c: [t for t in FALLOS.get(c, []) if ahora - t < VENTANA_SEG] for c in claves}
+    if any(len(r) >= tope for r, tope in zip(recientes.values(), (MAX_FALLOS, MAX_FALLOS_IP))):
+        raise HTTPException(429, {"error": "demasiados_intentos", "detalle": "Demasiados intentos. Probá de nuevo en unos minutos."})
     usuario = db.query(Usuario).filter_by(usuario=datos.usuario).first()
     hash_verificar = usuario.password_hash if usuario else HASH_DUMMY
     db.commit()  # libera la conexión antes del hash de argon2 (auditoría 3.C2); rollback() perdería lo pendiente
     if usuario is None or not verificar_password(datos.password, hash_verificar):
+        for c, r in recientes.items():
+            FALLOS[c] = [*r, ahora]
         raise HTTPException(401, {"error": "credenciales_invalidas", "detalle": "Usuario o contraseña incorrectos."})
+    FALLOS.pop(claves[0], None)
+    if not recientes[claves[1]]:
+        FALLOS.pop(claves[1], None)
     token = secrets.token_urlsafe(32)
     sesion = Sesion(id=hash_token(token), usuario_id=usuario.id, negocio_id=usuario.negocio_id,
                      expira=datetime.now(UTC) + timedelta(hours=DURACION_SESION_HORAS))
