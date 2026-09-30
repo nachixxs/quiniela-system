@@ -114,8 +114,8 @@ The repo includes the configuration, not a public instance:
 - `render.yaml`: a Render web service built from the `Dockerfile`, with a health check on
   `/api/salud`. The database URL is set outside the repo.
 - `.github/workflows/backup.yml`: a daily scheduled job that runs `pg_dump` on the Neon
-  PostgreSQL database, encrypts the dump with GPG and uploads it to Backblaze B2. It is
-  disabled until the production database exists.
+  PostgreSQL database, encrypts the dump with GPG and uploads it to Backblaze B2 (a bucket
+  with Object Lock, 30-day retention). A restore was tested end to end.
 
 ## Project status
 
