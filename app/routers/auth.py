@@ -21,17 +21,17 @@ class LoginRequest(BaseModel):
     password: str = Field(max_length=128)
 
 
-FALLOS: dict[str, list[float]] = {}  # clave "u:usuario" o "ip:x" -> momentos de intentos fallidos (D50; una sola instancia)
-MAX_FALLOS, VENTANA_SEG = 5, 15 * 60
+FALLOS: dict[str, list[float]] = {}  # clave "u:usuario|ip:x" o "ip:x" -> momentos de intentos fallidos (D58; una sola instancia)
+MAX_FALLOS, MAX_FALLOS_IP, VENTANA_SEG = 5, 20, 15 * 60
 
 
 @router.post("/login", status_code=204)
 def login(datos: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> None:
     # Último valor de X-Forwarded-For: lo agrega el proxy de Render; los anteriores los inventa el cliente.
     ip = ",".join(request.headers.getlist("x-forwarded-for")).split(",")[-1].strip() or request.client.host
-    claves, ahora = (f"u:{datos.usuario}", f"ip:{ip}"), time.monotonic()
+    claves, ahora = (f"u:{datos.usuario}|ip:{ip}", f"ip:{ip}"), time.monotonic()
     recientes = {c: [t for t in FALLOS.get(c, []) if ahora - t < VENTANA_SEG] for c in claves}
-    if any(len(r) >= MAX_FALLOS for r in recientes.values()):
+    if any(len(r) >= tope for r, tope in zip(recientes.values(), (MAX_FALLOS, MAX_FALLOS_IP))):
         raise HTTPException(429, {"error": "demasiados_intentos", "detalle": "Demasiados intentos. Probá de nuevo en unos minutos."})
     usuario = db.query(Usuario).filter_by(usuario=datos.usuario).first()
     hash_verificar = usuario.password_hash if usuario else HASH_DUMMY
