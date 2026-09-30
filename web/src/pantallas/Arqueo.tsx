@@ -66,11 +66,10 @@ function Resultado({ r }: { r: ArqueoOut }) {
       </m.div>
       {!cierra && (
         <div className="border-t p-4 lg:px-5">
-          <button type="button" disabled className="flex min-h-11 w-full items-center gap-2 rounded-md border border-dashed px-3 text-left text-sm text-muted-foreground lg:min-h-9">
+          <a href={`#asistente?arqueo=${r.id}`} className="presiona flex min-h-11 w-full items-center gap-2 rounded-md border px-3 text-sm hover:bg-muted lg:min-h-9">
             <Sparkles className="size-4 shrink-0" aria-hidden />
-            <span className="flex-1">Preguntarle al asistente</span>
-            <span className="text-xs">Próximamente</span>
-          </button>
+            Preguntarle al asistente
+          </a>
         </div>
       )}
     </m.div>

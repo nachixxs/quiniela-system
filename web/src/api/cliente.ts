@@ -1,5 +1,5 @@
 import type {
-  ArqueoOut, ArqueoRequest, CajaEstado, ClienteBusqueda, ClienteCrear, ClienteDetalle,
+  ArqueoOut, AsistenteOut, AsistenteRequest, ArqueoRequest, CajaEstado, ClienteBusqueda, ClienteCrear, ClienteDetalle,
   DeudorOut, DiaActualOut, DiaConTurnos, DiferenciaItem, JuegoOut, MovimientoCrear, MovimientoOut, MovimientosPagina,
   RendicionItem, RendicionOut, RendicionRequest, ReporteDia, ReporteMercadoPago, ReporteMes, Saldo, TicketOut, TicketRequest,
   TraspasoRequest, Usuario,
@@ -15,7 +15,7 @@ async function pedir<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "error_desconocido", detalle: "Ocurrió un error inesperado." }));
-    throw new ApiError(err.error, err.detalle);
+    throw new ApiError(err.error, err.detalle, res.status);
   }
   return res.status === 204 ? (undefined as T) : res.json();
 }
@@ -50,4 +50,5 @@ export const api = {
   traspaso: (t: TraspasoRequest) => pedir<Saldo>("POST", "/traspaso", t),
   rendicion: (r: RendicionRequest) => pedir<RendicionOut>("POST", "/rendicion", r),
   crearCliente: (c: ClienteCrear) => pedir<ClienteBusqueda>("POST", "/clientes", c),
+  asistente: (p: AsistenteRequest) => pedir<AsistenteOut>("POST", "/asistente", p),
 };
