@@ -92,7 +92,7 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
         {juegos.isLoading && <div className="esqueleto h-12" />}
         {juegos.isError && <Aviso tono="error">No se pudieron traer los juegos. Cerrá y volvé a intentar.</Aviso>}
         {juegos.data?.map((j) => (
-          <CampoMonto key={j.id} etiqueta={/telekino/i.test(j.nombre) ? `${j.nombre} (lo vendido en este turno)` : j.nombre} valor={montos[j.id] ?? ""} onValor={(v) => setMontos((m) => ({ ...m, [j.id]: v }))} />
+          <CampoMonto key={j.id} etiqueta={j.nombre === "Telekino" ? `${j.nombre} (lo vendido en este turno)` : j.nombre} valor={montos[j.id] ?? ""} onValor={(v) => setMontos((m) => ({ ...m, [j.id]: v }))} />
         ))}
         {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo cargar el ticket."}</Aviso>}
         <Boton type="submit" cargando={guardar.isPending} disabled={!listo} className={BOTON}>
