@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app import consultas
 from app import operaciones as op
 from app.db import engine
-from app.modelos import Arqueo, DiaOperativo, Movimiento, Negocio, Turno
+from app.modelos import Arqueo, DiaOperativo, Juego, Movimiento, Negocio, Turno
 
 
 def mov(db, a, tipo, monto, caja=None, **campos):
@@ -188,6 +188,34 @@ def test_cierre_del_mes_por_corresponde_a_fecha_y_sin_anulados(db, agencia):  # 
     por_dia = reporte["ventas_por_dia"]
     assert len(por_dia) == 30 and por_dia[0] == {"fecha": date(2026, 9, 1), "total": 0}
     assert por_dia[21] == {"fecha": date(2026, 9, 22), "total": 108000} and sum(d["total"] for d in por_dia) == 108000
+
+
+def test_telekino_va_por_turno_y_el_resto_acumulado(db, agencia):  # D63: cartones, no pasan por la terminal
+    a = agencia
+    telekino = Juego(negocio_id=a.n, nombre="Telekino")
+    db.add(telekino)
+    db.flush()
+    op.cargar_ticket(db, a.n, a.manana, 50000, [{"juego_id": a.juego, "monto": 8000},
+                                               {"juego_id": telekino.id, "monto": 6000}])
+    op.guardar_arqueo(db, a.n, a.chica, a.manana, 64000, 0)
+    ticket = op.cargar_ticket(db, a.n, a.noche, 80000, [{"juego_id": a.juego, "monto": 13000},  # Quini 6: 5.000
+                                                        {"juego_id": telekino.id, "monto": 2000}])  # menos, y vale
+    assert ticket["desglose"]["otros_juegos"] == 7000 and ticket["esperado"]["efectivo"] == 64000 + 30000 + 7000
+
+
+def test_traspaso_parcial_no_es_el_del_arqueo(db, agencia):  # D65
+    a = agencia
+    op.cargar_ticket(db, a.n, a.manana, 100000, [])
+    assert op.traspasar(db, a.n, a.chica, 30000) == {"efectivo": 30000, "boletas": 0}  # a mitad de turno
+    op.traspasar(db, a.n, a.chica, 20000)  # se repite
+    esperados = {c["id"]: c["esperado"] for c in consultas.cajas(db, a.n)}
+    assert esperados[a.chica] == {"efectivo": 50000, "boletas": 0} and esperados[a.grande]["efectivo"] == 50000
+    assert op.guardar_arqueo(db, a.n, a.chica, a.manana, 50000, 0).estado == "cuadra"
+    op.traspasar(db, a.n, a.chica, 10000)  # en la noche, antes del traspaso del arqueo de la mañana
+    assert op.traspasar(db, a.n, a.chica) == {"efectivo": 50000, "boletas": 0}  # sin 409
+    with pytest.raises(op.Conflicto):
+        op.traspasar(db, a.n, a.chica)
+    assert op.guardar_arqueo(db, a.n, a.grande, a.noche, 110000, 0).estado == "cuadra"
 
 
 def test_dos_escrituras_del_mismo_negocio_van_en_fila(tablas):
