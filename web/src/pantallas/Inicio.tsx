@@ -30,10 +30,10 @@ function Indicador({ titulo, icono: Icono, tonoIcono = "text-muted-foreground", 
 
 // Un dato de caja: rótulo, monto en mono y el esperado debajo si existe.
 const Dato = ({ rotulo, valor, esperado }: { rotulo: string; valor: ReactNode; esperado?: number }) => (
-  <div className="min-w-0">
+  <div>
     <p className="rotulo text-muted-foreground">{rotulo}</p>
-    <p className="mt-1.5 truncate">{valor}</p>
-    {esperado !== undefined && <p className="mt-1 truncate text-xs text-muted-foreground">Esperado <span className="monto">{pesos(esperado)}</span></p>}
+    <p className="mt-1.5">{valor}</p>
+    {esperado !== undefined && <p className="mt-1 text-xs text-muted-foreground">Esperado <span className="monto">{pesos(esperado)}</span></p>}
   </div>
 );
 const Monto = ({ v }: { v: number }) => <span className="monto text-2xl font-semibold">{pesos(v)}</span>;
@@ -45,7 +45,7 @@ function TarjetaCaja({ c, hayTurnoAbierto }: { c: CajaEstado; hayTurnoAbierto: b
   return (
     <Indicador titulo={c.nombre} icono={c.tipo === "operativa" ? Store : Landmark} className="col-span-2 sm:col-span-1"
       extra={sinTicket && <span className={`${INSIGNIA} ${TONOS.aviso}`}>Sin ticket</span>}>
-      <div className="mt-4 grid grid-cols-2 gap-4">
+      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
         <Dato rotulo="Efectivo" esperado={c.esperado?.efectivo}
           valor={sinTicket ? <span className="text-sm leading-8 text-muted-foreground">Al cargar el ticket</span> : <Monto v={c.efectivo} />} />
         <Dato rotulo="Boletas" valor={<Monto v={c.boletas} />} esperado={c.esperado?.boletas} />
