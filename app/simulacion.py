@@ -24,7 +24,6 @@ CLIENTES = ["Rubén Ficticio", "Marta Inventada", "Hugo Imaginario", "Norma Supu
 SUBAGENTES = ["Subagencia Los Álamos", "Subagencia El Trébol Inventado", "Subagencia Barrio Ficticio"]
 DUENO, EMPLEADO = "Ernesto Ficticio", "Lucas Imaginario"
 TELEKINO, CAFE, CADETE = 1500, 2000, 3000  # precio del cartón y gastos fijos, ficticios
-SOBRANTE = "Sobrante chico: se anota y no se corrige"
 
 
 def simular(db, n: int, dias: list[date], rng: random.Random) -> None:
@@ -89,7 +88,7 @@ def simular(db, n: int, dias: list[date], rng: random.Random) -> None:
         esperado = op.cargar_ticket(db, n, turno, quiniela, lista)["esperado"]
         sobra = rng.randint(1, 10) * 100 if rng.random() < 0.25 else 0
         op.guardar_arqueo(db, n, chica, turno, esperado["efectivo"] + sobra, esperado["boletas"],
-                          SOBRANTE if sobra else None)
+                          "Sobrante chico: se anota y no se corrige" if sobra else None)
 
     def turno_chica(desde, hasta, factor, anular=False):
         """Fiados, cobros, tachados, Mercado Pago y premios de un turno, entre dos minutos del día."""
