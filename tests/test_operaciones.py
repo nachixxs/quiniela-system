@@ -1,3 +1,4 @@
+import random
 from datetime import date
 from uuid import uuid4
 
@@ -6,10 +7,11 @@ from sqlalchemy import delete, func, select, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from app import consultas
+from app import consultas, simulacion
 from app import operaciones as op
 from app.db import engine
-from app.modelos import Arqueo, DiaOperativo, Juego, Movimiento, Negocio, Turno
+from app.modelos import Arqueo, Caja, DiaOperativo, Juego, Movimiento, Negocio, Turno
+from app.seed import JUEGOS
 
 
 def mov(db, a, tipo, monto, caja=None, **campos):
@@ -239,3 +241,26 @@ def test_dos_escrituras_del_mismo_negocio_van_en_fila(tablas):
             a.execute(delete(DiaOperativo).where(DiaOperativo.negocio_id == n))
             a.execute(delete(Negocio).where(Negocio.id == n))
             a.commit()
+
+
+def test_dos_dias_simulados_cierran_y_cuadran(db):  # 7.4: el mes simulado, con dos días
+    negocio = Negocio(nombre="Agencia Simulada")
+    db.add(negocio)
+    db.flush()
+    n, grande = negocio.id, Caja(negocio_id=negocio.id, nombre="Caja grande", tipo="central")
+    db.add(grande)
+    db.flush()
+    chica = Caja(negocio_id=n, nombre="Caja chica", tipo="operativa", caja_padre_id=grande.id)
+    db.add_all([chica, *(Juego(negocio_id=n, nombre=j, es_quiniela=j == "Quiniela") for j in JUEGOS)])
+    db.flush()
+    simulacion.simular(db, n, [date(2026, 9, 25), date(2026, 9, 26)], random.Random(simulacion.SEMILLA))
+    assert db.scalars(select(DiaOperativo.estado).where(DiaOperativo.negocio_id == n)).all() == ["cerrado"] * 2
+    arqueos = db.scalars(select(Arqueo).where(Arqueo.negocio_id == n, Arqueo.caja_id == chica.id)).all()
+    assert len(arqueos) == 4 and all(a.estado == "cuadra" for a in arqueos if a.nota is None)
+    assert all(a.diferencia_efectivo > 0 and a.diferencia_boletas == 0 for a in arqueos if a.nota)  # el sobrante
+    movs = db.scalars(select(Movimiento).where(Movimiento.negocio_id == n)).all()  # cargados ese día, no tardíos
+    assert all(m.creado_en.astimezone(op.ARGENTINA).date() == m.corresponde_a_fecha and not m.es_ajuste for m in movs)
+    cliente = consultas.deudores(db, n)[0]
+    fiados, cobros = (sum(m.monto for m in movs if m.cliente_id == cliente["id"] and m.tipo == t)
+                      for t in ("fiado", "cobro_fiado"))
+    assert cliente["saldo"] == fiados - cobros > 0
