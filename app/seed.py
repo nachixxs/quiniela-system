@@ -6,7 +6,7 @@ from sqlalchemy import select
 from app.db import SessionLocal
 from app.modelos import Caja, Juego, Negocio, Usuario, hasher
 
-JUEGOS = ["Quiniela", "Quini 6", "Loto", "Brinco", "Combinada", "Lotería", "Telekino"]
+JUEGOS = ["Quiniela", "Quini 6", "Loto", "Brinco", "Combinada", "Lotería", "Telekino", "Quiniela Instantánea"]
 
 
 def obtener_o_crear(db, modelo, **campos):
@@ -41,7 +41,7 @@ def main():
             obtener_o_crear(db, Juego, negocio_id=negocio.id, nombre=nombre, es_quiniela=nombre == "Quiniela")
         db.commit()
     estado = "ya existía (no se tocó su clave ni su negocio)" if existia else "creado"
-    print(f"Seed listo: {negocio_nombre}, usuario {usuario} {estado}, dos cajas y siete juegos.")
+    print(f"Seed listo: {negocio_nombre}, usuario {usuario} {estado}, dos cajas y {len(JUEGOS)} juegos.")
 
 
 if __name__ == "__main__":
