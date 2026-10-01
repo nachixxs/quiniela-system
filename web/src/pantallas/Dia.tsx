@@ -92,7 +92,7 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
         {juegos.isLoading && <div className="esqueleto h-12" />}
         {juegos.isError && <Aviso tono="error">No se pudieron traer los juegos. Cerrá y volvé a intentar.</Aviso>}
         {juegos.data?.map((j) => (
-          <CampoMonto key={j.id} etiqueta={j.nombre} valor={montos[j.id] ?? ""} onValor={(v) => setMontos((m) => ({ ...m, [j.id]: v }))} />
+          <CampoMonto key={j.id} etiqueta={j.nombre === "Telekino" ? `${j.nombre} (lo vendido en este turno)` : j.nombre} valor={montos[j.id] ?? ""} onValor={(v) => setMontos((m) => ({ ...m, [j.id]: v }))} />
         ))}
         {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo cargar el ticket."}</Aviso>}
         <Boton type="submit" cargando={guardar.isPending} disabled={!listo} className={BOTON}>
@@ -103,29 +103,35 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
   );
 }
 
-// Traspaso (D9): sube a la caja grande lo contado en el último arqueo de la chica. Sin montos a elegir.
+// Traspaso (D9, D65): sin monto sube lo contado en el último arqueo; con monto mueve ese efectivo a mitad de turno.
 function HojaTraspaso({ cajaId, onCerrar }: { cajaId: number; onCerrar: () => void }) {
   const [movido, setMovido] = useState<Saldo | null>(null);
+  const [monto, setMonto] = useState("");
+  const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
+  const hayArqueo = !!dia.data?.turnos.some((t) => t.estado === "cerrado");
   // Saldo actual de la caja chica (después del arqueo, lo contado): lo que se va a mover.
   const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
   const caja = cajas.data?.find((c) => c.id === cajaId);
   const hacer = useMutation({
-    mutationFn: () => api.traspaso({ caja_origen_id: cajaId }),
+    mutationFn: () => api.traspaso({ caja_origen_id: cajaId, monto: monto ? Number(monto) : null }),
     onSuccess: setMovido,
   });
 
   return (
-    <Hoja titulo="Traspaso a caja grande" descripcion="Sube lo contado en el último arqueo de la caja chica." onCerrar={onCerrar}>
+    <Hoja titulo="Traspaso a caja grande" descripcion="Sin monto sube lo contado en el último arqueo; con monto mueve ese efectivo ahora." onCerrar={onCerrar}>
       <div className="flex flex-col gap-4">
+        {!movido && <CampoMonto etiqueta={hayArqueo ? "Monto (opcional)" : "Monto"} valor={monto} onValor={setMonto} autoFocus />}
         {movido ? (
           <p className="text-sm">Se movieron <span className="monto font-medium">{pesos(movido.efectivo)}</span> en efectivo y <span className="monto font-medium">{pesos(movido.boletas)}</span> en boletas.</p>
+        ) : monto ? (
+          <p className="text-sm text-muted-foreground">Se mueven <span className="monto font-medium text-foreground">{pesos(Number(monto))}</span> en efectivo a la caja grande.</p>
         ) : caja ? (
           <p className="text-sm text-muted-foreground">Se mueven <span className="monto font-medium text-foreground">{pesos(caja.efectivo)}</span> en efectivo y <span className="monto font-medium text-foreground">{pesos(caja.boletas)}</span> en boletas a la caja grande.</p>
         ) : (
           <div className="esqueleto h-5" />
         )}
         {hacer.isError && <Aviso tono="error">{hacer.error instanceof ApiError ? hacer.error.detalle : "No se pudo traspasar."}</Aviso>}
-        <Boton type="button" cargando={hacer.isPending} onClick={() => (movido ? onCerrar() : hacer.mutate())} className={BOTON}>
+        <Boton type="button" cargando={hacer.isPending} disabled={!movido && !monto && !hayArqueo} onClick={() => (movido ? onCerrar() : hacer.mutate())} className={BOTON}>
           {movido ? "Listo" : hacer.isPending ? "Traspasando…" : "Confirmar traspaso"}
         </Boton>
       </div>

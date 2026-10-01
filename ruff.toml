@@ -1,0 +1,6 @@
+# Auditoría del 30/09 (Q10): solo la configuración. Todavía no corre en el CI ni está en requirements.txt.
+target-version = "py314"
+line-length = 120
+
+[lint]
+select = ["E", "F"]

@@ -868,6 +868,8 @@ export interface components {
         TraspasoRequest: {
             /** Caja Origen Id */
             caja_origen_id: number;
+            /** Monto */
+            monto?: number | null;
         };
         /** TurnoOut */
         TurnoOut: {

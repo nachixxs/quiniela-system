@@ -1,3 +1,4 @@
+import random
 from datetime import date
 from uuid import uuid4
 
@@ -6,10 +7,11 @@ from sqlalchemy import delete, func, select, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from app import consultas
+from app import consultas, simulacion
 from app import operaciones as op
 from app.db import engine
-from app.modelos import Arqueo, DiaOperativo, Movimiento, Negocio, Turno
+from app.modelos import Arqueo, Caja, DiaOperativo, Juego, Movimiento, Negocio, Turno
+from app.seed import JUEGOS
 
 
 def mov(db, a, tipo, monto, caja=None, **campos):
@@ -190,6 +192,34 @@ def test_cierre_del_mes_por_corresponde_a_fecha_y_sin_anulados(db, agencia):  # 
     assert por_dia[21] == {"fecha": date(2026, 9, 22), "total": 108000} and sum(d["total"] for d in por_dia) == 108000
 
 
+def test_telekino_va_por_turno_y_el_resto_acumulado(db, agencia):  # D63: cartones, no pasan por la terminal
+    a = agencia
+    telekino = Juego(negocio_id=a.n, nombre="Telekino")
+    db.add(telekino)
+    db.flush()
+    op.cargar_ticket(db, a.n, a.manana, 50000, [{"juego_id": a.juego, "monto": 8000},
+                                               {"juego_id": telekino.id, "monto": 6000}])
+    op.guardar_arqueo(db, a.n, a.chica, a.manana, 64000, 0)
+    ticket = op.cargar_ticket(db, a.n, a.noche, 80000, [{"juego_id": a.juego, "monto": 13000},  # Quini 6: 5.000
+                                                        {"juego_id": telekino.id, "monto": 2000}])  # menos, y vale
+    assert ticket["desglose"]["otros_juegos"] == 7000 and ticket["esperado"]["efectivo"] == 64000 + 30000 + 7000
+
+
+def test_traspaso_parcial_no_es_el_del_arqueo(db, agencia):  # D65
+    a = agencia
+    op.cargar_ticket(db, a.n, a.manana, 100000, [])
+    assert op.traspasar(db, a.n, a.chica, 30000) == {"efectivo": 30000, "boletas": 0}  # a mitad de turno
+    op.traspasar(db, a.n, a.chica, 20000)  # se repite
+    esperados = {c["id"]: c["esperado"] for c in consultas.cajas(db, a.n)}
+    assert esperados[a.chica] == {"efectivo": 50000, "boletas": 0} and esperados[a.grande]["efectivo"] == 50000
+    assert op.guardar_arqueo(db, a.n, a.chica, a.manana, 50000, 0).estado == "cuadra"
+    op.traspasar(db, a.n, a.chica, 10000)  # en la noche, antes del traspaso del arqueo de la mañana
+    assert op.traspasar(db, a.n, a.chica) == {"efectivo": 50000, "boletas": 0}  # sin 409
+    with pytest.raises(op.Conflicto):
+        op.traspasar(db, a.n, a.chica)
+    assert op.guardar_arqueo(db, a.n, a.grande, a.noche, 110000, 0).estado == "cuadra"
+
+
 def test_dos_escrituras_del_mismo_negocio_van_en_fila(tablas):
     """Dos conexiones: mientras una escritura tiene los turnos (_turno), la rendición del mismo negocio espera,
     acá hasta el lock_timeout. Sin el lock, un doble toque pasa dos veces los chequeos y duplica el efecto."""
@@ -211,3 +241,26 @@ def test_dos_escrituras_del_mismo_negocio_van_en_fila(tablas):
             a.execute(delete(DiaOperativo).where(DiaOperativo.negocio_id == n))
             a.execute(delete(Negocio).where(Negocio.id == n))
             a.commit()
+
+
+def test_dos_dias_simulados_cierran_y_cuadran(db):  # 7.4: el mes simulado, con dos días
+    negocio = Negocio(nombre="Agencia Simulada")
+    db.add(negocio)
+    db.flush()
+    n, grande = negocio.id, Caja(negocio_id=negocio.id, nombre="Caja grande", tipo="central")
+    db.add(grande)
+    db.flush()
+    chica = Caja(negocio_id=n, nombre="Caja chica", tipo="operativa", caja_padre_id=grande.id)
+    db.add_all([chica, *(Juego(negocio_id=n, nombre=j, es_quiniela=j == "Quiniela") for j in JUEGOS)])
+    db.flush()
+    simulacion.simular(db, n, [date(2026, 9, 25), date(2026, 9, 26)], random.Random(simulacion.SEMILLA))
+    assert db.scalars(select(DiaOperativo.estado).where(DiaOperativo.negocio_id == n)).all() == ["cerrado"] * 2
+    arqueos = db.scalars(select(Arqueo).where(Arqueo.negocio_id == n, Arqueo.caja_id == chica.id)).all()
+    assert len(arqueos) == 4 and all(a.estado == "cuadra" for a in arqueos if a.nota is None)
+    assert all(a.diferencia_efectivo > 0 and a.diferencia_boletas == 0 for a in arqueos if a.nota)  # el sobrante
+    movs = db.scalars(select(Movimiento).where(Movimiento.negocio_id == n)).all()  # cargados ese día, no tardíos
+    assert all(m.creado_en.astimezone(op.ARGENTINA).date() == m.corresponde_a_fecha and not m.es_ajuste for m in movs)
+    cliente = consultas.deudores(db, n)[0]
+    fiados, cobros = (sum(m.monto for m in movs if m.cliente_id == cliente["id"] and m.tipo == t)
+                      for t in ("fiado", "cobro_fiado"))
+    assert cliente["saldo"] == fiados - cobros > 0

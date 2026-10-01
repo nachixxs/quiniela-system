@@ -125,6 +125,7 @@ class AnularRequest(BaseModel):
 
 class TraspasoRequest(BaseModel):
     caja_origen_id: int
+    monto: int | None = Field(default=None, gt=0, lt=2**31)
 
 
 class ArqueoRequest(BaseModel):

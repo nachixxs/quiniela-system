@@ -192,30 +192,37 @@ def anular_movimiento(db: Session, negocio_id: int, movimiento_id: int, motivo: 
     return contra
 
 
-def traspasar(db: Session, negocio_id: int, caja_origen_id: int) -> dict:
+def traspasar(db: Session, negocio_id: int, caja_origen_id: int, monto: int | None = None) -> dict:
     """POST /traspaso: sube a la caja padre lo contado en el último arqueo, en dos filas (D9). Lo cargado después de
-    ese arqueo es del turno siguiente y se queda en la caja (DIA-SIMULADO). Devuelve lo movido."""
+    ese arqueo es del turno siguiente y se queda en la caja (DIA-SIMULADO). Con `monto`, solo ese efectivo, en el
+    turno abierto y sin arqueo (D65): va con nota "Traspaso parcial" y no es el del arqueo. Devuelve lo movido."""
     caja = obtener(db, Caja, negocio_id, caja_origen_id)
     if caja.caja_padre_id is None:
         raise Invalido("sin_caja_padre", "Esta caja no traspasa a otra.")
-    turno = _turno(db, negocio_id, abierto=False)
-    movs, (efectivo, boletas) = control(db, negocio_id, caja)
-    if any(m.tipo.startswith("traspaso") and m.caja_id == caja.id for m in movs):
+    if monto is not None and monto <= 0:
+        raise Invalido("monto_invalido", "El monto tiene que ser mayor a cero.")
+    turno = _turno(db, negocio_id, abierto=monto is not None)
+    desde = select(func.max(Arqueo.momento)).where(Arqueo.negocio_id == negocio_id, Arqueo.caja_id == caja.id)
+    if monto is None and db.scalar(select(Movimiento.id).where(  # el traspaso del último arqueo, no los parciales
+            Movimiento.negocio_id == negocio_id, Movimiento.caja_id == caja.id, Movimiento.tipo.startswith("traspaso"),
+            Movimiento.nota.is_distinct_from("Traspaso parcial"), Movimiento.creado_en > desde.scalar_subquery())):
         raise Conflicto("ya_traspasado", "Lo contado en el último arqueo ya se traspasó: primero arqueá la caja.")
-    for tipo, monto in (("traspaso", efectivo), ("traspaso_boletas", boletas)):
-        if monto:
-            _nuevo(db, turno, caja.id, tipo, monto)
+    efectivo, boletas = (monto, 0) if monto else control(db, negocio_id, caja)[1]
+    for tipo, cuanto in (("traspaso", efectivo), ("traspaso_boletas", boletas)):
+        if cuanto:
+            _nuevo(db, turno, caja.id, tipo, cuanto, nota="Traspaso parcial" if monto else None)
     db.commit()
     return {"efectivo": efectivo, "boletas": boletas}
 
 
 def cargar_ticket(db: Session, negocio_id: int, turno_id: int, quiniela: int, juegos: list[dict]) -> dict:
     """POST /turno/{id}/ticket, `juegos` = [{juego_id, monto}], acumulado del día (D17): las ventas del turno son la
-    resta contra el ticket del turno anterior; recargar anula las previas. Devuelve el esperado (§7.3) y desglose."""
+    resta contra el ticket del turno anterior, salvo Telekino, que ya viene por turno (D63); recargar anula las
+    previas. Devuelve el esperado (§7.3) y desglose."""
     turno = _turno(db, negocio_id)
     if turno.id != turno_id:
         raise Conflicto("turno_no_actual", "El ticket se carga en el turno abierto.")
-    validos = set(db.scalars(select(Juego.id).where(Juego.negocio_id == negocio_id)))
+    validos = dict(db.execute(select(Juego.id, Juego.nombre).where(Juego.negocio_id == negocio_id)).all())
     if any(j["juego_id"] not in validos for j in juegos):
         raise NoEncontrado("no_encontrado", "Ese juego no existe.")
     anterior = db.scalar(select(Turno).where(Turno.negocio_id == negocio_id, Turno.dia_id == turno.dia_id,
@@ -224,7 +231,7 @@ def cargar_ticket(db: Session, negocio_id: int, turno_id: int, quiniela: int, ju
         raise Conflicto("falta_ticket_anterior", "El ticket es acumulado del día: primero va el del turno anterior.")
     base = anterior.ticket_terminal if anterior else {"quiniela": 0, "juegos": []}
     ventas = {None: quiniela - base["quiniela"]}  # por juego_id; None es la quiniela
-    for signo, lista in ((1, juegos), (-1, base["juegos"])):
+    for signo, lista in ((1, juegos), (-1, [j for j in base["juegos"] if validos.get(j["juego_id"]) != "Telekino"])):
         for j in lista:
             ventas[j["juego_id"]] = ventas.get(j["juego_id"], 0) + signo * j["monto"]
     if ventas[None] <= 0 or min(ventas.values()) < 0:
@@ -233,13 +240,11 @@ def cargar_ticket(db: Session, negocio_id: int, turno_id: int, quiniela: int, ju
     previas = db.scalars(select(Movimiento).where(Movimiento.negocio_id == negocio_id, Movimiento.turno_id == turno.id,
                                                   Movimiento.tipo.in_(VENTAS))).all()
     anuladas = {m.anula_id for m in previas}
-    for m in previas:
-        if m.anula_id is None and m.id not in anuladas:
-            _contra(db, m, "Ticket recargado")
+    for m in [m for m in previas if m.anula_id is None and m.id not in anuladas]:
+        _contra(db, m, "Ticket recargado")
     for juego_id, monto in ventas.items():
         if monto:
-            tipo = "venta_otro_juego" if juego_id else "apuesta_quiniela"
-            _nuevo(db, turno, caja.id, tipo, monto, juego_id=juego_id)
+            _nuevo(db, turno, caja.id, "venta_otro_juego" if juego_id else "apuesta_quiniela", monto, juego_id=juego_id)
     turno.ticket_terminal = {"quiniela": quiniela, "juegos": juegos}
     movs, partida = control(db, negocio_id, caja)
     efectivo, boletas = motor.esperado(caja.id, movs, partida, operativa=True)

@@ -30,10 +30,10 @@ function Indicador({ titulo, icono: Icono, tonoIcono = "text-muted-foreground", 
 
 // Un dato de caja: rótulo, monto en mono y el esperado debajo si existe.
 const Dato = ({ rotulo, valor, esperado }: { rotulo: string; valor: ReactNode; esperado?: number }) => (
-  <div className="min-w-0">
+  <div>
     <p className="rotulo text-muted-foreground">{rotulo}</p>
-    <p className="mt-1.5 truncate">{valor}</p>
-    {esperado !== undefined && <p className="mt-1 truncate text-xs text-muted-foreground">Esperado <span className="monto">{pesos(esperado)}</span></p>}
+    <p className="mt-1.5">{valor}</p>
+    {esperado !== undefined && <p className="mt-1 text-xs text-muted-foreground">Esperado <span className="monto">{pesos(esperado)}</span></p>}
   </div>
 );
 const Monto = ({ v }: { v: number }) => <span className="monto text-2xl font-semibold">{pesos(v)}</span>;
@@ -45,7 +45,7 @@ function TarjetaCaja({ c, hayTurnoAbierto }: { c: CajaEstado; hayTurnoAbierto: b
   return (
     <Indicador titulo={c.nombre} icono={c.tipo === "operativa" ? Store : Landmark} className="col-span-2 sm:col-span-1"
       extra={sinTicket && <span className={`${INSIGNIA} ${TONOS.aviso}`}>Sin ticket</span>}>
-      <div className="mt-4 grid grid-cols-2 gap-4">
+      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
         <Dato rotulo="Efectivo" esperado={c.esperado?.efectivo}
           valor={sinTicket ? <span className="text-sm leading-8 text-muted-foreground">Al cargar el ticket</span> : <Monto v={c.efectivo} />} />
         <Dato rotulo="Boletas" valor={<Monto v={c.boletas} />} esperado={c.esperado?.boletas} />
@@ -64,10 +64,10 @@ export function Inicio() {
   const conDeuda = deudores.data?.filter((d) => d.saldo > 0);
   const pendientes = dia.data ? dia.data.arqueos_pendientes.length + (dia.data.rendicion_pendiente ? 1 : 0) : 0;
   const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
-  // Traspaso disponible una vez que la caja chica se arqueó en algún turno, porque ese arqueo lo cierra (D3).
-  const puedeTraspasar = !!dia.data?.turnos.some((t) => t.estado === "cerrado");
   const cajaChicaId = dia.data?.cajas.find((c) => c.tipo === "operativa")?.id;
   const turnosAbiertos = !!dia.data?.turnos.some((t) => t.estado === "abierto");
+  // Traspaso: completo tras un arqueo (D3) o parcial con el turno abierto (D65).
+  const puedeTraspasar = turnosAbiertos || !!dia.data?.turnos.some((t) => t.estado === "cerrado");
   const puedeCerrar = !!dia.data && !turnosAbiertos && dia.data.arqueos_pendientes.length === 0;
 
   return (

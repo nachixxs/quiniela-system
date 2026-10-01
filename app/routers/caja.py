@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.post("/traspaso", response_model=Saldo)
 def traspaso(datos: TraspasoRequest, usuario: Usuario = Depends(usuario_actual), db: Session = Depends(get_db)):
-    return operaciones.traspasar(db, usuario.negocio_id, datos.caja_origen_id)
+    return operaciones.traspasar(db, usuario.negocio_id, datos.caja_origen_id, datos.monto)
 
 
 @router.post("/arqueo", response_model=ArqueoOut)
