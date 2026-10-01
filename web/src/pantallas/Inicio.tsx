@@ -64,10 +64,10 @@ export function Inicio() {
   const conDeuda = deudores.data?.filter((d) => d.saldo > 0);
   const pendientes = dia.data ? dia.data.arqueos_pendientes.length + (dia.data.rendicion_pendiente ? 1 : 0) : 0;
   const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
-  // Traspaso disponible una vez que la caja chica se arqueó en algún turno, porque ese arqueo lo cierra (D3).
-  const puedeTraspasar = !!dia.data?.turnos.some((t) => t.estado === "cerrado");
   const cajaChicaId = dia.data?.cajas.find((c) => c.tipo === "operativa")?.id;
   const turnosAbiertos = !!dia.data?.turnos.some((t) => t.estado === "abierto");
+  // Traspaso: completo tras un arqueo (D3) o parcial con el turno abierto (D65).
+  const puedeTraspasar = turnosAbiertos || !!dia.data?.turnos.some((t) => t.estado === "cerrado");
   const puedeCerrar = !!dia.data && !turnosAbiertos && dia.data.arqueos_pendientes.length === 0;
 
   return (
