@@ -165,6 +165,18 @@ def test_recorrido_feliz_http(db):
     app.dependency_overrides.clear()
 
 
+def test_traspaso_parcial_http(db, agencia):  # D65
+    app.dependency_overrides[get_db] = lambda: db
+    cliente = TestClient(app, base_url="https://testserver")
+    cliente.cookies.set("sesion", _sesion(db, agencia.n))
+
+    resp = cliente.post("/api/traspaso", json={"caja_origen_id": agencia.chica, "monto": 30000})
+    assert resp.status_code == 200 and resp.json() == {"efectivo": 30000, "boletas": 0}
+    assert cliente.post("/api/traspaso", json={"caja_origen_id": agencia.chica, "monto": 0}).status_code == 422
+
+    app.dependency_overrides.clear()
+
+
 def test_413_body_grande(db):
     app.dependency_overrides[get_db] = lambda: db
     cliente = TestClient(app, base_url="https://testserver")
