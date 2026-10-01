@@ -73,6 +73,10 @@ def simular(db, n: int, dias: list[date], rng: random.Random) -> None:
     def esperado_grande():
         return next(c["esperado"] for c in consultas.cajas(db, n) if c["id"] == grande)
 
+    def banco(objetivo):  # deposita lo que la grande tiene, según el sistema, por encima de `objetivo`
+        if (monto := (esperado_grande()["efectivo"] - objetivo) // 10000 * 10000) > 0:
+            mov("pago_banco", monto, grande, contraparte="Banco")
+
     def rendicion():  # el primer día no hay boletas de ayer
         if boletas := esperado_grande()["boletas"]:
             op.rendir(db, n, boletas)
@@ -127,7 +131,7 @@ def simular(db, n: int, dias: list[date], rng: random.Random) -> None:
             if rng.random() < 0.15:
                 ev.append((rng.randint(512, 534), partial(cobro, c, grande, rng.choice([0.6, 0.8, 1]))))
         if fecha.weekday() < 5:  # banco solo en día hábil, y el cadete que lleva el paquete
-            ev += [(535, partial(mov, "pago_banco", rng.randint(40, 75) * 10000, grande, contraparte="Banco")),
+            ev += [(535, partial(banco, rng.randint(82, 117) * 10000)),  # 36 valores, como antes: no corre la semilla
                    (536, partial(mov, "gasto", CADETE, grande, contraparte="Cadete del banco"))]
         ev.append((537, partial(mov, "gasto", CAFE, grande, contraparte=DUENO, nota="Café")))
         error = rng.choice([-1, 1]) * rng.randint(2, 40) * 10 if rng.random() < 5 / 6 else 0
