@@ -1,0 +1,3 @@
+/* Mismo CSS de la app (tokens incluidos); @source obliga a Tailwind a leer estos archivos aunque el servidor ya estuviera levantado. */
+@import "../src/index.css";
+@source "./";
