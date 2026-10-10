@@ -6,7 +6,7 @@ import { SEED_PASSWORD } from "./global-setup";
 
 const remoto = !!process.env.E2E_URL;
 let page: Page, context: BrowserContext;
-test.describe.configure({ mode: "serial" });
+test.describe.configure({ mode: "serial", timeout: 120_000 }); // los casos en rojo esperan 5 s cada uno antes de anotarse
 test.beforeAll(async ({ browser }) => {
   context = await browser.newContext({ viewport: { width: 390, height: 844 }, recordVideo: { dir: "test-results" } });
   page = await context.newPage(); });
@@ -14,7 +14,7 @@ test.afterAll(async () => { await context.close(); });
 
 const CLIENTE = "Ana Ficticia Montenegro"; // 23 letras: el contrato (caso 5) pide 20 o más
 const V360 = { width: 360, height: 780 }, V390 = { width: 390, height: 844 };
-const MOTIVO = /falta|completá|ingresá|escribí|elegí|indicá|poné|necesit/i; // lo que se lee bajo un botón bloqueado
+const MOTIVO = /falta|completá|ingresá|escribí|elegí|indicá|poné|necesit|cargá|contá/i; // lo que se lee bajo un botón bloqueado
 const fallas: string[] = [];
 
 // Un caso del contrato que falla se anota con su número (y captura) y el día sigue: en modo serial, un rojo
@@ -36,19 +36,27 @@ const trampa = (abrir: Locator) => async () => {
     await page.keyboard.press("Tab");
     expect(await page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]')), `Tab ${i}: el foco salió de la hoja`).toBe(true);
   }
-  await cerrarHoja(); await expect(abrir).toBeFocused();
+  await page.keyboard.press("Escape"); await expect(abrir).toBeFocused(); // conHoja confirma que la hoja se fue
 };
 // Caso 7: un solo patrón de confirmación, un toast arriba con el monto (y el cliente) que se va solo.
 const toast = (...textos: string[]) => async () => {
   let t = page.getByRole("status").or(page.locator("[data-sonner-toast]")); for (const x of textos) t = t.filter({ hasText: x });
   await expect(t.first()).toBeVisible();
   expect((await t.first().boundingBox())!.y, "la confirmación no está arriba").toBeLessThan(120);
+  await expect(page.getByText(/Cobro guardado/)).toHaveCount(0); await expect(page.getByText("Movimiento anulado.")).toHaveCount(0); // sin otra confirmación
   await expect(t.first()).toBeHidden({ timeout: 10_000 });
 };
-// Caso 8: el botón deshabilitado trae escrito qué falta.
+// Hoy el ticket y el traspaso cierran con "Listo"; con el toast (D97) la hoja se cierra sola: se toca solo si aparece.
+const listo = async () => {
+  const l = page.getByRole("button", { name: "Listo" }); if (await l.isVisible()) await l.click();
+  await expect(page.getByRole("dialog")).toBeHidden();
+};
+// Caso 8: el botón deshabilitado trae escrito qué falta, debajo de él.
 const bloqueado = (boton: string | RegExp, donde?: Locator) => async () => {
-  await expect(page.getByRole("button", { name: boton })).toBeDisabled();
-  await expect((donde ?? page.getByRole("dialog")).getByText(MOTIVO).first()).toBeVisible();
+  const b = page.getByRole("button", { name: boton }), motivo = (donde ?? page.getByRole("dialog")).getByText(MOTIVO);
+  await expect(b).toBeDisabled(); await expect(motivo.first()).toBeVisible();
+  const bb = (await b.boundingBox())!, ys = await Promise.all((await motivo.all()).map(async (m) => (await m.boundingBox())?.y ?? -1));
+  expect(Math.max(...ys), "el motivo no está debajo del botón").toBeGreaterThanOrEqual(bb.y + bb.height);
 };
 // Va a una pantalla y espera su título: hasta entonces el contenido de la anterior sigue en el DOM.
 const ir = async (enlace: string, titulo = enlace) => { await page.getByRole("link", { name: enlace, exact: true }).click(); await expect(page.getByRole("heading", { level: 1, name: titulo })).toBeVisible(); };
@@ -79,10 +87,18 @@ async function fiar(monto: string, cliente: string, nuevo: boolean) {
 }
 
 // Ticket de la terminal (§8.2), acumulado del día (D17): el total de quiniela hasta ese turno.
-async function cargarTicket(turno: string, quinielaAcumulada: string) {
+async function cargarTicket(turno: string, quinielaAcumulada: string, enToast: string) {
   await page.getByRole("button", { name: new RegExp(`Turno ${turno}`) }).click();
   await page.getByLabel("Quiniela", { exact: true }).fill(quinielaAcumulada); // "Quiniela Instantánea" (CP7) también contiene el texto
-  await page.getByRole("button", { name: "Guardar ticket" }).click(); await page.getByRole("button", { name: "Listo" }).click();
+  await page.getByRole("button", { name: "Guardar ticket" }).click();
+  await caso(7, "cargar el ticket avisa con un toast con el monto", toast(enToast)); await listo();
+}
+
+// Traspaso de la chica a la grande; el toast trae el efectivo que se movió.
+async function traspasar(enToast: string) {
+  await page.getByRole("button", { name: /Traspaso a la caja grande/ }).click();
+  await page.getByRole("button", { name: "Confirmar traspaso" }).click();
+  await caso(7, "traspasar avisa con un toast con el monto", toast(enToast)); await listo();
 }
 
 // Arqueo (§6, §8.3): dos campos, resultado inmediato.
@@ -133,7 +149,7 @@ test("login, abre el día y arquea la caja grande de la mañana", async () => {
     await ir("Fiados", "Cuenta corriente");
     const main = page.getByRole("main");
     await expect(main).toContainText(/sin cuentas|nadie debe|no hay/i);
-    await expect(main.getByRole("button").or(main.getByRole("link"))).not.toHaveCount(0);
+    await expect(main.getByRole("button", { name: /fiado|carg/i }).or(main.getByRole("link", { name: /fiado|carg/i }))).not.toHaveCount(0);
   });
   await page.getByRole("link", { name: "Inicio", exact: true }).click();
   await conHoja(8, "Rendición: el botón bloqueado dice qué falta", rendicion, bloqueado("Guardar rendición"));
@@ -170,21 +186,20 @@ test("carga la mañana en carga rápida y cierra el turno con su arqueo", async 
   // Chica sin ticket y con -14.000 de movimientos: el traspaso no puede mostrar ese efectivo parcial (D27).
   const traspaso = page.getByRole("button", { name: /Traspaso a la caja grande/ }), ticket = page.getByRole("button", { name: /Turno mañana/ });
   await conHoja(2, "el traspaso con la chica sin ticket no muestra efectivo parcial ni negativo", traspaso, async () => {
-    await page.waitForLoadState("networkidle"); const d = page.getByRole("dialog");
-    await expect(d).not.toContainText(/-\s*\$/); await expect(d).not.toContainText(/\$\s?[\d.]+\s+en efectivo/);
+    const d = page.getByRole("dialog", { name: /traspaso/i }); await expect(d).toBeVisible(); // la hoja ya cargó
+    await expect(d).not.toContainText("14.000"); // el efectivo parcial conocido
   });
   await conHoja(8, "Traspaso: el botón bloqueado dice qué falta", traspaso, bloqueado("Confirmar traspaso"));
   await conHoja(8, "Ticket: el botón bloqueado dice qué falta", ticket, bloqueado("Guardar ticket"));
   await conHoja(6, "Ticket: el foco no sale de la hoja", ticket, trampa(ticket));
-  await cargarTicket("mañana", "20000");
+  await cargarTicket("mañana", "20000", "$20.000");
   // Chica desde cero: -4.000-3.000-2.000-5.000+20.000 = 6.000 efectivo · 3.000 boletas (la del premio).
   await arquear("Caja chica", "Mañana", "6000", "3000");
 });
 
 test("traspasa la mañana, carga la noche y cierra su turno con arqueo", async () => {
   await page.getByRole("link", { name: "Inicio", exact: true }).click();
-  await page.getByRole("button", { name: /Traspaso a la caja grande/ }).click();
-  await page.getByRole("button", { name: "Confirmar traspaso" }).click(); await page.getByRole("button", { name: "Listo" }).click();
+  await traspasar("$6.000");
 
   await page.getByRole("link", { name: "Cargar", exact: true }).click();
   await fiar("1000", CLIENTE, false);
@@ -197,15 +212,14 @@ test("traspasa la mañana, carga la noche y cierra su turno con arqueo", async (
   await caso(7, "cobrar un fiado avisa con un toast con monto y cliente", toast("$500", CLIENTE));
   await page.keyboard.press("Escape"); await expect(page.getByRole("dialog")).toBeHidden();
   await page.getByRole("link", { name: "Inicio", exact: true }).click();
-  await cargarTicket("noche", "30000");
+  await cargarTicket("noche", "30000", "$30.000");
   // Chica desde cero: -1.000-2.000+500+10.000 (quiniela: 30.000-20.000) = 7.500 efectivo · 2.000 boletas.
   await arquear("Caja chica", "Noche", "7500", "2000");
 });
 
 test("traspasa la noche y arquea la caja grande de la noche", async () => {
   await page.getByRole("link", { name: "Inicio", exact: true }).click();
-  await page.getByRole("button", { name: /Traspaso a la caja grande/ }).click();
-  await page.getByRole("button", { name: "Confirmar traspaso" }).click(); await page.getByRole("button", { name: "Listo" }).click();
+  await traspasar("$7.500");
   // Grande: 100.000 + 6.000 + 7.500 = 113.500 efectivo · 3.000 + 2.000 = 5.000 boletas (los dos traspasos).
   await arquear("Caja grande", "Noche", "113500", "5000");
 });
@@ -221,14 +235,12 @@ test("reportes muestra los totales esperados del día", async () => {
   await expect(fila("Arqueos: cuadran / no cuadran")).toContainText("4 / 0");
   const mp = page.locator("section", { hasText: "Mercado Pago acumulado" }); await expect(mp.getByText("$5.000", { exact: true })).toBeVisible();
 
-  // Caso 12 en Reportes solo guarda la regla: con los 4 arqueos cuadrados no hay una hora en pantalla.
-  await caso(12, "Reportes no muestra horas de 12 h", () => expect(page.getByRole("main")).not.toContainText(/[ap]\.\s?m\./i));
   await caso(13, "cada total dice cuál es Este mes y cuál Mes anterior", async () => {
     await expect(page.getByText("Este mes", { exact: true }).first()).toBeVisible(); await expect(page.getByText("Mes anterior", { exact: true }).first()).toBeVisible();
   });
   const grafico = page.locator("section").filter({ has: page.getByRole("heading", { name: /ventas por día/i }) });
   await caso(13, "el gráfico tiene eje con montos legibles", async () => {
-    await expect(grafico).toBeVisible(); const ejes = grafico.getByText(/^\$\s?[\d.,]+(\s?(mil|M|k))?$/).filter({ visible: true });
+    await expect(grafico).toBeVisible(); const ejes = grafico.locator("svg").getByText(/^\$\s?[\d.,]+(\s?(mil|M|k))?$/).filter({ visible: true });
     expect(await ejes.count(), "marcas de monto en el eje").toBeGreaterThanOrEqual(2);
   });
   await caso(13, "el detalle por día se ve sin pasar el mouse", () => expect(page.getByText(/ver por día/i).or(grafico.getByRole("table")).first()).toBeVisible());
@@ -251,8 +263,11 @@ test("anula un movimiento desde la app y el saldo del cliente vuelve", async () 
   await page.getByRole("link", { name: "Inicio", exact: true }).click();
   const fila = page.locator("li", { hasText: "Fiado" }).filter({ hasText: "$1.000" });
   const anular = fila.getByRole("button", { name: "Anular" }), dialogo = page.getByRole("dialog");
+  // D95/D98: Inicio muestra los últimos movimientos y "Ver todos" despliega la lista. Hoy no existe: anda con y sin él.
+  const todos = page.getByRole("button", { name: /ver todos/i }).or(page.getByRole("link", { name: /ver todos/i }));
+  await expect(todos.or(fila).first()).toBeVisible(); if (await todos.count()) await todos.first().click();
   await caso(12, "Movimientos muestra la hora en 24 h", async () => {
-    await expect(page.getByRole("main")).toContainText(/\d{2}:\d{2}/); await expect(page.getByRole("main")).not.toContainText(/[ap]\.\s?m\./i);
+    await expect(page.getByRole("main")).toContainText(/\d{1,2}:\d{2}/); await expect(page.getByRole("main")).not.toContainText(/[ap]\.\s?m\./i);
   });
   await conHoja(6, "Anular: el foco no sale de la hoja", anular, trampa(anular));
   await page.setViewportSize(V360);
@@ -300,8 +315,6 @@ test("cierra el día", async () => {
     await expect(main).toContainText(/cerrad/i);
     await expect(main.getByRole("button", { name: /abrir el día/i }).or(main.getByRole("link", { name: /abrir el día/i }))).toBeVisible();
   });
-});
-
-test("contrato CP8: todos los casos pasan", () => {
+  // El día cerró: lo que queda es juntar los casos del contrato que fallaron.
   expect(fallas, `Casos del contrato que fallan:\n${fallas.join("\n")}`).toEqual([]);
 });

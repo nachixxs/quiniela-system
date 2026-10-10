@@ -6,7 +6,6 @@ import { DB_URL, SEED_PASSWORD, RAIZ, PYTHON } from "./global-setup";
 const remoto = !!process.env.E2E_URL;
 
 export default defineConfig({
-  timeout: 120_000, // los casos del contrato en rojo esperan 5 s cada uno antes de anotarse
   reporter: remoto ? "list" : "html", // "html" en remoto puede filtrar E2E_PASSWORD en el título del paso `fill`
   use: {
     baseURL: process.env.E2E_URL ?? "http://127.0.0.1:8001",
