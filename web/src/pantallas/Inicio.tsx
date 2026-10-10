@@ -5,10 +5,10 @@ import { api } from "../api/cliente";
 import { esSinDia, type CajaEstado } from "../api/tipos";
 import { useUsuario } from "../contexto/usuario";
 import { fechaLarga, pesos } from "../util";
-import { Aviso, Boton, INSIGNIA, TARJETA, TONOS } from "../ui";
+import { Aviso, Boton, FILA, INSIGNIA, Reintentar, TARJETA, TONOS } from "../ui";
 import { BOTONES, Carga, type BotonCarga } from "./CargaRapida";
 import { AccionesDia, TarjetaAbrirDia, type AccionDia } from "./Dia";
-import { FILA, Reintentar, TarjetaMovimientos } from "./Movimientos";
+import { TarjetaMovimientos } from "./Movimientos";
 
 const diasDesde = (d: number) => (d === 0 ? "Desde hoy" : `Hace ${d} ${d === 1 ? "día" : "días"}`);
 

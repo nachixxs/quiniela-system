@@ -5,8 +5,7 @@ import { BookUser, ChevronRight, MousePointerClick } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
 import { esSinDia } from "../api/tipos";
 import { fechaCorta, pesos, useEscritorio, uuid } from "../util";
-import { Aviso, Boton, CampoMonto, Hoja, Segmentado, TARJETA, TIPOS } from "../ui";
-import { AvisoAbrirDia } from "./Dia";
+import { Aviso, AvisoAbrirDia, Boton, CampoMonto, Hoja, Segmentado, TARJETA, TIPOS } from "../ui";
 
 const COLUMNAS = "grid grid-cols-[minmax(0,1fr)_3.5rem_7rem] items-center gap-3 px-4 lg:px-5";
 

@@ -5,8 +5,8 @@ import { Info, Landmark, Sparkles, Store, TriangleAlert } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
 import { esSinDia, type ArqueoOut } from "../api/tipos";
 import { pesos } from "../util";
-import { Aviso, Boton, CampoMonto, EASE_SALIDA, OPCION, PUNTO_RADIO, Segmentado, TARJETA } from "../ui";
-import { AccionesDia, AvisoAbrirDia, type AccionDia } from "./Dia";
+import { Aviso, AvisoAbrirDia, Boton, CampoMonto, EASE_SALIDA, OPCION, PUNTO_RADIO, Segmentado, TARJETA } from "../ui";
+import { AccionesDia, type AccionDia } from "./Dia";
 
 // Las filas del resultado entran en cascada corta: el arqueo se ve cuatro veces por día, no decenas.
 const fila = (i: number) => ({

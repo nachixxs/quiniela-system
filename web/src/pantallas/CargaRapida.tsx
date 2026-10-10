@@ -5,8 +5,7 @@ import { Banknote, CircleCheck, Search, UserPlus, X } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
 import { esSinDia, type ClienteBusqueda, type MovimientoCrear } from "../api/tipos";
 import { pesos, uuid } from "../util";
-import { Aviso, Boton, CampoMonto, Hoja, OPCION, PUNTO_RADIO, TARJETA, TIPOS } from "../ui";
-import { AvisoAbrirDia } from "./Dia";
+import { Aviso, AvisoAbrirDia, Boton, CampoMonto, Hoja, OPCION, PUNTO_RADIO, TARJETA, TIPOS } from "../ui";
 
 // D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja. D42: Cobro tampoco.
 const OPCIONES_COBRO: MovimientoCrear["tipo"][] = ["cobro_fiado", "cobro_subagente", "ingreso_del_dueno"];

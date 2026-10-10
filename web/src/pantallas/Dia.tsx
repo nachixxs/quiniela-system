@@ -8,15 +8,6 @@ import { Aviso, Boton, CampoMonto, Hoja, TARJETA } from "../ui";
 
 const BOTON = "h-12 w-full text-base lg:h-10 lg:text-sm";
 
-// Aviso repetido en las pantallas que necesitan un día abierto para actuar (D3, §3).
-export function AvisoAbrirDia() {
-  return (
-    <Aviso tono="aviso">
-      Todavía no se abrió el día. <a href="#" className="font-medium underline underline-offset-4">Abrilo desde Inicio</a>.
-    </Aviso>
-  );
-}
-
 // Tarjeta de Inicio cuando no hay día abierto (§3): sin ella no hay turnos, cajas ni nada que cargar.
 // `cerrado` llega cuando el día actual existe pero ya se cerró: se ofrece abrir el siguiente.
 export function TarjetaAbrirDia({ cerrado }: { cerrado?: { fecha: string } }) {

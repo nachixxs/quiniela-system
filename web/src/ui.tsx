@@ -1,12 +1,19 @@
-import { useEffect, useId, useRef, type ComponentPropsWithoutRef, type ReactNode } from "react";
-import { m } from "motion/react";
+import { useEffect, useId, useRef, type ComponentProps, type ComponentPropsWithoutRef, type ReactNode } from "react";
+import { m, usePresence, useReducedMotion } from "motion/react";
 import {
   Banknote, CircleAlert, CircleCheck, HandCoins, Landmark, LoaderCircle, NotebookPen, PiggyBank,
   ReceiptText, ShoppingBag, Smartphone, TriangleAlert, Trophy, Users, Wallet, X, type LucideIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MovimientoOut } from "./api/tipos";
 
 export const EASE_SALIDA = [0.23, 1, 0.32, 1] as const;
+
+// Renglón de lista (Inicio, Movimientos) y hora en 24 h ("13:30"; hourCycle h23 evita el "24:05" de hour12:false).
+export const FILA = "flex min-h-14 items-center gap-3 px-4 py-2.5 lg:px-5";
+const horaFormato = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+export const hora = (iso: string) => horaFormato.format(new Date(iso));
 
 // Superficies y piezas que se repiten entre pantallas: clases, no componentes (el máximo de compartidos es seis).
 export const TARJETA = "rounded-xl border bg-card shadow-xs";
@@ -14,6 +21,7 @@ export const INSIGNIA = "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-m
 export const TONOS = {
   exito: "bg-exito/8 text-exito",
   aviso: "bg-aviso/8 text-aviso",
+  peligro: "bg-peligro/8 text-peligro",
   neutro: "bg-muted text-muted-foreground",
 } as const;
 // Opción elegible (tipo de pago, caja del arqueo): borde de 1 px que pasa a 2 px en el color del texto al elegirla.
@@ -46,27 +54,23 @@ export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   rendicion_boletas: T("Rendición de boletas"),
 };
 
-// Botón: primario claro sobre oscuro (una acción principal por vista), secundario con borde.
-// 44 px en el celular, la escala de escritorio (36 px) desde 1024 px.
-const VARIANTES = {
-  primario: "bg-primary text-primary-foreground hover:bg-primary/90",
-  secundario: "border bg-card shadow-xs hover:bg-muted",
-};
+// Botón: primario claro sobre oscuro (una acción principal por vista), secundario con borde. Los tamaños
+// (44 px en el celular, 48 el "lg" de guardar y arquear, y la escala de escritorio desde lg) vienen de buttonVariants.
+const VARIANTES = { primario: "default", secundario: "outline" } as const;
 export function Boton({
-  variante = "primario", cargando = false, className = "", children, disabled, ...props
-}: { variante?: keyof typeof VARIANTES; cargando?: boolean } & ComponentPropsWithoutRef<"button">) {
+  variante = "primario", cargando = false, disabled, children, ...props
+}: { variante?: keyof typeof VARIANTES; cargando?: boolean } & Omit<ComponentProps<typeof Button>, "variant">) {
   return (
-    <button
-      {...props}
-      disabled={disabled || cargando}
-      aria-busy={cargando || undefined}
-      className={`presiona inline-flex h-11 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium whitespace-nowrap disabled:pointer-events-none disabled:bg-muted disabled:text-muted-foreground lg:h-9 ${VARIANTES[variante]} ${className}`}
-    >
-      {cargando && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
+    <Button {...props} variant={VARIANTES[variante]} disabled={disabled || cargando} aria-busy={cargando || undefined}>
+      {cargando && <LoaderCircle className="animate-spin" aria-hidden />}
       {children}
-    </button>
+    </Button>
   );
 }
+
+export const Reintentar = ({ onClick }: { onClick: () => void }) => (
+  <Button type="button" variant="link" size="sm" onClick={onClick} className="-my-1 px-2">Reintentar</Button>
+);
 
 // Mensaje en línea: error, éxito o aviso. El color vive en el ícono y en un tinte; el texto queda en el de lectura.
 const AVISOS = {
@@ -76,10 +80,11 @@ const AVISOS = {
 } as const;
 export function Aviso({ tono, children, accion }: { tono: keyof typeof AVISOS; children: ReactNode; accion?: ReactNode }) {
   const [Icono, clases] = AVISOS[tono];
+  const y = useReducedMotion() ? 0 : -4; // motion no reduce los strings de transform
   return (
     <m.div
       role={tono === "error" ? "alert" : "status"}
-      initial={{ opacity: 0, transform: "translateY(-4px)" }}
+      initial={{ opacity: 0, transform: `translateY(${y}px)` }}
       animate={{ opacity: 1, transform: "translateY(0px)" }}
       transition={{ duration: 0.2, ease: EASE_SALIDA }}
       className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-sm ${clases}`}
@@ -88,6 +93,15 @@ export function Aviso({ tono, children, accion }: { tono: keyof typeof AVISOS; c
       <div className="flex-1">{children}</div>
       {accion}
     </m.div>
+  );
+}
+
+// Aviso repetido en las pantallas que necesitan un día abierto para actuar (D3, §3).
+export function AvisoAbrirDia() {
+  return (
+    <Aviso tono="aviso">
+      Todavía no se abrió el día. <a href="#" className="font-medium underline underline-offset-4">Abrilo desde Inicio</a>.
+    </Aviso>
   );
 }
 
@@ -105,7 +119,7 @@ export function CampoMonto({
   return (
     <div>
       <label htmlFor={id} className="mb-2 block text-sm font-medium">{etiqueta}</label>
-      <div className="flex items-center gap-2 rounded-md border border-input bg-background px-3 shadow-xs transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20 dark:bg-input/30">
+      <div className="flex items-center gap-2 rounded-lg border border-input bg-card px-3 shadow-xs transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring">
         <span className={`monto text-muted-foreground ${grande ? "text-2xl" : "text-lg"}`} aria-hidden>$</span>
         <input
           id={id}
@@ -142,7 +156,7 @@ export function Segmentado<V extends string | number>({
           className="presiona relative flex min-h-11 flex-1 flex-col items-center justify-center rounded-md px-3 py-1 text-sm font-medium disabled:opacity-50 lg:min-h-8"
         >
           {o.valor === valor && (
-            <m.span layoutId={id} className="absolute inset-0 rounded-md bg-card shadow-xs dark:bg-input" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />
+            <m.span layoutId={id} className="absolute inset-0 rounded-md bg-card shadow-xs dark:bg-foreground/15" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />
           )}
           <span className={`relative ${o.valor === valor ? "text-foreground" : "text-muted-foreground"}`}>{o.texto}</span>
           {o.detalle && <span className="relative text-xs text-muted-foreground">{o.detalle}</span>}
@@ -152,84 +166,49 @@ export function Segmentado<V extends string | number>({
   );
 }
 
-// Hoja: diálogo centrado, con margen a los costados y alto máximo en dvh (para no tapar el
-// teclado del celular). Mismo trato en todos los tamaños: opacidad y escala corta, sin arrastre.
-// Se monta dentro de <AnimatePresence> para que la salida se anime.
+// Hoja: el Dialog de shadcn/Radix (foco atrapado, Escape, fondo inerte, foco devuelto al botón que la abrió).
+// Se monta dentro de <AnimatePresence>: al desmontarla, usePresence deja que corra la salida (150 ms, CSS) y recién ahí la saca.
 export function Hoja({
   titulo, descripcion, icono, onCerrar, children,
 }: { titulo: string; descripcion?: string; icono?: ReactNode; onCerrar: () => void; children: ReactNode }) {
-  const idTitulo = useId();
-  const panel = useRef<HTMLDivElement>(null);
-  const cerrar = useRef(onCerrar);
-  cerrar.current = onCerrar;
-  // Se guarda en el render, no en el efecto: los efectos de los hijos (CampoMonto con
-  // autoFocus) corren antes que este, así que para cuando se ejecuta el foco ya se movió.
+  const [presente, salir] = usePresence();
+  // Se guarda en el render, no en el efecto: los hijos con autoFocus (CampoMonto) enfocan antes que Radix.
   const previo = useRef(document.activeElement as HTMLElement | null);
-
   useEffect(() => {
-    // Si un hijo ya enfocó algo adentro (CampoMonto con autoFocus), no se lo robamos.
-    if (!panel.current?.contains(document.activeElement)) panel.current?.focus({ preventScroll: true });
-    const tecla = (e: KeyboardEvent) => e.key === "Escape" && cerrar.current();
-    document.addEventListener("keydown", tecla);
-
-    // Bloqueo de scroll que funciona también en iOS Safari y Chrome Android, donde
-    // overflow:hidden en el body no alcanza: fija el body donde estaba y lo devuelve al cerrar.
-    const scrollY = window.scrollY;
-    const { style } = document.body;
-    const previoPosicion = style.position, previoTop = style.top, previoAncho = style.width;
-    const previoOverflowHtml = document.documentElement.style.overflow;
-    style.position = "fixed";
-    style.top = `-${scrollY}px`;
-    style.width = "100%";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", tecla);
-      style.position = previoPosicion;
-      style.top = previoTop;
-      style.width = previoAncho;
-      document.documentElement.style.overflow = previoOverflowHtml;
-      window.scrollTo(0, scrollY);
-      previo.current?.focus();
-    };
-  }, []);
+    if (presente) return;
+    const t = setTimeout(() => salir?.(), 160);
+    return () => clearTimeout(t);
+  }, [presente, salir]);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 lg:p-6">
-      <m.div
-        className="absolute inset-0 bg-black/50 dark:bg-black/70"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0, transition: { duration: 0.15 } }}
-        onClick={onCerrar}
-        aria-hidden
-      />
-      <m.div
-        ref={panel}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={idTitulo}
-        tabIndex={-1}
-        className="relative flex max-h-[92dvh] w-full max-w-md flex-col rounded-xl border bg-card shadow-lg"
-        initial={{ opacity: 0, transform: "scale(0.96)" }}
-        animate={{ opacity: 1, transform: "scale(1)" }}
-        exit={{ opacity: 0, transform: "scale(0.96)", transition: { duration: 0.15, ease: EASE_SALIDA } }}
-        transition={{ duration: 0.2, ease: EASE_SALIDA }}
+    <Dialog open={presente} onOpenChange={(abierta) => !abierta && onCerrar()}>
+      <DialogContent
+        showCloseButton={false}
+        className="gap-0 p-0 lg:p-0"
+        {...(descripcion ? {} : { "aria-describedby": undefined })}
+        // Si un hijo ya enfocó algo (CampoMonto con autoFocus) no se lo robamos; si no, el foco va a la hoja.
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          const hoja = e.target as HTMLElement;
+          if (!hoja.contains(document.activeElement)) hoja.focus({ preventScroll: true });
+        }}
+        onCloseAutoFocus={(e) => {
+          e.preventDefault();
+          previo.current?.focus();
+        }}
       >
-        <div className="px-5 pb-3 pt-5 lg:px-6 lg:pt-6">
-          <div className="flex items-start gap-3">
-            {icono}
-            <div className="min-w-0 flex-1">
-              <h2 id={idTitulo} className="text-base font-semibold tracking-tight">{titulo}</h2>
-              {descripcion && <p className="mt-0.5 text-sm text-muted-foreground">{descripcion}</p>}
-            </div>
-            <button type="button" onClick={onCerrar} aria-label="Cerrar" className="presiona -mr-2 -mt-1.5 grid size-11 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:size-8">
-              <X className="size-4" aria-hidden />
-            </button>
-          </div>
+        <div className="flex items-start gap-3 px-5 pb-3 pt-5 lg:px-6 lg:pt-6">
+          {icono}
+          <DialogHeader className="min-w-0 flex-1 gap-0.5">
+            <DialogTitle>{titulo}</DialogTitle>
+            {descripcion && <DialogDescription>{descripcion}</DialogDescription>}
+          </DialogHeader>
+          <DialogClose asChild>
+            <Button type="button" variant="ghost" size="icon-sm" aria-label="Cerrar" className="-mr-2 -mt-1.5 text-muted-foreground"><X aria-hidden /></Button>
+          </DialogClose>
         </div>
         <div className="overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-1 lg:px-6 lg:pb-6">{children}</div>
-      </m.div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

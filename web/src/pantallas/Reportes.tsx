@@ -4,8 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "../api/cliente";
 import type { MovimientoOut, ResumenMes } from "../api/tipos";
 import { fechaCorta, fechaHoraCorta, fechaHoy, pesos } from "../util";
-import { Aviso, INSIGNIA, TARJETA, TIPOS, TONOS } from "../ui";
-import { hora, Reintentar } from "./Movimientos";
+import { Aviso, hora, INSIGNIA, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
 
 // "2026-09" ± meses, sin pasar por Date con día fijo (evita saltos por zona horaria).
 function sumarMes(mes: string, delta: number): string {
