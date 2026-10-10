@@ -45,9 +45,10 @@ Reglas:
   Deshabilitado = fondo `muted` y texto `muted-foreground`, con el motivo escrito debajo.
 - **Contraste medido** (WCAG 2, en los dos temas, con mezcla de alfa): texto 4,5:1 o más;
   íconos y foco, 3:1 o más. Desvíos de shadcn en claro: `muted-foreground` y `ring`, un punto
-  más oscuros (los de shadcn dan 4,35 sobre `muted` y menos de 3:1 como foco). Falla conocida,
-  igual que en shadcn: el borde de `input` no llega a 3:1 (1,48:1 sobre `card`); el campo se
-  reconoce por su etiqueta. En claro, `background`/`sidebar` son un gris suave (#f5f5f5) y
+  más oscuros (los de shadcn dan 4,35 sobre `muted` y menos de 3:1 como foco). El borde de
+  `input` llega a 3:1 (D88): #8a8a8a en claro (3,2:1 sobre el fondo, 3,5:1 sobre `card`) y
+  #6b6b6b en oscuro. `aviso` en claro es #a45106: 4,6:1 como texto de insignia sobre su tinte
+  del 8 %. En claro, `background`/`sidebar` son un gris suave (#f5f5f5) y
   `card` queda blanco encima; `muted` (#e5e5e5) da un paso más oscuro que el fondo
   para seguir leyéndose sobre él. Medido: `foreground` 18,2:1 sobre `background` y 15,7:1
   sobre `muted`; `muted-foreground` 4,7:1 sobre `background`, 6,0:1 sobre `card` y 4,8:1 sobre
@@ -127,8 +128,11 @@ bundle, D26). Cifras tabulares en todo el `body`.
 
 ## 7. Componentes compartidos
 
-Seis, el máximo del track B: `Boton`, `Aviso`, `CampoMonto`, `Segmentado` y `Hoja` en
-`ui.tsx`, y `Carga` (la hoja de carga de Inicio y Carga rápida) en `pantallas/CargaRapida.tsx`.
+Desde el CP8 la base es shadcn (`web/src/components/ui/`, generado por el CLI y ajustado a
+estos tokens). Encima, en `ui.tsx`: `Boton` (sobre `buttonVariants`), `Aviso`, `CampoMonto`,
+`Segmentado`, `Hoja` (sobre Dialog, con el foco atrapado), `Reintentar`, `AvisoAbrirDia` y
+`hora()` en 24 h; y `Carga` (la hoja de carga de Inicio y Carga rápida) en
+`pantallas/CargaRapida.tsx`. Un solo `Toaster` (Sonner) en `main.tsx`.
 
 Lo demás que se repite son **clases**, no componentes: `TARJETA`, `INSIGNIA`, `TONOS`,
 `OPCION`, `PUNTO_RADIO` y `TIPOS` (el nombre, ícono y color de cada tipo de movimiento).
@@ -165,14 +169,15 @@ deslizar entre pantallas, levantar tarjetas en hover y el esqueleto que late.
 
 ## 9. Íconos
 
-`lucide-react`, 16 px (20 en la barra inferior y en las tarjetas de carga), color por tipo en
+`lucide-react` con trazo 1,75 en toda la app (`LucideProvider`; el activo de la barra, más
+grueso), 16 px (20 en la barra inferior y en las tarjetas de carga), color por tipo en
 `TIPOS`. Decorativos (`aria-hidden`), con texto al lado; los botones de solo ícono llevan `aria-label`.
 
 ## 10. Temas, accesibilidad y celular
 
 - **Temas (D21):** sigue al sistema; la elección se guarda en `localStorage`. `theme-color`
   por tema en `index.html` (con script antidestello), actualizado por `util.ts`.
-- **Foco visible** en todo (`ring`); los campos suman un halo suave, como en shadcn.
+- **Foco visible** en todo: un contorno de `ring`, el mismo en campos y botones.
 - `<form>` en todo: Enter guarda. Hojas con `role=dialog`, `aria-modal`, título enlazado,
   Escape y foco devuelto. Errores con `role=alert`; lo demás, `role=status` / `aria-live`.
 - **Celular:** `interactive-widget=resizes-content` para que el teclado no tape la hoja;
