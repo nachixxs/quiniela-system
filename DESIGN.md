@@ -16,6 +16,10 @@ color aparece solo cuando algo tiene significado. Nada compite con los montos.
   toque que responde en el acto, nada que mirar dos veces.
 - **Qué no es:** una landing ni un template de IA. Sin gradientes, dorado, brillos, vidrio,
   tarjetas dentro de tarjetas, avatares de relleno ni métricas infladas.
+- **Variante elegida en la 8.2c (D93): "Mostrador"** (lienzo de Claude Design, contra Libro,
+  Cifra y Afinado). Primero la plata, después lo que falta hacer. Las listas son renglones
+  dentro de una tarjeta con título. Cada monto de una lista lleva signo y color. Las horas van
+  en 24 h.
 
 ## 2. Color
 
@@ -86,6 +90,22 @@ bundle, D26). Cifras tabulares en todo el `body`.
 
 ## 6. Pantallas
 
+- **Renglón (Mostrador):** la hora en 24 h, en mono, a la izquierda; el tipo y debajo el
+  detalle en `muted-foreground`; el monto a la derecha. Si entra plata, `+` en `exito`; si
+  sale, `−` en `peligro`; un premio o un traspaso va sin signo, en `foreground`. Los renglones
+  se separan con un borde superior dentro de una tarjeta con su `h2`. En escritorio, una
+  tabla con encabezados.
+- **Inicio (D93–D95), en este orden:**
+  1. Las dos cajas, con el efectivo como cifra principal (22 px en el celular, 34 en
+     escritorio) y las boletas debajo.
+  2. "Lo que falta hoy": un renglón por pendiente, con título, detalle y el botón de su
+     acción. El primero es el único primario.
+  3. Los cuatro botones de carga (Fiado, Cobro, Pago, Premio).
+  4. Los últimos 4 movimientos y "Ver todos", que despliega la lista entera ahí mismo, con
+     anular.
+
+  En escritorio son dos columnas (3/2): a la izquierda cajas, pendientes y movimientos; a la
+  derecha, cargas y fiados con sus días.
 - **Caja chica sin ticket (D27, SPECS §7.3):** insignia "Sin ticket", Efectivo dice "Al
   cargar el ticket", solo las boletas llevan monto y no hay esperado. Nunca un efectivo
   parcial. Se sabe porque la caja operativa llega con `esperado` nulo.
@@ -99,6 +119,10 @@ bundle, D26). Cifras tabulares en todo el `body`.
   "Cuadra" o "No cuadra"; efectivo y boletas (esperado y diferencia) bajo rótulos, y la
   fila "Diferencia total". Diferencia ≠ 0 en `peligro`; cuadra solo si las dos dan cero.
   Con el resultado a la vista el botón queda deshabilitado; cualquier cambio lo borra.
+  Mostrador: la caja y el turno salen del arqueo pendiente (nunca "Noche" por defecto). Si se
+  cambia el turno, aparece un aviso. La "Diferencia total" es la cifra principal (34 px en
+  el celular, 40 en escritorio). En escritorio, el resultado es una tabla Esperado ·
+  Contado · Diferencia.
 - **Cuenta corriente:** a favor, el valor absoluto en `exito`.
 
 ## 7. Componentes compartidos
