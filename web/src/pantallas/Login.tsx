@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,11 +10,18 @@ import { Aviso, Boton, TARJETA } from "../ui";
 const mensajeDe = (e: unknown) =>
   e instanceof ApiError ? (e.status === 401 ? `${e.detalle} Revisá los dos datos y probá de nuevo.` : e.detalle) : "No se pudo conectar. Revisá la conexión y probá de nuevo.";
 
+// D106: main.tsx deja la marca antes de recargar por un 401. Se lee al montar y se borra en un efecto
+// (StrictMode llama dos veces al inicializador: borrar ahí perdería el aviso).
+const MARCA = "quiniela-sesion-vencida";
+const hayMarca = () => { try { return !!sessionStorage.getItem(MARCA); } catch { return false; } };
+
 export function Login({ acciones, marca }: { acciones: ReactNode; marca: ReactNode }) {
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const { setUsuario: guardarUsuario } = useUsuario();
   const form = useRef<HTMLFormElement>(null);
+  const [vencida] = useState(hayMarca);
+  useEffect(() => { try { sessionStorage.removeItem(MARCA); } catch { /* nada que borrar */ } }, []);
 
   const mutacion = useMutation({
     mutationKey: ["login"],
@@ -82,8 +89,9 @@ export function Login({ acciones, marca }: { acciones: ReactNode; marca: ReactNo
                 aria-invalid={invalido || undefined}
               />
             </div>
+            {vencida && !mutacion.isError && <Aviso tono="aviso">Tu sesión venció. Volvé a entrar para seguir.</Aviso>}
             {mutacion.isError && <Aviso tono="error">{mensajeDe(mutacion.error)}</Aviso>}
-            <Boton type="submit" size="lg" cargando={mutacion.isPending} className="w-full">
+            <Boton type="submit" cargando={mutacion.isPending} className="w-full">
               {mutacion.isPending ? "Entrando…" : "Entrar"}
             </Boton>
           </form>

@@ -15,8 +15,14 @@ import "./index.css";
 // invalidación a mano por pantalla, que quedaban desactualizadas apenas se sumaba una nueva.
 // Un 401 en cualquier consulta o mutación (sesión vencida) recarga: "yo" da 401 y vuelve al login. Se salta "yo"
 // (sería un bucle) y el ingreso mismo, donde un 401 es la contraseña mal.
-const sesionVencida = (e: unknown) => e instanceof ApiError && e.status === 401 && location.reload();
+// D106: la marca en sessionStorage le dice al login por qué volvió.
+const sesionVencida = (e: unknown) => {
+  if (!(e instanceof ApiError && e.status === 401)) return;
+  try { sessionStorage.setItem("quiniela-sesion-vencida", "1"); } catch { /* sin storage: el login no avisa */ }
+  location.reload();
+};
 const queryClient: QueryClient = new QueryClient({
+  defaultOptions: { queries: { retry: (n, e) => !(e instanceof ApiError && e.status === 401) && n < 3 } },
   queryCache: new QueryCache({ onError: (e, q) => q.queryKey[0] !== "yo" && sesionVencida(e) }),
   mutationCache: new MutationCache({
     onSuccess: () => queryClient.invalidateQueries(),

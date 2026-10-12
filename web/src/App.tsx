@@ -51,6 +51,8 @@ const NAV: { id: Pantalla; texto: string; corto: string; icono: LucideIcon; deta
 const PANTALLAS = { inicio: Inicio, "carga-rapida": CargaRapida, arqueo: Arqueo, "cuenta-corriente": CuentaCorriente, reportes: Reportes, asistente: Asistente };
 const ICONO_BOTON = "presiona grid size-11 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:size-8";
 const NEGOCIO = "Quiniela La Estrella";
+// Foco del sidebar de shadcn (outline-hidden + ring-2): el mismo contorno global de index.css.
+const FOCO = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:ring-0";
 const pendientesTexto = (n: number) => `${n} ${n === 1 ? "pendiente" : "pendientes"}`;
 
 function Marca({ nombre }: { nombre: string }) {
@@ -83,7 +85,8 @@ export function App() {
   useEffect(() => aplicarTema(tema), [tema]);
   useEffect(() => {
     const n = NAV.find((x) => x.id === pantalla)!;
-    document.title = !usuario ? `Iniciar sesión · ${NEGOCIO}` : n.id === "inicio" ? NEGOCIO : `${n.texto} · ${NEGOCIO}`;
+    const negocio = usuario?.negocio.nombre ?? NEGOCIO;
+    document.title = !usuario ? `Iniciar sesión · ${negocio}` : n.id === "inicio" ? negocio : `${n.texto} · ${negocio}`;
   }, [pantalla, usuario]);
   // El cambio de tema funde toda la página de una vez (View Transitions); sin soporte, cambia directo.
   const alternarTema = () => {
@@ -135,12 +138,12 @@ export function App() {
                   const activo = n.id === pantalla;
                   return (
                     <SidebarMenuItem key={n.id}>
-                      <SidebarMenuButton asChild isActive={activo} className={`presiona relative data-active:bg-transparent ${activo ? "" : "text-muted-foreground"}`}>
+                      <SidebarMenuButton asChild isActive={activo} className={`presiona relative data-active:bg-transparent ${FOCO} ${activo ? "" : "text-muted-foreground"}`}>
                         <a href={enlace(n.id)} aria-current={activo ? "page" : undefined} title={titulo(n.id)}>
                           {activo && <m.span layoutId="nav-lateral" className="absolute inset-0 rounded-md bg-muted" transition={{ type: "spring", duration: 0.25, bounce: 0 }} />}
                           <n.icono className="relative" aria-hidden />
                           <span className="relative">{n.texto}</span>
-                          {pendientesDe(n.id) > 0 && <span aria-hidden className={`${INSIGNIA} ${activo ? "bg-aviso/8 text-foreground" : TONOS.aviso} relative ml-auto`}>{pendientes}</span>}
+                          {pendientesDe(n.id) > 0 && <span aria-hidden className={`${INSIGNIA} ${activo ? "bg-aviso/8 text-foreground" : `${TONOS.aviso} group-hover/menu-button:text-foreground`} relative ml-auto`}>{pendientes}</span>}
                         </a>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -154,7 +157,7 @@ export function App() {
               <CircleUser className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               <span className="truncate">{usuario.nombre}</span>
             </p>
-            <SidebarMenuButton onClick={cerrarSesion} className="presiona text-muted-foreground">
+            <SidebarMenuButton onClick={cerrarSesion} className={`presiona text-muted-foreground ${FOCO}`}>
               <LogOut aria-hidden />
               Cerrar sesión
             </SidebarMenuButton>
