@@ -1,5 +1,4 @@
 // E2E del flujo crítico de un día completo (SPECS §3, §8), serial. Esperados a mano, por paso (§6).
-// Incluye los casos [E2E] de CONTRATO-CP8.md ("contrato N: ..."): rojos hasta que el rediseño los cumpla.
 import { test, expect, type Page, type BrowserContext, type Locator } from "@playwright/test";
 import { stripVTControlCharacters } from "node:util";
 import AxeBuilder from "@axe-core/playwright";
@@ -86,7 +85,8 @@ async function poner(tema: "claro" | "oscuro") {
 const quieto = () => page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => 0))));
 async function revisar(nombre: string, abrir: () => Promise<void>) {
   for (const tema of ["claro", "oscuro"] as const) {
-    await page.setViewportSize(V390); await poner(tema); await abrir();
+    await page.setViewportSize(V390); await poner(tema); await abrir(); await page.waitForLoadState("networkidle");
+    await caso(14, `${nombre}, ${tema}: ningún texto visible es "–" o "—"`, async () => expect(await page.getByText(/^[–—]$/).filter({ visible: true }).count(), "hay una raya donde va un valor").toBe(0));
     for (const ancho of ANCHOS) {
       const id = `${nombre}-${ancho.width}-${tema}`;
       await page.setViewportSize(ancho); await page.waitForLoadState("networkidle"); await quieto();
@@ -229,6 +229,9 @@ test("login, abre el día y arquea la caja grande de la mañana", async () => {
     await expect(turnoMarcado(/^Mañana/)).toBeVisible();
   });
   await caso(8, "Arqueo: el botón bloqueado dice qué falta", bloqueado("Arquear", page.getByRole("main")));
+  await caso(1, "llegando desde el pendiente de Inicio, el turno marcado es mañana y nunca noche", async () => {
+    await ir("Inicio", /^Hola,/); await page.getByRole("link", { name: /Arqueo de caja grande.*mañana/i }).click();
+    await expect(turnoMarcado(/^Mañana/)).toBeVisible(); await expect(turnoMarcado(/^Noche/)).toHaveCount(0); });
   await arquear("Caja grande", "Mañana", "100000", "0");
 });
 
@@ -326,7 +329,6 @@ test("anula un movimiento desde la app y el saldo del cliente vuelve", async () 
   await page.getByRole("link", { name: "Inicio", exact: true }).click();
   const fila = page.locator("li", { hasText: "Fiado" }).filter({ hasText: "$1.000" });
   const anular = fila.getByRole("button", { name: "Anular" }), dialogo = page.getByRole("dialog");
-  // D95/D98: Inicio muestra los últimos movimientos y "Ver todos" despliega la lista. Hoy no existe: anda con y sin él.
   const todos = page.getByRole("button", { name: /ver todos/i }).or(page.getByRole("link", { name: /ver todos/i }));
   await expect(todos.or(fila).first()).toBeVisible(); if (await todos.count()) await todos.first().click();
   await caso(12, "Movimientos muestra la hora en 24 h", async () => {
