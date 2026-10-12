@@ -138,7 +138,8 @@ bundle, D26). Cifras tabulares en todo el `body`.
 ## 7. Componentes compartidos
 
 Desde el CP8 la base es shadcn (`web/src/components/ui/`, generado por el CLI y ajustado a
-estos tokens). Encima, en `ui.tsx`: `Boton` (sobre `buttonVariants`), `Aviso`, `CampoMonto`,
+estos tokens y a los tamaños de este archivo, D103: nunca se regenera con `shadcn add
+--overwrite`). Encima, en `ui.tsx`: `Boton` (sobre `buttonVariants`), `Aviso`, `CampoMonto`,
 `Segmentado`, `Hoja` (sobre Dialog, con el foco atrapado), `Reintentar`, `AvisoAbrirDia` y
 `hora()` en 24 h; y `Carga` (la hoja de carga de Inicio y Carga rápida) en
 `pantallas/CargaRapida.tsx`. Un solo `Toaster` (Sonner) en `main.tsx`.
