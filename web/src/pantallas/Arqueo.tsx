@@ -55,11 +55,13 @@ function Resultado({ r, v, donde }: Hecho) {
             <TriangleAlert className="size-[18px]" aria-hidden />
           )}
         </span>
-        <div className="min-w-0 flex-1">
-          <p className={`text-lg font-semibold tracking-tight ${cierra ? "text-exito" : "text-peligro"}`}>{cierra ? "Cuadra" : "No cuadra"}</p>
-          <p className="text-sm text-muted-foreground">{cierra ? "Las dos diferencias dan cero." : "Quedó guardado con su diferencia."}</p>
+        <div className="flex min-w-0 flex-1 flex-col gap-1 lg:flex-row lg:items-start lg:justify-between lg:gap-3">
+          <div>
+            <p className={`text-lg font-semibold tracking-tight ${cierra ? "text-exito" : "text-peligro"}`}>{cierra ? "Cuadra" : "No cuadra"}</p>
+            <p className="text-sm text-muted-foreground">{cierra ? "Las dos diferencias dan cero." : "Quedó guardado con su diferencia."}</p>
+          </div>
+          <span className="text-xs text-muted-foreground lg:shrink-0 lg:text-right">{donde}</span>
         </div>
-        <span className="shrink-0 text-right text-xs text-muted-foreground">{donde}</span>
       </div>
       <m.div {...fila(0, reducir ? 0 : 4)} className="px-4 lg:px-5">
         <p className="rotulo text-muted-foreground">Diferencia total</p>

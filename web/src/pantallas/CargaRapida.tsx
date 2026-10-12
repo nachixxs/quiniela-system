@@ -108,10 +108,10 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
                     {seleccion.opciones.map((op) => {
                       const t = TIPOS[op];
                       return (
-                        <label key={op} className={`${OPCION} min-h-12 gap-2 px-3`}>
+                        <label key={op} className={`${OPCION} min-h-12 min-w-0 gap-2 px-3`}>
                           <input type="radio" name="subtipo" className="sr-only" checked={tipoFinal === op} onChange={() => { setSubtipo(op); setRefCliente(uuid()); }} />
                           <t.icono className={`size-4 shrink-0 ${t.tono}`} aria-hidden />
-                          <span className="flex-1 text-sm font-medium leading-tight">{t.etiqueta}</span>
+                          <span className="min-w-0 flex-1 break-words text-sm font-medium leading-tight">{t.etiqueta}</span>
                           {PUNTO_RADIO}
                         </label>
                       );

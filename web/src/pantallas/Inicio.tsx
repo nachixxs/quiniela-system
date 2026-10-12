@@ -19,14 +19,14 @@ const ENCABEZADO = "flex items-center justify-between gap-3 px-4 pb-2 pt-4 lg:px
 function TarjetaCaja({ c, hayTurnoAbierto }: { c: CajaEstado; hayTurnoAbierto: boolean }) {
   const sinTicket = c.tipo === "operativa" && !c.esperado && hayTurnoAbierto;
   return (
-    <section className={`${TARJETA} p-3.5 lg:p-5`} aria-label={c.nombre}>
+    <section className={`${TARJETA} @container p-3.5 lg:p-5`} aria-label={c.nombre}>
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h2 className="text-sm font-medium text-muted-foreground">{c.nombre}</h2>
         {sinTicket && <span className={`${INSIGNIA} ${TONOS.aviso}`}>Sin ticket</span>}
       </div>
       <p className="rotulo mt-3 text-muted-foreground">Efectivo</p>
-      <p className="mt-1 break-all">
-        {sinTicket ? <span className="text-sm leading-8 text-muted-foreground">Al cargar el ticket</span> : <span className="monto text-[22px] font-semibold lg:text-[34px]">{pesos(c.efectivo)}</span>}
+      <p className="mt-1">
+        {sinTicket ? <span className="text-sm leading-8 text-muted-foreground">Al cargar el ticket</span> : <span className="monto text-[clamp(16px,15cqw,22px)] font-semibold lg:text-[34px]">{pesos(c.efectivo)}</span>}
       </p>
       <p className="mt-2 text-xs text-muted-foreground">Boletas <span className="monto text-sm text-foreground">{pesos(c.boletas)}</span></p>
     </section>
@@ -126,111 +126,107 @@ export function Inicio() {
         <p className="mt-1 hidden text-sm text-muted-foreground lg:block">Cajas, pendientes y fiados del día.</p>
       </div>
 
-      {/* Mobile: cajas, pendientes, cargas, movimientos, fiados. Escritorio (3/2): izquierda cajas, pendientes y movimientos; derecha cargas y fiados. */}
+      {/* El DOM sigue el orden del celular: cajas, pendientes, cargas, movimientos, fiados. En escritorio (3/2) la izquierda lleva cajas, pendientes y movimientos, y la derecha cargas y fiados. */}
       <div className="mt-5 flex flex-col gap-3 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start lg:gap-6">
-        <div className="contents lg:flex lg:flex-col lg:gap-6">
-          <div className="order-1 grid grid-cols-2 gap-3 lg:gap-4">
-            {cajas.isLoading && [0, 1].map((i) => <div key={i} className="esqueleto h-[136px]" />)}
-            {cajas.data?.map((c) => <TarjetaCaja key={c.id} c={c} hayTurnoAbierto={turnosAbiertos} />)}
-            {cajas.isError && (
-              <div className="col-span-2">
-                <Aviso tono="error" accion={<Reintentar onClick={() => cajas.refetch()} />}>No se pudieron traer las cajas.</Aviso>
-              </div>
-            )}
-          </div>
-
-          <div className="order-2">
-            {sinDia ? <TarjetaAbrirDia cerrado={dia.data?.dia.estado === "cerrado" ? dia.data.dia : undefined} /> : (
-              <section className={`${TARJETA} overflow-hidden`} aria-labelledby="falta-hoy">
-                <div className={ENCABEZADO}>
-                  <h2 id="falta-hoy" className="font-semibold">Lo que falta hoy</h2>
-                  {dia.data && reporte.data && <Anillo n={new Set(reporte.data.arqueos.map((a) => `${a.caja_id}-${a.turno_id}`)).size} m={dia.data.cajas.length * turnos.length} />}
-                </div>
-                {dia.isLoading && <div className="esqueleto m-4 h-40" />}
-                {dia.isError && (
-                  <div className="p-4">
-                    <Aviso tono="error" accion={<Reintentar onClick={() => dia.refetch()} />}>No se pudo traer el día.</Aviso>
-                  </div>
-                )}
-                {dia.data && (
-                  <ul className="divide-y border-t">
-                    {pendientes.map((p, i) => <li key={p.clave}><Renglon p={p} primario={i === 0} /></li>)}
-                    {pendientes.length === 0 && <li className="px-4 py-5 text-center text-sm text-muted-foreground lg:px-5">No falta nada por ahora.</li>}
-                    {puedeTraspasar && cajaChicaId !== undefined && (
-                      <li>
-                        <Renglon p={{ clave: "traspaso", icono: Landmark, titulo: "Traspaso a la caja grande", detalle: "Pasá el efectivo de la caja chica", accion: "Traspasar", onClick: () => setAccion({ tipo: "traspaso", cajaId: cajaChicaId }) }} primario={false} />
-                      </li>
-                    )}
-                  </ul>
-                )}
-                {dia.data && (
-                  <div className="border-t p-4 lg:px-5">
-                    <Boton type="button" variante={pendientes.length === 0 && puedeCerrar ? "primario" : "secundario"} disabled={!puedeCerrar}
-                      onClick={() => setAccion({ tipo: "cerrar", diaId: dia.data.dia.id })} className="w-full">
-                      Cerrar el día
-                    </Boton>
-                    {!puedeCerrar && (
-                      <p className="mt-2 text-center text-xs text-muted-foreground">
-                        {turnosAbiertos ? "Hay turnos abiertos: cerralos con su arqueo." : "Faltan arqueos pendientes."}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
-          </div>
-
-          {!sinDia && <div className="order-4"><TarjetaMovimientos /></div>}
-        </div>
-
-        <div className="contents lg:flex lg:flex-col lg:gap-6">
-          <div role="group" aria-label="Cargar" className="order-3 grid grid-cols-4 gap-2 lg:grid-cols-2 lg:gap-3">
-            {BOTONES.map((b) => (
-              <button key={b.etiqueta} type="button" onClick={() => setSeleccion(b)}
-                className="presiona flex h-16 flex-col items-center justify-center gap-1.5 rounded-lg border bg-card text-[13px] font-medium shadow-xs hover:bg-muted lg:h-[76px] lg:text-sm">
-                <b.icono className={`size-5 ${b.tono}`} aria-hidden />
-                {b.etiqueta}
-              </button>
-            ))}
-          </div>
-
-          <section className={`${TARJETA} order-5 flex flex-col overflow-hidden`} aria-labelledby="fiados">
-            <div className={ENCABEZADO}>
-              <h2 id="fiados" className="font-semibold">Fiados</h2>
-              <a href="#cuenta-corriente" className="text-sm underline underline-offset-4 hover:text-muted-foreground">Ver cuenta corriente</a>
+        <div className="grid grid-cols-2 gap-3 lg:col-start-1 lg:row-start-1 lg:gap-4 lg:self-stretch">
+          {cajas.isLoading && [0, 1].map((i) => <div key={i} className="esqueleto h-[136px]" />)}
+          {cajas.data?.map((c) => <TarjetaCaja key={c.id} c={c} hayTurnoAbierto={turnosAbiertos} />)}
+          {cajas.isError && (
+            <div className="col-span-2">
+              <Aviso tono="error" accion={<Reintentar onClick={() => cajas.refetch()} />}>No se pudieron traer las cajas.</Aviso>
             </div>
-            {deudores.isLoading && <div className="esqueleto m-4 h-32" />}
-            {deudores.isError && (
-              <div className="p-4">
-                <Aviso tono="error" accion={<Reintentar onClick={() => deudores.refetch()} />}>No se pudieron traer los fiados.</Aviso>
-              </div>
-            )}
-            {conDeuda?.length === 0 && (
-              <div className="flex flex-col items-center gap-3 border-t px-4 py-6 text-center">
-                <p className="text-sm text-muted-foreground">Nadie debe nada. Los fiados que cargues aparecen acá.</p>
-                <Boton type="button" variante="secundario" onClick={() => setSeleccion(BOTONES[0])}>Cargar un fiado</Boton>
-              </div>
-            )}
-            <ul className="divide-y border-t empty:hidden">
-              {conDeuda?.slice(0, 4).map((d) => {
-                const vencido = d.dias_deuda_mas_vieja >= DIAS_VENCIDO;
-                return (
-                  <li key={d.id} className={FILA}>
-                    <TIPOS.fiado.icono className={`size-4 shrink-0 ${vencido ? "text-peligro" : "text-aviso"}`} aria-hidden />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="break-words text-sm font-medium">{d.nombre}</span>
-                        {vencido && <span className={`${INSIGNIA} ${TONOS.peligro}`}>Vencido</span>}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">{diasDesde(d.dias_deuda_mas_vieja)}</span>
-                    </span>
-                    <span className="monto text-sm font-medium">{pesos(d.saldo)}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+          )}
         </div>
+
+        <div className="lg:col-start-1 lg:row-start-2">
+          {sinDia ? <TarjetaAbrirDia cerrado={dia.data?.dia.estado === "cerrado" ? dia.data.dia : undefined} /> : (
+            <section className={`${TARJETA} overflow-hidden`} aria-labelledby="falta-hoy">
+              <div className={ENCABEZADO}>
+                <h2 id="falta-hoy" className="font-semibold">Lo que falta hoy</h2>
+                {dia.data && reporte.data && <Anillo n={new Set(reporte.data.arqueos.map((a) => `${a.caja_id}-${a.turno_id}`)).size} m={dia.data.cajas.length * turnos.length} />}
+              </div>
+              {dia.isLoading && <div className="esqueleto m-4 h-40" />}
+              {dia.isError && (
+                <div className="p-4">
+                  <Aviso tono="error" accion={<Reintentar onClick={() => dia.refetch()} />}>No se pudo traer el día.</Aviso>
+                </div>
+              )}
+              {dia.data && (
+                <ul className="divide-y border-t">
+                  {pendientes.map((p, i) => <li key={p.clave}><Renglon p={p} primario={i === 0} /></li>)}
+                  {pendientes.length === 0 && <li className="px-4 py-5 text-center text-sm text-muted-foreground lg:px-5">No falta nada por ahora.</li>}
+                  {puedeTraspasar && cajaChicaId !== undefined && (
+                    <li>
+                      <Renglon p={{ clave: "traspaso", icono: Landmark, titulo: "Traspaso a la caja grande", detalle: "Pasá el efectivo de la caja chica", accion: "Traspasar", onClick: () => setAccion({ tipo: "traspaso", cajaId: cajaChicaId }) }} primario={false} />
+                    </li>
+                  )}
+                </ul>
+              )}
+              {dia.data && (
+                <div className="border-t p-4 lg:px-5">
+                  <Boton type="button" variante={pendientes.length === 0 && puedeCerrar ? "primario" : "secundario"} disabled={!puedeCerrar}
+                    onClick={() => setAccion({ tipo: "cerrar", diaId: dia.data.dia.id })} className="w-full">
+                    Cerrar el día
+                  </Boton>
+                  {!puedeCerrar && (
+                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                      {turnosAbiertos ? "Hay turnos abiertos: cerralos con su arqueo." : "Faltan arqueos pendientes."}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+
+        <div role="group" aria-label="Cargar" className="grid grid-cols-4 gap-2 lg:col-start-2 lg:row-start-1 lg:grid-cols-2 lg:gap-3">
+          {BOTONES.map((b) => (
+            <button key={b.etiqueta} type="button" onClick={() => setSeleccion(b)}
+              className="presiona flex h-16 flex-col items-center justify-center gap-1.5 rounded-lg border bg-card text-[13px] font-medium shadow-xs hover:bg-muted lg:h-[76px] lg:text-sm">
+              <b.icono className={`size-5 ${b.tono}`} aria-hidden />
+              {b.etiqueta}
+            </button>
+          ))}
+        </div>
+
+        {!sinDia && <div className="lg:col-start-1 lg:row-start-3"><TarjetaMovimientos /></div>}
+
+        <section className={`${TARJETA} flex flex-col overflow-hidden lg:col-start-2 lg:row-span-2 lg:row-start-2`} aria-labelledby="fiados">
+          <div className={ENCABEZADO}>
+            <h2 id="fiados" className="font-semibold">Fiados</h2>
+            <a href="#cuenta-corriente" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 hover:text-muted-foreground lg:min-h-0">Ver cuenta corriente</a>
+          </div>
+          {deudores.isLoading && <div className="esqueleto m-4 h-32" />}
+          {deudores.isError && (
+            <div className="p-4">
+              <Aviso tono="error" accion={<Reintentar onClick={() => deudores.refetch()} />}>No se pudieron traer los fiados.</Aviso>
+            </div>
+          )}
+          {conDeuda?.length === 0 && (
+            <div className="flex flex-col items-center gap-3 border-t px-4 py-6 text-center">
+              <p className="text-sm text-muted-foreground">Nadie debe nada. Los fiados que cargues aparecen acá.</p>
+              <Boton type="button" variante="secundario" onClick={() => setSeleccion(BOTONES[0])}>Cargar un fiado</Boton>
+            </div>
+          )}
+          <ul className="divide-y border-t empty:hidden">
+            {conDeuda?.slice(0, 4).map((d) => {
+              const vencido = d.dias_deuda_mas_vieja >= DIAS_VENCIDO;
+              return (
+                <li key={d.id} className={FILA}>
+                  <TIPOS.fiado.icono className={`size-4 shrink-0 ${vencido ? "text-peligro" : "text-aviso"}`} aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="break-words text-sm font-medium">{d.nombre}</span>
+                      {vencido && <span className={`${INSIGNIA} ${TONOS.peligro}`}>Vencido</span>}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">{diasDesde(d.dias_deuda_mas_vieja)}</span>
+                  </span>
+                  <span className="monto text-sm font-medium">{pesos(d.saldo)}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       </div>
 
       <Carga seleccion={seleccion} onSeleccion={setSeleccion} />

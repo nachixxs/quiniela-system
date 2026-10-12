@@ -23,7 +23,7 @@ const mesLabel = (mes: string) => formatoMes.format(new Date(`${mes}-01T12:00:00
 // Celdas de las tablas de la pantalla: el rótulo a la izquierda, los montos a la derecha.
 const TD_ROTULO = "whitespace-normal py-2.5 pl-4 pr-2 lg:pl-5";
 const TD_MONTO = "monto px-2 py-2.5 text-right last:pr-4 lg:last:pr-5";
-const TH_MONTO = "px-2 text-right text-xs font-medium text-muted-foreground last:pr-4 lg:last:pr-5";
+const TH_MONTO = "whitespace-normal px-2 text-right text-xs font-medium text-muted-foreground last:pr-4 lg:last:pr-5";
 const Encabezado = ({ titulo, descripcion }: { titulo: string; descripcion: string }) => (
   <div className="p-4 pb-2 lg:p-5 lg:pb-2">
     <h2 className="font-medium">{titulo}</h2>
@@ -117,7 +117,7 @@ const GraficoVentas = lazy(async () => {
             <R.CartesianGrid vertical={false} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="0" />
             <R.XAxis dataKey="fecha" tickLine={false} axisLine={false} tickMargin={6} tick={eje} interval={0}
               ticks={dias.filter((_, i) => i === 0 || (i + 1) % 5 === 0).map((d) => d.fecha)} tickFormatter={(f: string) => String(Number(f.slice(-2)))} />
-            <R.YAxis width={60} tickLine={false} axisLine={false} tick={eje} ticks={[0, paso, paso * 2]} domain={[0, paso * 2]}
+            <R.YAxis width={66} tickLine={false} axisLine={false} tick={eje} ticks={[0, paso, paso * 2]} domain={[0, paso * 2]}
               tickFormatter={(v: number) => pesos(v, false, true)} />
             <C.ChartTooltip cursor={{ fill: "var(--color-muted)" }} content={({ active, payload }) => {
               const d = payload?.[0]?.payload as DiaVenta | undefined;
@@ -174,17 +174,18 @@ export function Reportes() {
       )}
 
       {grupos && cierre.data && (
-        <div className={`grid gap-4 transition-opacity lg:grid-cols-2 lg:items-start lg:gap-5 ${cierre.isPlaceholderData ? "opacity-60" : ""}`}>
+        <div className={`grid grid-cols-1 gap-4 transition-opacity lg:grid-cols-2 lg:items-start lg:gap-5 ${cierre.isPlaceholderData ? "opacity-60" : ""}`}>
           <div className="flex flex-col gap-4 lg:gap-5">
-            <div className={`${TARJETA} grid grid-cols-2 gap-3 p-4 lg:p-5`}>
-              <div><p className="rotulo text-muted-foreground">{rotulos[0]}</p><p className="monto text-2xl font-semibold lg:text-[34px]">{pesos(cierre.data.actual.total_vendido)}</p></div>
-              <div className="border-l pl-3"><p className="rotulo text-muted-foreground">{rotulos[1]}</p><p className="monto text-2xl font-semibold text-muted-foreground lg:text-[34px]">{pesos(cierre.data.anterior.total_vendido)}</p></div>
+            <div className={`${TARJETA} @container grid grid-cols-2 gap-3 p-4 lg:p-5`}>
+              <div><p className="rotulo text-muted-foreground">{rotulos[0]}</p><p className="monto text-[clamp(18px,6.5cqw,34px)] font-semibold">{pesos(cierre.data.actual.total_vendido)}</p></div>
+              <div className="border-l pl-3"><p className="rotulo text-muted-foreground">{rotulos[1]}</p><p className="monto text-[clamp(18px,6.5cqw,34px)] font-semibold text-muted-foreground">{pesos(cierre.data.anterior.total_vendido)}</p></div>
               <p className="col-span-2 text-sm text-muted-foreground">Total vendido en el mes</p>
             </div>
             <section className={`${TARJETA} p-4 lg:p-5`}>
               <h2 className="font-medium">Ventas por día</h2>
               <p className="text-sm text-muted-foreground">Lo vendido cada día de {mesLabel(mes)}</p>
-              <Suspense fallback={<div className="esqueleto mt-3 h-56" />}><GraficoVentas dias={cierre.data.ventas_por_dia} /></Suspense>
+              {cierre.data.actual.total_vendido === 0 ? <p className="mt-3 text-sm text-muted-foreground">{esteMes ? "Todavía no hay ventas este mes." : `Sin ventas en ${mesLabel(mes)}.`}</p>
+                : <Suspense fallback={<div className="esqueleto mt-3 h-56" />}><GraficoVentas dias={cierre.data.ventas_por_dia} /></Suspense>}
               <details className="mt-2">
                 <summary className="flex min-h-11 w-fit cursor-pointer items-center text-sm font-medium underline underline-offset-4 lg:min-h-9">Ver por día</summary>
                 <div className="max-h-72 overflow-y-auto">

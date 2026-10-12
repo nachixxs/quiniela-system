@@ -157,10 +157,12 @@ export function TarjetaMovimientos() {
             <li key={f.mov.id} className={FILA}>
               <span className="monto w-11 shrink-0 text-xs text-muted-foreground">{f.hora}</span>
               <span className="min-w-0 flex-1">
-                <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <f.t.icono className={`size-4 shrink-0 ${f.t.tono}`} aria-hidden />
-                  <span className={`text-sm font-medium ${f.anulado ? "text-muted-foreground line-through" : ""}`}>{f.etiqueta}</span>
-                  {f.anulado && Anulado}
+                <span className="flex items-start gap-2">
+                  <f.t.icono className={`mt-0.5 size-4 shrink-0 ${f.t.tono}`} aria-hidden />
+                  <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className={`text-sm font-medium ${f.anulado ? "text-muted-foreground line-through" : ""}`}>{f.etiqueta}</span>
+                    {f.anulado && Anulado}
+                  </span>
                 </span>
                 {f.detalle && <span className="mt-0.5 block break-words text-xs text-muted-foreground">{f.detalle}</span>}
               </span>

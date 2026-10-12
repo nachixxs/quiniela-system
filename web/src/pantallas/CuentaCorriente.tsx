@@ -145,7 +145,7 @@ export function CuentaCorriente() {
                 {deudores.data.map((d) => {
                   const vencido = d.dias_deuda_mas_vieja >= DIAS_VENCIDO;
                   return (
-                    <TableRow key={d.id} onClick={() => setClienteId(d.id)} className={`cursor-pointer active:bg-muted ${d.id === clienteId ? "bg-muted" : ""}`}>
+                    <TableRow key={d.id} onClick={() => setClienteId(d.id)} className={`cursor-pointer active:bg-muted ${d.id === clienteId ? "bg-muted/60" : ""}`}>
                       <TableCell className="min-h-14 whitespace-normal py-2 pl-4 lg:pl-5">
                         <button type="button" aria-pressed={d.id === clienteId} className="block min-h-9 w-full text-left text-sm font-medium break-words">{d.nombre}</button>
                         {vencido && <Badge variant="peligro" className="mt-1">Vencido</Badge>}
