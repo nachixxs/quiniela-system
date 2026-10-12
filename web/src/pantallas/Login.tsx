@@ -35,7 +35,7 @@ export function Login({ acciones, marca }: { acciones: ReactNode; marca: ReactNo
       if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       form.current?.animate(
         { transform: ["translateX(0)", "translateX(-6px)", "translateX(6px)", "translateX(-3px)", "translateX(0)"] },
-        { duration: 300, easing: "ease-out" },
+        { duration: 300, easing: "cubic-bezier(0.23, 1, 0.32, 1)" },
       );
     },
   });

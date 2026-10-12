@@ -144,7 +144,7 @@ export function Inicio() {
               <section className={`${TARJETA} overflow-hidden`} aria-labelledby="falta-hoy">
                 <div className={ENCABEZADO}>
                   <h2 id="falta-hoy" className="font-semibold">Lo que falta hoy</h2>
-                  {dia.data && reporte.data && <Anillo n={reporte.data.arqueos.length} m={dia.data.cajas.length * turnos.length} />}
+                  {dia.data && reporte.data && <Anillo n={new Set(reporte.data.arqueos.map((a) => `${a.caja_id}-${a.turno_id}`)).size} m={dia.data.cajas.length * turnos.length} />}
                 </div>
                 {dia.isLoading && <div className="esqueleto m-4 h-40" />}
                 {dia.isError && (

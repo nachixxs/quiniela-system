@@ -81,9 +81,10 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
 function HojaTraspaso({ cajaId, onCerrar }: { cajaId: number; onCerrar: () => void }) {
   const [monto, setMonto] = useState("");
   const conMonto = Number(monto) > 0;
+  const cero = monto !== "" && !conMonto;
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const hayArqueo = !!dia.data?.turnos.some((t) => t.estado === "cerrado");
-  // Saldo actual de la caja chica (después del arqueo, lo contado): lo que se va a mover.
+  // Solo para saber si la chica tiene ticket.
   const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
   const caja = cajas.data?.find((c) => c.id === cajaId);
   const hacer = useMutation({
@@ -93,7 +94,7 @@ function HojaTraspaso({ cajaId, onCerrar }: { cajaId: number; onCerrar: () => vo
       onCerrar();
     },
   });
-  const falta = !conMonto && !hayArqueo && "Falta el monto: escribí cuánto efectivo pasás (todavía no hay un arqueo del que subir lo contado).";
+  const falta = cero ? "El monto tiene que ser mayor a cero" : !conMonto && !hayArqueo && "Falta el monto: escribí cuánto efectivo pasás (todavía no hay un arqueo del que subir lo contado).";
   const fuerte = "monto font-medium text-foreground";
 
   return (
@@ -102,7 +103,7 @@ function HojaTraspaso({ cajaId, onCerrar }: { cajaId: number; onCerrar: () => vo
         <CampoMonto etiqueta={hayArqueo ? "Monto (opcional)" : "Monto"} valor={monto} onValor={setMonto} autoFocus />
         {conMonto ? (
           <p className="text-sm text-muted-foreground">Se mueven <span className={fuerte}>{pesos(Number(monto))}</span> en efectivo a la caja grande.</p>
-        ) : !caja ? (
+        ) : cero ? null : !caja ? (
           <div className="esqueleto h-5" />
         ) : hayArqueo ? (
           <p className="text-sm text-muted-foreground">Se sube lo contado en el último arqueo.</p>

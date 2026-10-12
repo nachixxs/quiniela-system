@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AnimatePresence, m } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Info, Landmark, Store, TriangleAlert } from "lucide-react";
 import { api, ApiError } from "../api/cliente";
 import { esSinDia, type ArqueoOut, type ArqueoRequest, type CajaEstado } from "../api/tipos";
@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AccionesDia, TarjetaAbrirDia, type AccionDia } from "./Dia";
 
 // Los bloques del resultado entran en cascada corta: el arqueo se ve cuatro veces por día, no decenas.
-const fila = (i: number) => ({
-  initial: { opacity: 0, transform: "translateY(4px)" },
+const fila = (i: number, dy: number) => ({
+  initial: { opacity: 0, transform: `translateY(${dy}px)` },
   animate: { opacity: 1, transform: "translateY(0px)" },
   transition: { duration: 0.22, delay: 0.12 + i * 0.04, ease: EASE_SALIDA },
 });
@@ -26,6 +26,7 @@ function Resultado({ r, v, donde }: Hecho) {
   const cierra = r.estado === "cuadra";
   const total = r.diferencia_efectivo + r.diferencia_boletas;
   const ref = useRef<HTMLDivElement>(null);
+  const reducir = useReducedMotion();
   useEffect(() => {
     ref.current?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }, []);
@@ -37,7 +38,7 @@ function Resultado({ r, v, donde }: Hecho) {
   return (
     <m.div
       ref={ref}
-      initial={{ opacity: 0, transform: "translateY(8px) scale(0.98)" }}
+      initial={{ opacity: 0, transform: reducir ? "translateY(0px) scale(1)" : "translateY(8px) scale(0.98)" }}
       animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
       exit={{ opacity: 0, transition: { duration: 0.12 } }}
       transition={{ type: "spring", duration: 0.4, bounce: 0 }}
@@ -48,7 +49,7 @@ function Resultado({ r, v, donde }: Hecho) {
         <span className={`grid size-9 shrink-0 place-items-center rounded-full ${cierra ? "bg-exito/10 text-exito" : "bg-peligro/10 text-peligro"}`}>
           {cierra ? (
             <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <m.path d="M5 12.5l4.5 4.5L19 7.5" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.3, delay: 0.15, ease: EASE_SALIDA }} />
+              <m.path d="M5 12.5l4.5 4.5L19 7.5" initial={reducir ? { opacity: 0 } : { pathLength: 0 }} animate={reducir ? { opacity: 1 } : { pathLength: 1 }} transition={{ duration: 0.3, delay: 0.15, ease: EASE_SALIDA }} />
             </svg>
           ) : (
             <TriangleAlert className="size-[18px]" aria-hidden />
@@ -60,11 +61,11 @@ function Resultado({ r, v, donde }: Hecho) {
         </div>
         <span className="shrink-0 text-right text-xs text-muted-foreground">{donde}</span>
       </div>
-      <m.div {...fila(0)} className="px-4 lg:px-5">
+      <m.div {...fila(0, reducir ? 0 : 4)} className="px-4 lg:px-5">
         <p className="rotulo text-muted-foreground">Diferencia total</p>
         <p className={`monto mt-1 text-[34px] font-semibold leading-none tracking-tight lg:text-[40px] ${total ? "text-peligro" : ""}`}>{pesos(total, true)}</p>
       </m.div>
-      <m.div {...fila(1)} className="mt-4 border-t px-4 pb-2 lg:px-5">
+      <m.div {...fila(1, reducir ? 0 : 4)} className="mt-4 border-t px-4 pb-2 lg:px-5">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -201,7 +202,7 @@ export function Arqueo() {
           </div>
         )}
 
-        {turnoElegido !== null && pendiente && turno && turnoElegido !== pendiente.id && (
+        {!resultado && turnoElegido !== null && pendiente && turno && turnoElegido !== pendiente.id && (
           <Aviso tono="aviso">Lo pendiente en {caja?.nombre.toLowerCase()} es el turno {pendiente.nombre}; estás arqueando el turno {turno.nombre}.</Aviso>
         )}
 

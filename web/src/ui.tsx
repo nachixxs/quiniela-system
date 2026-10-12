@@ -29,7 +29,7 @@ export const OPCION =
   "presiona group flex cursor-pointer items-center gap-3 rounded-lg border bg-card shadow-xs hover:bg-muted/60 has-[:checked]:border-foreground has-[:checked]:ring-1 has-[:checked]:ring-foreground has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring";
 export const PUNTO_RADIO = (
   <span className="grid size-4 shrink-0 place-items-center rounded-full border border-input transition-colors group-has-[:checked]:border-foreground" aria-hidden>
-    <span className="size-2 scale-50 rounded-full bg-foreground opacity-0 transition-[opacity,transform] duration-150 ease-salida group-has-[:checked]:scale-100 group-has-[:checked]:opacity-100" />
+    <span className="size-2 scale-50 rounded-full bg-foreground opacity-0 transition-[opacity,transform] duration-150 ease-salida motion-reduce:scale-100 group-has-[:checked]:scale-100 group-has-[:checked]:opacity-100" />
   </span>
 );
 

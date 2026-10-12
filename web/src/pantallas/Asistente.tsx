@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
+import { m } from "motion/react";
 import { Input } from "@/components/ui/input";
 import { api, ApiError } from "../api/cliente";
-import { Aviso, Boton, TARJETA } from "../ui";
+import { Aviso, Boton, EASE_SALIDA, TARJETA } from "../ui";
 
 type Turno = { pregunta: string; respuesta?: string; error?: string };
 // Preguntas que se pueden contestar con cualquier base: no nombran a un cliente puntual.
@@ -62,12 +63,12 @@ export function Asistente() {
       )}
 
       {turnos.map((t, i) => (
-        <div key={turnos.length - i} className={`${TARJETA} p-4 lg:p-6`}>
+        <m.div key={turnos.length - i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: EASE_SALIDA }} className={`${TARJETA} p-4 lg:p-6`}>
           <p className="text-sm font-medium">{t.pregunta}</p>
           {t.error
             ? <div className="mt-3"><Aviso tono="error">{t.error}</Aviso></div>
             : <p className="mt-3 whitespace-pre-wrap break-words text-sm">{t.respuesta}</p>}
-        </div>
+        </m.div>
       ))}
 
       {!turnos.length && !preguntar.isPending && (
