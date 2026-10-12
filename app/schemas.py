@@ -138,6 +138,8 @@ class ArqueoRequest(BaseModel):
 
 class ArqueoOut(OrmModel):
     id: int
+    caja_id: int
+    turno_id: int
     efectivo_esperado: int
     boletas_esperadas: int
     diferencia_efectivo: int

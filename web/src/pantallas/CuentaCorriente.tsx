@@ -1,23 +1,24 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
-import { BookUser, ChevronRight, MousePointerClick } from "lucide-react";
-import { api, ApiError } from "../api/cliente";
-import { esSinDia } from "../api/tipos";
-import { fechaCorta, pesos, useEscritorio, uuid } from "../util";
-import { Aviso, Boton, CampoMonto, Hoja, Segmentado, TARJETA, TIPOS } from "../ui";
-import { AvisoAbrirDia } from "./Dia";
-
-const COLUMNAS = "grid grid-cols-[minmax(0,1fr)_3.5rem_7rem] items-center gap-3 px-4 lg:px-5";
+import { ChevronRight, Clock, MousePointerClick } from "lucide-react";
+import { toast } from "sonner";
+import { api } from "../api/cliente";
+import { detalleError, faltaDia } from "../api/tipos";
+import { DIAS_VENCIDO, fechaCorta, pesos, useEscritorio, uuid } from "../util";
+import { Aviso, Boton, CampoMonto, Hoja, montoFirmado, Reintentar, Segmentado, TARJETA, TIPOS } from "../ui";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Saldo, movimientos que lo componen y cobro total o parcial de un cliente.
 function Detalle({ clienteId }: { clienteId: number }) {
   const [monto, setMonto] = useState("");
-  const [refCliente, setRefCliente] = useState(() => uuid());
-  const [cobrado, setCobrado] = useState<number | null>(null);
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
-  const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
+  const sinDia = faltaDia(dia);
   const cajaChica = dia.data?.cajas.find((c) => c.tipo === "operativa");
+  // Misma ref para reintentos del mismo cobro (doble clic, error de red); ref nueva apenas cambia el payload.
+  const refCliente = useMemo(uuid, [clienteId, monto, cajaChica?.id]);
   const detalle = useQuery({ queryKey: ["cliente", clienteId], queryFn: () => api.cliente(clienteId) });
 
   const cobrar = useMutation({
@@ -26,63 +27,64 @@ function Detalle({ clienteId }: { clienteId: number }) {
       caja_id: cajaChica!.id, cliente_id: clienteId,
     }),
     onSuccess: (mov) => {
-      setRefCliente(uuid());
       setMonto("");
-      setCobrado(mov.monto);
+      toast.success(`Cobrado: ${pesos(mov.monto)} · ${detalle.data?.nombre}`);
     },
   });
 
   if (detalle.isLoading) return <div className="esqueleto h-72" />;
-  if (detalle.isError || !detalle.data) return <Aviso tono="error">No se pudo traer el cliente.</Aviso>;
+  if (detalle.isError || !detalle.data) return <Aviso tono="error" accion={<Reintentar onClick={() => detalle.refetch()} />}>No se pudo traer el cliente.</Aviso>;
   const c = detalle.data;
   const aFavor = c.saldo < 0;
+  const motivo = dia.isLoading ? "" : sinDia ? "Falta abrir el día para cobrar." : !cajaChica ? "Falta una caja chica abierta para cobrar." : !Number(monto) ? "Ingresá cuánto cobrás." : "";
 
   return (
     <div className="flex flex-col gap-5">
       <div>
         <p className={`rotulo ${aFavor ? "text-exito" : c.saldo > 0 ? "text-peligro" : "text-muted-foreground"}`}>{aFavor ? "A favor" : "Deuda"}</p>
-        <p className="monto mt-1 text-3xl font-semibold">{pesos(Math.abs(c.saldo))}</p>
+        <p className={`monto mt-1 text-3xl font-semibold ${aFavor ? "text-exito" : ""}`}>{pesos(Math.abs(c.saldo))}</p>
       </div>
 
       {c.saldo > 0 && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (Number(monto) > 0 && cajaChica && !sinDia) cobrar.mutate();
+            if (!motivo) cobrar.mutate();
           }}
           className="flex flex-col gap-3"
         >
-          <CampoMonto etiqueta="Cobrar" valor={monto} onValor={(v) => { setMonto(v); setCobrado(null); setRefCliente(uuid()); }} enterKeyHint="done" />
+          <CampoMonto etiqueta="Cobrar" valor={monto} onValor={setMonto} enterKeyHint="done" />
           <div className="flex gap-2">
-            <Boton type="button" variante="secundario" onClick={() => { setMonto(String(c.saldo)); setRefCliente(uuid()); }} className="shrink-0">
+            <Boton type="button" variante="secundario" onClick={() => setMonto(String(c.saldo))} className="shrink-0">
               <span>Todo (<span className="monto">{pesos(c.saldo)}</span>)</span>
             </Boton>
-            <Boton type="submit" cargando={cobrar.isPending} disabled={!Number(monto) || !cajaChica || sinDia} className="flex-1">
+            <Boton type="submit" cargando={cobrar.isPending} disabled={!!motivo || dia.isLoading} className="flex-1">
               {cobrar.isPending ? "Cobrando…" : "Cobrar"}
             </Boton>
           </div>
+          <p aria-live="polite" className="text-sm text-muted-foreground empty:hidden">{motivo}</p>
         </form>
       )}
-      {sinDia && c.saldo > 0 && <AvisoAbrirDia />}
-      {!sinDia && dia.isSuccess && !cajaChica && c.saldo > 0 && <Aviso tono="aviso">No hay caja chica abierta: hasta que se abra el día no se puede cobrar.</Aviso>}
-      {cobrar.isError && <Aviso tono="error">{cobrar.error instanceof ApiError ? cobrar.error.detalle : "No se pudo cobrar."}</Aviso>}
-      {cobrado !== null && <Aviso tono="exito">Cobro guardado: <span className="monto">{pesos(cobrado)}</span>.</Aviso>}
+      {cobrar.isError && <Aviso tono="error">{detalleError(cobrar.error, "No se pudo cobrar.")}</Aviso>}
 
       <div>
-        <h3 className="rotulo border-b pb-2 text-muted-foreground">Movimientos</h3>
+        <h3 className="border-b pb-2 text-sm font-medium">Movimientos</h3>
+        {c.movimientos.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Este cliente todavía no tiene movimientos.</p>}
         <ul className="divide-y">
           {c.movimientos.map((mov) => {
             const t = TIPOS[mov.tipo];
+            const contra = mov.anula_id !== null;
+            const [monto, color] = montoFirmado(mov);
             return (
               <li key={mov.id} className="flex min-h-14 items-center gap-3 py-2.5">
                 <t.icono className={`size-4 shrink-0 ${t.tono}`} aria-hidden />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium">{t.etiqueta}</span>
+                  <span className="block text-sm font-medium">{contra ? `Anulación · ${t.etiqueta}` : t.etiqueta}</span>
                   <span className="block truncate text-xs text-muted-foreground">
                     {fechaCorta(mov.corresponde_a_fecha)}{mov.nota ? ` · ${mov.nota}` : ""}
                   </span>
                 </span>
-                <span className="monto text-sm font-medium">{pesos(mov.monto)}</span>
+                <span className={`monto text-sm font-medium ${color}`}>{monto}</span>
               </li>
             );
           })}
@@ -110,43 +112,62 @@ export function CuentaCorriente() {
             opciones={[{ valor: "monto", texto: "Por monto" }, { valor: "antiguedad", texto: "Por antigüedad" }]}
           />
         </div>
-        <div className={`${TARJETA} mt-4 overflow-hidden`}>
-          <div className={`${COLUMNAS} h-10 border-b bg-muted/50 text-xs font-medium text-muted-foreground`} aria-hidden>
-            <span>Cliente</span>
-            <span className="text-right">Días</span>
-            <span className="text-right">Saldo</span>
+        <section className={`${TARJETA} mt-4 overflow-hidden`} aria-labelledby="deben">
+          <div className="flex items-baseline justify-between gap-3 px-4 pb-2 pt-4 lg:px-5 lg:pt-5">
+            <h2 id="deben" className="font-medium">Deben</h2>
+            {deudores.data && deudores.data.length > 0 && (
+              <span className="text-sm text-muted-foreground">{deudores.data.length} {deudores.data.length === 1 ? "cliente" : "clientes"}</span>
+            )}
           </div>
           {deudores.isLoading && [0, 1, 2].map((i) => <div key={i} className="esqueleto m-3 h-10" />)}
-          {deudores.isError && <div className="p-4"><Aviso tono="error">No se pudieron traer los deudores.</Aviso></div>}
-          {deudores.data?.length === 0 && (
-            <p className="flex flex-col items-center gap-2 px-6 py-12 text-center text-sm text-muted-foreground">
-              <BookUser className="size-6" aria-hidden />
-              Sin cuentas pendientes. Cuando cargues un fiado, el cliente aparece acá.
-            </p>
+          {deudores.isError && (
+            <div className="p-4">
+              <Aviso tono="error" accion={<Reintentar onClick={() => deudores.refetch()} />}>No se pudieron traer los deudores.</Aviso>
+            </div>
           )}
-          <ul className="divide-y">
-            {deudores.data?.map((d) => (
-              <li key={d.id}>
-                <button
-                  type="button"
-                  onClick={() => setClienteId(d.id)}
-                  aria-current={d.id === clienteId || undefined}
-                  className={`${COLUMNAS} min-h-14 w-full py-2 text-left transition-colors hover:bg-muted/50 active:bg-muted ${d.id === clienteId ? "bg-muted" : ""}`}
-                >
-                  <span className="truncate text-sm font-medium">{d.nombre}</span>
-                  <span className="monto text-right text-sm text-muted-foreground">{d.dias_deuda_mas_vieja === 0 ? "Hoy" : d.dias_deuda_mas_vieja}</span>
-                  <span className="flex items-center justify-end gap-1">
-                    <span className={`text-right ${d.saldo < 0 ? "text-exito" : ""}`}>
-                      <span className="monto block text-sm font-medium">{pesos(Math.abs(d.saldo))}</span>
-                      {d.saldo < 0 && <span className="block text-xs">a favor</span>}
-                    </span>
-                    <ChevronRight className="-mr-1.5 size-4 shrink-0 text-muted-foreground lg:hidden" aria-hidden />
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+          {deudores.data?.length === 0 && (
+            <div className="flex flex-col items-center gap-3 px-6 py-10 text-center text-sm text-muted-foreground">
+              Nadie debe nada. Cuando cargues un fiado, el cliente aparece acá.
+              <Button asChild variant="outline"><a href="#carga-rapida">Cargar un fiado</a></Button>
+            </div>
+          )}
+          {!!deudores.data?.length && (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="pl-4 text-xs text-muted-foreground lg:pl-5">Cliente</TableHead>
+                  <TableHead className="text-right text-xs text-muted-foreground">Días</TableHead>
+                  <TableHead className="pr-4 text-right text-xs text-muted-foreground lg:pr-5">Saldo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {deudores.data.map((d) => {
+                  const vencido = d.dias_deuda_mas_vieja >= DIAS_VENCIDO;
+                  return (
+                    <TableRow key={d.id} onClick={() => setClienteId(d.id)} className={`cursor-pointer active:bg-muted ${d.id === clienteId ? "bg-muted/60" : ""}`}>
+                      <TableCell className="min-h-14 whitespace-normal py-2 pl-4 lg:pl-5">
+                        <button type="button" aria-pressed={d.id === clienteId} className="block min-h-9 w-full text-left text-sm font-medium break-words">{d.nombre}</button>
+                        {vencido && <Badge variant="peligro" className="mt-1">Vencido</Badge>}
+                      </TableCell>
+                      <TableCell className={`monto text-right text-sm ${vencido ? "text-peligro" : "text-muted-foreground"}`}>
+                        <span className="inline-flex items-center gap-1">
+                          {vencido && <Clock className="size-4" aria-hidden />}
+                          {d.dias_deuda_mas_vieja === 0 ? "Hoy" : d.dias_deuda_mas_vieja}
+                        </span>
+                      </TableCell>
+                      <TableCell className="pr-4 lg:pr-5">
+                        <span className="flex items-center justify-end gap-1">
+                          <span className="monto text-sm font-medium">{pesos(d.saldo)}</span>
+                          <ChevronRight className="-mr-1.5 size-4 shrink-0 text-muted-foreground lg:hidden" aria-hidden />
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </section>
       </div>
 
       {escritorio ? (
@@ -158,7 +179,7 @@ export function CuentaCorriente() {
             </p>
           ) : (
             <>
-              <h2 className="mb-4 truncate text-base font-semibold tracking-tight">{elegido?.nombre}</h2>
+              <h2 className="mb-4 text-base font-semibold tracking-tight break-words">{elegido?.nombre}</h2>
               <Detalle key={clienteId} clienteId={clienteId} />
             </>
           )}

@@ -44,3 +44,7 @@ export class ApiError extends Error {
 
 // GET /dia/actual da 404 sin_dia cuando nunca se abrió ningún día en el negocio.
 export const esSinDia = (e: unknown): boolean => e instanceof ApiError && e.codigo === "sin_dia";
+// No hay día abierto para actuar: nunca se abrió, o el actual ya se cerró. `dia` es la query de /dia/actual.
+export const faltaDia = (dia: { isError: boolean; error: unknown; isSuccess: boolean; data?: DiaActualOut }) =>
+  dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data?.dia.estado !== "abierto";
+export const detalleError = (e: unknown, defecto: string) => (e instanceof ApiError ? e.detalle : defecto);

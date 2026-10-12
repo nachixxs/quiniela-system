@@ -147,7 +147,8 @@ def test_recorrido_feliz_http(db):
     cliente = TestClient(app, base_url="https://testserver")
     cliente.cookies.set("sesion", token)
 
-    assert cliente.post("/api/dia/abrir").status_code == 201
+    abierto = cliente.post("/api/dia/abrir")
+    assert abierto.status_code == 201
 
     resp = cliente.post("/api/movimientos", json={"ref_cliente": str(uuid4()), "tipo": "fiado", "monto": 5000,
                                                     "caja_id": chica.id, "cliente_id": cliente_db.id})
@@ -156,6 +157,13 @@ def test_recorrido_feliz_http(db):
     resp = cliente.get(f"/api/clientes/{cliente_db.id}")
     assert resp.status_code == 200
     assert resp.json()["saldo"] == 5000
+
+    # D108: el arqueo trae su par (caja, turno), en la respuesta y en el reporte del día
+    par = {"caja_id": grande.id, "turno_id": abierto.json()["turnos"][0]["id"]}
+    resp = cliente.post("/api/arqueo", json={**par, "efectivo_contado": 0, "boletas_contadas": 0})
+    assert resp.status_code == 200 and resp.json().items() >= par.items()
+    arqueos = cliente.get(f"/api/reportes/dia/{abierto.json()['dia']['fecha']}").json()["arqueos"]
+    assert [{k: a[k] for k in par} for a in arqueos] == [par]
 
     resp = cliente.post("/api/dia/abrir")  # ya hay un día abierto: error de dominio (Conflicto)
     assert resp.status_code == 409

@@ -1,35 +1,75 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Tokens (ver DESIGN.md): la escala neutra de shadcn/ui, sin tinte, y color solo con significado.
-   El tema oscuro reasigna los mismos nombres; ningún componente escribe un color a mano. */
-@theme {
+/* Tokens (ver DESIGN.md, dirección Mostrador): la escala neutra de shadcn/ui, sin tinte, y color solo con significado.
+   El tema oscuro reasigna los mismos nombres; ningún componente escribe un color a mano.
+   `static`: salen todos, también los que solo se leen con var(--color-…) desde el código. */
+@theme static {
   --font-sans: "Geist Variable", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+
+  /* Escala fija en rem: cifras de 22 (caja, celular), 34 (diferencia total, celular) y 40 (escritorio).
+     El tracking baja con el tamaño: texto 0, títulos -0,02 a -0,025 em. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5rem;
+  --text-lg--letter-spacing: -0.01em;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.75rem;
+  --text-xl--letter-spacing: -0.02em;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: 2.5rem;
+  --text-3xl--letter-spacing: -0.025em;
 
   --color-background: #f5f5f5;
   --color-foreground: #0a0a0a;
   --color-card: #ffffff;
-  --color-sidebar: #f5f5f5;
+  --color-card-foreground: var(--color-foreground);
+  --color-popover: var(--color-card);
+  --color-popover-foreground: var(--color-foreground);
   --color-muted: #e5e5e5;
   --color-muted-foreground: #636363;
-  --color-border: #d4d4d4;
-  --color-input: #d4d4d4;
+  --color-border: #e0e0e0;
+  --color-input: #8a8a8a; /* D88: 3,2:1 contra el fondo y 3,5:1 contra la tarjeta */
   --color-ring: #737373;
   --color-primary: #171717;
   --color-primary-foreground: #fafafa;
 
   /* Significado: entró plata o cuadra · salió plata, deuda o no cuadra · mirá esto · premio (sin signo). */
-  --color-exito: oklch(50.8% 0.118 165.612); /* emerald-700 */
+  --color-exito: oklch(49% 0.118 165.612); /* emerald-700 un poco más oscuro: 4,7:1 con el tinte del 8 % sobre el fondo */
   --color-peligro: oklch(50.5% 0.213 27.518); /* red-700 */
-  --color-aviso: oklch(55.5% 0.163 48.998); /* amber-700 */
+  --color-aviso: #a45106; /* amber-700 un paso más oscuro: 4,6:1 con el tinte del 8 % sobre el fondo */
   --color-premio: oklch(54.1% 0.281 293.009); /* violet-600 */
+  --color-destructive: var(--color-peligro);
 
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
+  /* D90: una serie, en el primario neutro (claro y oscuro). */
+  --color-chart-1: var(--color-primary);
 
+  --color-sidebar: #f5f5f5;
+  --color-sidebar-foreground: var(--color-foreground);
+  --color-sidebar-accent: var(--color-muted);
+  --color-sidebar-accent-foreground: var(--color-foreground);
+  --color-sidebar-border: var(--color-border);
+  --color-sidebar-ring: var(--color-ring);
+
+  /* Radios: tarjeta y diálogo 14 (xl), control 10 (lg), insignia 8 (md). */
+  --radius: 0.625rem;
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+
+  /* Una sola curva de salida para todo lo que se mueve. */
   --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -41,15 +81,27 @@
   --color-sidebar: #171717;
   --color-muted: #262626;
   --color-muted-foreground: #a1a1a1;
-  --color-border: oklch(1 0 0 / 10%);
-  --color-input: oklch(1 0 0 / 15%);
+  --color-border: #2a2a2a;
+  --color-input: #6b6b6b;
   --color-ring: #a1a1a1;
-  --color-primary: #e5e5e5;
-  --color-primary-foreground: #171717;
+  --color-primary: #fafafa;
+  --color-primary-foreground: #0a0a0a;
   --color-exito: oklch(76.5% 0.177 163.223); /* emerald-400 */
   --color-peligro: oklch(70.4% 0.191 22.216); /* red-400 */
   --color-aviso: oklch(82.8% 0.189 84.429); /* amber-400 */
   --color-premio: oklch(70.2% 0.183 293.541); /* violet-400 */
+}
+
+/* Contraste alto del sistema: bordes y campos más marcados. */
+@media (prefers-contrast: more) {
+  :root {
+    --color-border: #8a8a8a;
+    --color-input: #595959;
+  }
+  .dark {
+    --color-border: #6b6b6b;
+    --color-input: #a3a3a3;
+  }
 }
 
 @layer base {
@@ -65,11 +117,23 @@
     scrollbar-color: var(--color-input) transparent;
     scrollbar-gutter: stable;
     overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* Lo enfocado no queda bajo una barra fija: barra de arriba (3,5 rem) y de abajo (4 rem) más aire y safe area. */
+    scroll-padding-top: calc(4rem + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 64rem) {
+    html {
+      scroll-padding-bottom: 1rem;
+    }
   }
 
   body {
     color: var(--color-foreground);
     font-variant-numeric: tabular-nums;
+    text-underline-offset: 4px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -77,6 +141,11 @@
   h1,
   h2 {
     text-wrap: balance;
+  }
+
+  input,
+  textarea {
+    caret-color: var(--color-foreground);
   }
 
   /* Los controles no se seleccionan con el dedo ni esperan el doble toque; el contenido sí se selecciona. */
@@ -111,10 +180,11 @@
   letter-spacing: -0.02em;
 }
 
-/* Etiqueta de dato ("EFECTIVO", "DEUDA"): chica, en mayúsculas, con aire entre letras. */
+/* Etiqueta de dato ("EFECTIVO", "DEUDA"): 12 px, en mayúsculas, con aire entre letras.
+   Solo encima de un valor; los títulos de sección van en minúscula normal (D87). */
 @utility rotulo {
-  font-size: 11px;
-  line-height: 16px;
+  font-size: 0.75rem;
+  line-height: 1rem;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -133,25 +203,41 @@
   }
 }
 
-/* Lugar reservado mientras carga, con la forma de lo que reemplaza. Quieto: nada late en bucle. */
+/* Lugar reservado mientras carga, con la forma de lo que reemplaza. Quieto: nada late en bucle (D92). */
 @utility esqueleto {
   border-radius: var(--radius-lg);
   background-color: var(--color-muted);
 }
 
-/* Cambio de tema: fundido corto de toda la página con View Transitions (App.tsx). */
+/* Toast de Sonner: arriba y al centro, entra y sale en 200 ms con la curva de salida. */
+[data-sonner-toaster] [data-sonner-toast] {
+  transition:
+    transform 200ms var(--ease-salida),
+    opacity 200ms var(--ease-salida),
+    height 200ms var(--ease-salida),
+    box-shadow 200ms ease;
+}
+
+/* Cambio de tema: fundido corto de toda la página con View Transitions (App.tsx). Con reducir
+   movimiento se mantiene (D91): es solo opacidad. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 180ms;
   animation-timing-function: var(--ease-salida);
 }
 
+/* Reducir movimiento: lo de shadcn (tw-animate-css) queda en opacidad, sin escala ni desplazamiento;
+   el toast aparece sin deslizarse. Lo de motion lo reduce MotionConfig y, en strings de transform, useReducedMotion. */
 @media (prefers-reduced-motion: reduce) {
   .presiona:active:not(:disabled) {
     transform: none;
   }
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
+  [data-slot] {
+    --tw-enter-scale: 1;
+    --tw-exit-scale: 1;
+    --tw-enter-translate-x: 0;
+    --tw-enter-translate-y: 0;
+    --tw-exit-translate-x: 0;
+    --tw-exit-translate-y: 0;
   }
 }

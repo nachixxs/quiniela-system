@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { LoaderCircle, Sparkles } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
+import { m } from "motion/react";
+import { Input } from "@/components/ui/input";
 import { api, ApiError } from "../api/cliente";
-import { Boton, TARJETA } from "../ui";
+import { Aviso, Boton, EASE_SALIDA, TARJETA } from "../ui";
 
 type Turno = { pregunta: string; respuesta?: string; error?: string };
-const EJEMPLOS = ["¿Cuánto debe Pérez?", "¿Cuánto Mercado Pago hay acumulado?"];
+// Preguntas que se pueden contestar con cualquier base: no nombran a un cliente puntual.
+const EJEMPLOS = ["¿Qué arqueo no cuadró este mes?", "¿Quién debe hace más de 30 días?", "¿Cuánto Mercado Pago hay acumulado?"];
 const NO_DISPONIBLE = "El asistente no está disponible ahora. El resto del sistema funciona igual.";
 
 export function Asistente() {
@@ -39,14 +42,13 @@ export function Asistente() {
     <div className="flex max-w-3xl flex-col gap-6">
       <form onSubmit={(e) => { e.preventDefault(); enviar(texto); }} className={`${TARJETA} p-4 lg:p-6`}>
         <h2 className="text-base font-semibold tracking-tight">Tu pregunta</h2>
-        <p className="mb-4 mt-1 text-sm text-muted-foreground">Consulta los datos del sistema y te responde con palabras. Los montos los calcula el sistema.</p>
+        <p className="mb-4 mt-1 text-sm text-muted-foreground">Los montos los calcula el sistema; el asistente los lee y te los explica.</p>
         <div className="flex flex-col gap-3 sm:flex-row">
-          <input
+          <Input
             value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={500} autoComplete="off" enterKeyHint="send"
-            aria-label="Pregunta para el asistente" placeholder="¿Cuánto debe Pérez?"
-            className="h-12 min-w-0 sm:flex-1 rounded-md border border-input bg-background px-3 text-base shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/20 dark:bg-input/30 lg:h-10"
+            aria-label="Pregunta para el asistente" placeholder="Escribí tu pregunta…" className="sm:flex-1"
           />
-          <Boton type="submit" cargando={preguntar.isPending} disabled={!texto.trim()} className="h-12 sm:w-32 lg:h-10">Preguntar</Boton>
+          <Boton type="submit" cargando={preguntar.isPending} disabled={!texto.trim()} className="sm:w-32">Preguntar</Boton>
         </div>
       </form>
 
@@ -61,21 +63,22 @@ export function Asistente() {
       )}
 
       {turnos.map((t, i) => (
-        <div key={turnos.length - i} className={`${TARJETA} p-4 lg:p-6`}>
+        <m.div key={turnos.length - i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: EASE_SALIDA }} className={`${TARJETA} p-4 lg:p-6`}>
           <p className="text-sm font-medium">{t.pregunta}</p>
-          <p className={`mt-3 whitespace-pre-wrap break-words text-sm ${t.error ? "text-peligro" : ""}`}>{t.respuesta ?? t.error}</p>
-        </div>
+          {t.error
+            ? <div className="mt-3"><Aviso tono="error">{t.error}</Aviso></div>
+            : <p className="mt-3 whitespace-pre-wrap break-words text-sm">{t.respuesta}</p>}
+        </m.div>
       ))}
 
       {!turnos.length && !preguntar.isPending && (
         <div className={`${TARJETA} p-4 lg:p-6`}>
           <h2 className="text-base font-semibold tracking-tight">Para empezar</h2>
           <p className="mb-4 mt-1 text-sm text-muted-foreground">Tocá una pregunta o escribí la tuya.</p>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
             {EJEMPLOS.map((e) => (
               <button key={e} type="button" onClick={() => enviar(e)}
-                className="presiona flex min-h-11 items-center gap-2 rounded-md border px-3 text-left text-sm hover:bg-muted lg:min-h-9">
-                <Sparkles className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                className="presiona flex min-h-11 items-center rounded-lg border bg-card px-3 text-left text-sm hover:bg-muted lg:min-h-9">
                 {e}
               </button>
             ))}

@@ -1,57 +1,74 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, BookUser, Calculator, ChevronRight, Clock, Landmark, ListTodo, Moon, Store, Sunrise, type LucideIcon } from "lucide-react";
+import { Archive, Calculator, Clock, Landmark, Moon, Sunrise, type LucideIcon } from "lucide-react";
 import { api } from "../api/cliente";
-import { esSinDia, type CajaEstado } from "../api/tipos";
+import { faltaDia, type CajaEstado, type TurnoOut } from "../api/tipos";
 import { useUsuario } from "../contexto/usuario";
-import { fechaLarga, pesos } from "../util";
-import { Aviso, Boton, INSIGNIA, TARJETA, TONOS } from "../ui";
+import { DIAS_VENCIDO, desarmarPendiente, fechaLarga, pesos } from "../util";
+import { Aviso, Boton, FILA, INSIGNIA, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
+import { buttonVariants } from "@/components/ui/button";
 import { BOTONES, Carga, type BotonCarga } from "./CargaRapida";
 import { AccionesDia, TarjetaAbrirDia, type AccionDia } from "./Dia";
-import { FILA, Reintentar, TarjetaMovimientos } from "./Movimientos";
+import { TarjetaMovimientos } from "./Movimientos";
 
 const diasDesde = (d: number) => (d === 0 ? "Desde hoy" : `Hace ${d} ${d === 1 ? "día" : "días"}`);
-
-// Tarjeta de indicador: título chico con su ícono a la derecha, el dato grande y el detalle debajo.
-function Indicador({ titulo, icono: Icono, tonoIcono = "text-muted-foreground", extra, children, className = "" }: {
-  titulo: string; icono: LucideIcon; tonoIcono?: string; extra?: ReactNode; children: ReactNode; className?: string;
-}) {
-  return (
-    <section className={`${TARJETA} flex flex-col p-4 lg:p-5 ${className}`}>
-      <div className="flex min-h-6 items-center gap-2">
-        <h2 className="flex-1 truncate text-sm font-medium">{titulo}</h2>
-        {extra}
-        <Icono className={`size-4 shrink-0 ${tonoIcono}`} aria-hidden />
-      </div>
-      {children}
-    </section>
-  );
-}
-
-// Un dato de caja: rótulo, monto en mono y el esperado debajo si existe.
-const Dato = ({ rotulo, valor, esperado }: { rotulo: string; valor: ReactNode; esperado?: number }) => (
-  <div>
-    <p className="rotulo text-muted-foreground">{rotulo}</p>
-    <p className="mt-1.5">{valor}</p>
-    {esperado !== undefined && <p className="mt-1 text-xs text-muted-foreground">Esperado <span className="monto">{pesos(esperado)}</span></p>}
-  </div>
-);
-const Monto = ({ v }: { v: number }) => <span className="monto text-2xl font-semibold">{pesos(v)}</span>;
+const ENCABEZADO = "flex items-center justify-between gap-3 px-4 pb-2 pt-4 lg:px-5 lg:pt-5";
 
 // D27: antes del ticket la caja chica no tiene esperado (SPECS §7.3) y su efectivo es parcial: solo se muestran las boletas.
 // Sin turno abierto (los dos cerrados) ya no hay ticket por cargar: se muestra como la caja grande.
 function TarjetaCaja({ c, hayTurnoAbierto }: { c: CajaEstado; hayTurnoAbierto: boolean }) {
   const sinTicket = c.tipo === "operativa" && !c.esperado && hayTurnoAbierto;
   return (
-    <Indicador titulo={c.nombre} icono={c.tipo === "operativa" ? Store : Landmark} className="col-span-2 sm:col-span-1"
-      extra={sinTicket && <span className={`${INSIGNIA} ${TONOS.aviso}`}>Sin ticket</span>}>
-      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
-        <Dato rotulo="Efectivo" esperado={c.esperado?.efectivo}
-          valor={sinTicket ? <span className="text-sm leading-8 text-muted-foreground">Al cargar el ticket</span> : <Monto v={c.efectivo} />} />
-        <Dato rotulo="Boletas" valor={<Monto v={c.boletas} />} esperado={c.esperado?.boletas} />
+    <section className={`${TARJETA} @container p-3.5 lg:p-5`} aria-label={c.nombre}>
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <h2 className="text-sm font-medium text-muted-foreground">{c.nombre}</h2>
+        {sinTicket && <span className={`${INSIGNIA} ${TONOS.aviso}`}>Sin ticket</span>}
       </div>
-    </Indicador>
+      <p className="rotulo mt-3 text-muted-foreground">Efectivo</p>
+      <p className="mt-1">
+        {sinTicket ? <span className="text-sm leading-8 text-muted-foreground">Al cargar el ticket</span> : <span className="monto text-[clamp(16px,15cqw,22px)] font-semibold lg:text-[34px]">{pesos(c.efectivo)}</span>}
+      </p>
+      <p className="mt-2 text-xs text-muted-foreground">Boletas <span className="monto text-sm text-foreground">{pesos(c.boletas)}</span></p>
+    </section>
   );
+}
+
+// D102: anillo chico con los arqueos hechos del día; no es una cifra héroe.
+function Anillo({ n, m }: { n: number; m: number }) {
+  const c = 2 * Math.PI * 8;
+  return (
+    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+      <svg role="img" aria-label={`Arqueos ${n} de ${m}`} width="20" height="20" viewBox="0 0 20 20" fill="none" strokeWidth="2.5">
+        <circle cx="10" cy="10" r="8" className="stroke-muted" />
+        {n > 0 && m > 0 && <circle cx="10" cy="10" r="8" className="stroke-foreground" strokeDasharray={`${(c * Math.min(n, m)) / m} ${c}`} strokeLinecap="round" transform="rotate(-90 10 10)" />}
+      </svg>
+      Arqueos {n} de {m}
+    </span>
+  );
+}
+
+// Un pendiente: lo vencido (turno ya pasado) en peligro, lo que falta ahora en aviso (D101); la acción es un enlace o un botón.
+type Pendiente = { clave: string; icono: LucideIcon; titulo: string; detalle: string; accion: string; estado?: "Vencido" | "Falta"; href?: string; onClick?: () => void };
+
+function Renglon({ p, primario }: { p: Pendiente; primario: boolean }) {
+  const color = p.estado === "Vencido" ? "text-peligro" : p.estado ? "text-aviso" : "text-muted-foreground";
+  const contenido = (
+    <>
+      <p.icono className={`size-4 shrink-0 ${color}`} aria-hidden />
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-sm font-medium">{p.titulo}</span>
+          {p.estado && <span className={`${INSIGNIA} ${p.estado === "Vencido" ? TONOS.peligro : TONOS.aviso}`}>{p.estado}</span>}
+        </span>
+        <span className="block text-xs text-muted-foreground">{p.detalle}</span>
+      </span>
+      <span className={buttonVariants({ variant: primario ? "default" : "outline", size: "sm" })}>{p.accion}</span>
+    </>
+  );
+  const clases = `${FILA} w-full text-left transition-colors hover:bg-muted/50 active:bg-muted`;
+  return p.href
+    ? <a href={p.href} className={clases}>{contenido}</a>
+    : <button type="button" onClick={p.onClick} className={clases}>{contenido}</button>;
 }
 
 export function Inicio() {
@@ -61,189 +78,155 @@ export function Inicio() {
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
   const deudores = useQuery({ queryKey: ["deudores", "monto"], queryFn: () => api.deudores("monto") });
+  const fecha = dia.data?.dia.fecha;
+  const reporte = useQuery({ queryKey: ["reporte-dia", fecha], queryFn: () => api.reportesDia(fecha!), enabled: !!fecha });
   const conDeuda = deudores.data?.filter((d) => d.saldo > 0);
-  const pendientes = dia.data ? dia.data.arqueos_pendientes.length + (dia.data.rendicion_pendiente ? 1 : 0) : 0;
-  const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
+  const sinDia = faltaDia(dia);
+  const turnos = dia.data?.turnos ?? [];
   const cajaChicaId = dia.data?.cajas.find((c) => c.tipo === "operativa")?.id;
-  const turnosAbiertos = !!dia.data?.turnos.some((t) => t.estado === "abierto");
+  const turnosAbiertos = turnos.some((t) => t.estado === "abierto");
   // Traspaso: completo tras un arqueo (D3) o parcial con el turno abierto (D65).
-  const puedeTraspasar = turnosAbiertos || !!dia.data?.turnos.some((t) => t.estado === "cerrado");
-  const puedeCerrar = !!dia.data && !turnosAbiertos && dia.data.arqueos_pendientes.length === 0;
+  const puedeTraspasar = turnosAbiertos || turnos.some((t) => t.estado === "cerrado");
+  const arqueosPendientes = dia.data?.arqueos_pendientes ?? [];
+  const puedeCerrar = !!dia.data && !turnosAbiertos && arqueosPendientes.length === 0;
+
+  // Turno ya pasado = vencido; el turno de ahora = falta; uno futuro todavía no corre.
+  const actual = turnos.findIndex((t) => t.estado === "abierto");
+  const estadoDe = (t?: TurnoOut): Pendiente["estado"] => {
+    const i = t ? turnos.indexOf(t) : -1;
+    return !t ? undefined : t.estado === "cerrado" || i < actual ? "Vencido" : i === actual ? "Falta" : undefined;
+  };
+  const pendientes: Pendiente[] = [
+    ...arqueosPendientes.map((a) => {
+      const { turno: t, caja } = desarmarPendiente(a, turnos);
+      return { clave: a, icono: Calculator, titulo: `Arqueo de ${caja}`, detalle: t ? `Turno ${t.nombre}` : "Contá efectivo y boletas", accion: "Arquear", estado: estadoDe(t), href: `#arqueo?pendiente=${a}` };
+    }),
+    // Solo el turno de ahora: el de la noche no admite ticket hasta que se cierre el de la mañana.
+    ...turnos.filter((t, i) => i === actual && !t.tiene_ticket).map((t) => ({
+      clave: `ticket-${t.id}`, icono: t.nombre === "mañana" ? Sunrise : t.nombre === "noche" ? Moon : Clock, titulo: `Turno ${t.nombre}`,
+      detalle: "Sin ticket, la caja chica no tiene esperado", accion: "Cargar ticket", estado: estadoDe(t), onClick: () => setAccion({ tipo: "ticket", turno: t }),
+    })),
+    ...(dia.data?.rendicion_pendiente ? [{ clave: "rendicion", icono: Archive, titulo: "Rendición", detalle: "Boletas de ayer para contar y archivar", accion: "Rendir", estado: "Falta" as const, onClick: () => setAccion({ tipo: "rendicion" }) }] : []),
+  ];
 
   return (
     <>
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-tight lg:text-2xl">Hola, {usuario?.nombre}</h1>
-          <div className="mt-1 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground lg:hidden">
-            {dia.isLoading && <span className="esqueleto h-5 w-48" />}
-            {dia.data && (
-              <>
-                <span className="first-letter:uppercase">{fechaLarga(dia.data.dia.fecha)}</span>
-                <span className={`${INSIGNIA} ${dia.data.dia.estado === "abierto" ? TONOS.exito : TONOS.neutro}`}>Día {dia.data.dia.estado}</span>
-              </>
-            )}
-          </div>
-          <p className="mt-1 hidden text-sm text-muted-foreground lg:block">Cajas, pendientes y fiados del día.</p>
+      <div>
+        <h1 className="text-[22px] font-semibold tracking-tight lg:text-2xl">Hola, {usuario?.nombre}</h1>
+        <div className="mt-1 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground lg:hidden">
+          {dia.isLoading && <span className="esqueleto h-5 w-48" />}
+          {dia.data && (
+            <>
+              <span className="first-letter:uppercase">{fechaLarga(dia.data.dia.fecha)}</span>
+              <span className={`${INSIGNIA} ${dia.data.dia.estado === "abierto" ? TONOS.exito : TONOS.neutro}`}>Día {dia.data.dia.estado}</span>
+            </>
+          )}
         </div>
-        <div role="group" aria-label="Cargar" className="grid grid-cols-4 gap-2 lg:flex">
+        <p className="mt-1 hidden text-sm text-muted-foreground lg:block">Cajas, pendientes y fiados del día.</p>
+      </div>
+
+      {/* El DOM sigue el orden del celular: cajas, pendientes, cargas, movimientos, fiados. En escritorio (3/2) la izquierda lleva cajas, pendientes y movimientos, y la derecha cargas y fiados. */}
+      <div className="mt-5 flex flex-col gap-3 lg:grid lg:grid-cols-[3fr_2fr] lg:items-start lg:gap-6">
+        <div className="grid grid-cols-2 gap-3 lg:col-start-1 lg:row-start-1 lg:gap-4 lg:self-stretch">
+          {cajas.isLoading && [0, 1].map((i) => <div key={i} className="esqueleto h-[136px]" />)}
+          {cajas.data?.map((c) => <TarjetaCaja key={c.id} c={c} hayTurnoAbierto={turnosAbiertos} />)}
+          {cajas.isError && (
+            <div className="col-span-2">
+              <Aviso tono="error" accion={<Reintentar onClick={() => cajas.refetch()} />}>No se pudieron traer las cajas.</Aviso>
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-start-1 lg:row-start-2">
+          {sinDia ? <TarjetaAbrirDia cerrado={dia.data?.dia.estado === "cerrado" ? dia.data.dia : undefined} /> : (
+            <section className={`${TARJETA} overflow-hidden`} aria-labelledby="falta-hoy">
+              <div className={ENCABEZADO}>
+                <h2 id="falta-hoy" className="font-semibold">Lo que falta hoy</h2>
+                {dia.data && reporte.data && <Anillo n={new Set(reporte.data.arqueos.map((a) => `${a.caja_id}-${a.turno_id}`)).size} m={dia.data.cajas.length * turnos.length} />}
+              </div>
+              {dia.isLoading && <div className="esqueleto m-4 h-40" />}
+              {dia.isError && (
+                <div className="p-4">
+                  <Aviso tono="error" accion={<Reintentar onClick={() => dia.refetch()} />}>No se pudo traer el día.</Aviso>
+                </div>
+              )}
+              {dia.data && (
+                <ul className="divide-y border-t">
+                  {pendientes.map((p, i) => <li key={p.clave}><Renglon p={p} primario={i === 0} /></li>)}
+                  {pendientes.length === 0 && <li className="px-4 py-5 text-center text-sm text-muted-foreground lg:px-5">No falta nada por ahora.</li>}
+                  {puedeTraspasar && cajaChicaId !== undefined && (
+                    <li>
+                      <Renglon p={{ clave: "traspaso", icono: Landmark, titulo: "Traspaso a la caja grande", detalle: "Pasá el efectivo de la caja chica", accion: "Traspasar", onClick: () => setAccion({ tipo: "traspaso", cajaId: cajaChicaId }) }} primario={false} />
+                    </li>
+                  )}
+                </ul>
+              )}
+              {dia.data && (
+                <div className="border-t p-4 lg:px-5">
+                  <Boton type="button" variante={pendientes.length === 0 && puedeCerrar ? "primario" : "secundario"} disabled={!puedeCerrar}
+                    onClick={() => setAccion({ tipo: "cerrar", diaId: dia.data.dia.id })} className="w-full">
+                    Cerrar el día
+                  </Boton>
+                  {!puedeCerrar && (
+                    <p className="mt-2 text-center text-xs text-muted-foreground">
+                      {turnosAbiertos ? "Hay turnos abiertos: cerralos con su arqueo." : "Faltan arqueos pendientes."}
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+
+        <div role="group" aria-label="Cargar" className="grid grid-cols-4 gap-2 lg:col-start-2 lg:row-start-1 lg:grid-cols-2 lg:gap-3">
           {BOTONES.map((b) => (
             <button key={b.etiqueta} type="button" onClick={() => setSeleccion(b)}
-              className="presiona flex h-[68px] flex-col items-center justify-center gap-1.5 rounded-lg border bg-card text-[13px] font-medium shadow-xs hover:bg-muted lg:h-9 lg:flex-row lg:gap-2 lg:rounded-md lg:px-3 lg:text-sm">
-              <b.icono className={`size-5 lg:size-4 ${b.tono}`} aria-hidden />
+              className="presiona flex h-16 flex-col items-center justify-center gap-1.5 rounded-lg border bg-card text-[13px] font-medium shadow-xs hover:bg-muted lg:h-[76px] lg:text-sm">
+              <b.icono className={`size-5 ${b.tono}`} aria-hidden />
               {b.etiqueta}
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-[2fr_2fr_1fr_1fr] lg:gap-4">
-        {cajas.isLoading && [0, 1].map((i) => <div key={i} className="esqueleto col-span-2 h-[146px] sm:col-span-1" />)}
-        {cajas.data?.map((c) => <TarjetaCaja key={c.id} c={c} hayTurnoAbierto={turnosAbiertos} />)}
-        {cajas.isError && (
-          <div className="col-span-2">
-            <Aviso tono="error" accion={<Reintentar onClick={() => cajas.refetch()} />}>No se pudieron traer las cajas.</Aviso>
-          </div>
-        )}
-        <Indicador titulo="Pendientes" icono={ListTodo} tonoIcono={pendientes ? "text-aviso" : undefined}>
-          <p className="monto mt-4 text-2xl font-semibold">{dia.data ? pendientes : "–"}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{!dia.data ? "" : pendientes ? "Controles por hacer hoy" : "Nada pendiente"}</p>
-        </Indicador>
-        <Indicador titulo="Fiados" icono={BookUser}>
-          <p className="monto mt-4 text-2xl font-semibold">{conDeuda ? conDeuda.length : "–"}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{conDeuda?.length === 1 ? "Cliente con deuda" : "Clientes con deuda"}</p>
-        </Indicador>
-      </div>
+        {!sinDia && <div className="lg:col-start-1 lg:row-start-3"><TarjetaMovimientos /></div>}
 
-      <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-2 lg:gap-4">
-        {sinDia ? <TarjetaAbrirDia cerrado={dia.data?.dia.estado === "cerrado" ? dia.data.dia : undefined} /> : (
-        <section className={`${TARJETA} overflow-hidden`} aria-labelledby="estado-dia">
-          <div className="px-4 pb-2 pt-4 lg:px-5 lg:pt-5">
-            <h2 id="estado-dia" className="font-medium">Estado del día</h2>
-            <p className="text-sm text-muted-foreground">Turnos, rendición y arqueos</p>
+        <section className={`${TARJETA} flex flex-col overflow-hidden lg:col-start-2 lg:row-span-2 lg:row-start-2`} aria-labelledby="fiados">
+          <div className={ENCABEZADO}>
+            <h2 id="fiados" className="font-semibold">Fiados</h2>
+            <a href="#cuenta-corriente" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4 hover:text-muted-foreground lg:min-h-0">Ver cuenta corriente</a>
           </div>
-          {dia.isLoading && <div className="esqueleto m-4 h-40" />}
-          {dia.isError && (
-            <div className="p-4">
-              <Aviso tono="error" accion={<Reintentar onClick={() => dia.refetch()} />}>No se pudo traer el día.</Aviso>
-            </div>
-          )}
-          <ul className="divide-y">
-            {dia.data?.turnos.map((t) => {
-              const Icono = t.nombre === "mañana" ? Sunrise : t.nombre === "noche" ? Moon : Clock;
-              const sinTicket = t.estado === "abierto" && !t.tiene_ticket;
-              return (
-                <li key={t.id}>
-                  {sinTicket ? (
-                    <button type="button" onClick={() => setAccion({ tipo: "ticket", turno: t })}
-                      className={`${FILA} w-full text-left transition-colors hover:bg-muted/50 active:bg-muted`}>
-                      <Icono className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium">Turno {t.nombre}</span>
-                        <span className="block text-xs text-muted-foreground">Sin ticket</span>
-                      </span>
-                      <span className={`${INSIGNIA} ${TONOS.aviso}`}>Cargar ticket</span>
-                      <ChevronRight className="-mr-1 size-4 text-muted-foreground" aria-hidden />
-                    </button>
-                  ) : (
-                    <div className={FILA}>
-                      <Icono className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium">Turno {t.nombre}</span>
-                        <span className="block text-xs text-muted-foreground">{t.tiene_ticket ? "Ticket cargado" : "Sin ticket"}</span>
-                      </span>
-                      {t.estado === "abierto" ? (
-                        <span className={`${INSIGNIA} ${TONOS.exito}`}><span className="size-1.5 rounded-full bg-current" aria-hidden />Abierto</span>
-                      ) : (
-                        <span className={`${INSIGNIA} ${TONOS.neutro}`}>Cerrado</span>
-                      )}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-            {dia.data?.rendicion_pendiente && (
-              <li>
-                <button type="button" onClick={() => setAccion({ tipo: "rendicion" })}
-                  className={`${FILA} w-full text-left transition-colors hover:bg-muted/50 active:bg-muted`}>
-                  <Archive className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">Rendición</span>
-                    <span className="block text-xs text-muted-foreground">Boletas de ayer para contar y archivar</span>
-                  </span>
-                  <span className={`${INSIGNIA} ${TONOS.aviso}`}>Pendiente</span>
-                  <ChevronRight className="-mr-1 size-4 text-muted-foreground" aria-hidden />
-                </button>
-              </li>
-            )}
-            {dia.data?.arqueos_pendientes.map((a) => (
-              <li key={a}>
-                <a href="#arqueo" className={`${FILA} transition-colors hover:bg-muted/50 active:bg-muted`}>
-                  <Calculator className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="min-w-0 flex-1 text-sm font-medium first-letter:uppercase">{`Arqueo ${a.replace(/_/g, " ")}`}</span>
-                  <span className={`${INSIGNIA} ${TONOS.aviso}`}>Pendiente</span>
-                  <ChevronRight className="-mr-1 size-4 text-muted-foreground" aria-hidden />
-                </a>
-              </li>
-            ))}
-            {puedeTraspasar && cajaChicaId !== undefined && (
-              <li>
-                <button type="button" onClick={() => setAccion({ tipo: "traspaso", cajaId: cajaChicaId })}
-                  className={`${FILA} w-full text-left transition-colors hover:bg-muted/50 active:bg-muted`}>
-                  <Landmark className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="min-w-0 flex-1 text-sm font-medium">Traspaso a la caja grande</span>
-                  <ChevronRight className="-mr-1 size-4 text-muted-foreground" aria-hidden />
-                </button>
-              </li>
-            )}
-          </ul>
-          {dia.data && (
-            <div className="border-t p-4 lg:px-5">
-              <Boton type="button" variante="secundario" disabled={!puedeCerrar}
-                onClick={() => setAccion({ tipo: "cerrar", diaId: dia.data.dia.id })} className="w-full">
-                Cerrar el día
-              </Boton>
-              {!puedeCerrar && (
-                <p className="mt-2 text-center text-xs text-muted-foreground">
-                  {turnosAbiertos ? "Hay turnos abiertos." : "Faltan arqueos pendientes."}
-                </p>
-              )}
-            </div>
-          )}
-        </section>
-        )}
-
-        <section className={`${TARJETA} flex flex-col overflow-hidden`} aria-labelledby="fiados">
-          <div className="px-4 pb-2 pt-4 lg:px-5 lg:pt-5">
-            <h2 id="fiados" className="font-medium">Fiados</h2>
-            <p className="text-sm text-muted-foreground">Los que más deben</p>
-          </div>
-          {deudores.isLoading && <div className="esqueleto m-4 h-40" />}
+          {deudores.isLoading && <div className="esqueleto m-4 h-32" />}
           {deudores.isError && (
             <div className="p-4">
               <Aviso tono="error" accion={<Reintentar onClick={() => deudores.refetch()} />}>No se pudieron traer los fiados.</Aviso>
             </div>
           )}
-          {conDeuda?.length === 0 && <p className="px-4 py-8 text-center text-sm text-muted-foreground">Nadie debe nada. Los fiados que cargues aparecen acá.</p>}
-          <ul className="divide-y">
-            {conDeuda?.slice(0, 3).map((d) => (
-              <li key={d.id} className={FILA}>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{d.nombre}</span>
-                  <span className="block text-xs text-muted-foreground">{diasDesde(d.dias_deuda_mas_vieja)}</span>
-                </span>
-                <span className="monto text-sm font-medium">{pesos(d.saldo)}</span>
-              </li>
-            ))}
+          {conDeuda?.length === 0 && (
+            <div className="flex flex-col items-center gap-3 border-t px-4 py-6 text-center">
+              <p className="text-sm text-muted-foreground">Nadie debe nada. Los fiados que cargues aparecen acá.</p>
+              <Boton type="button" variante="secundario" onClick={() => setSeleccion(BOTONES[0])}>Cargar un fiado</Boton>
+            </div>
+          )}
+          <ul className="divide-y border-t empty:hidden">
+            {conDeuda?.slice(0, 4).map((d) => {
+              const vencido = d.dias_deuda_mas_vieja >= DIAS_VENCIDO;
+              return (
+                <li key={d.id} className={FILA}>
+                  <TIPOS.fiado.icono className={`size-4 shrink-0 ${vencido ? "text-peligro" : "text-aviso"}`} aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="break-words text-sm font-medium">{d.nombre}</span>
+                      {vencido && <span className={`${INSIGNIA} ${TONOS.peligro}`}>Vencido</span>}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">{diasDesde(d.dias_deuda_mas_vieja)}</span>
+                  </span>
+                  <span className="monto text-sm font-medium">{pesos(d.saldo)}</span>
+                </li>
+              );
+            })}
           </ul>
-          <a href="#cuenta-corriente" className="presiona mt-auto flex h-12 items-center justify-center gap-1 border-t text-sm font-medium hover:bg-muted/50">
-            Ver cuenta corriente
-            <ChevronRight className="size-4" aria-hidden />
-          </a>
         </section>
       </div>
-
-      {!sinDia && <TarjetaMovimientos />}
 
       <Carga seleccion={seleccion} onSeleccion={setSeleccion} />
       <AccionesDia accion={accion} onCerrar={() => setAccion(null)} />

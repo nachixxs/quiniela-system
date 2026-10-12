@@ -448,6 +448,10 @@ export interface components {
         ArqueoOut: {
             /** Id */
             id: number;
+            /** Caja Id */
+            caja_id: number;
+            /** Turno Id */
+            turno_id: number;
             /** Efectivo Esperado */
             efectivo_esperado: number;
             /** Boletas Esperadas */

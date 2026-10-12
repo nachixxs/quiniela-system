@@ -14,6 +14,7 @@ import { Reportes } from "./pantallas/Reportes";
 import { Asistente } from "./pantallas/Asistente";
 import { type Tema, aplicarTema, fechaLarga, temaInicial } from "./util";
 import { Boton, EASE_SALIDA, INSIGNIA, TARJETA, TONOS } from "./ui";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from "@/components/ui/sidebar";
 
 // D46: un error de render no puede dejar la app en blanco (pasó en Reportes, 4.9).
 export class LimiteDeError extends Component<{ children: ReactNode }, { error: boolean }> {
@@ -49,7 +50,10 @@ const NAV: { id: Pantalla; texto: string; corto: string; icono: LucideIcon; deta
 ];
 const PANTALLAS = { inicio: Inicio, "carga-rapida": CargaRapida, arqueo: Arqueo, "cuenta-corriente": CuentaCorriente, reportes: Reportes, asistente: Asistente };
 const ICONO_BOTON = "presiona grid size-11 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:size-8";
-const ITEM_LATERAL = "presiona relative flex h-8 w-full items-center gap-2 rounded-md px-2 text-sm";
+const NEGOCIO = "Quiniela La Estrella";
+// Foco del sidebar de shadcn (outline-hidden + ring-2): el mismo contorno global de index.css.
+const FOCO = "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:ring-0";
+const pendientesTexto = (n: number) => `${n} ${n === 1 ? "pendiente" : "pendientes"}`;
 
 function Marca({ nombre }: { nombre: string }) {
   return (
@@ -79,6 +83,11 @@ export function App() {
   }, []);
 
   useEffect(() => aplicarTema(tema), [tema]);
+  useEffect(() => {
+    const n = NAV.find((x) => x.id === pantalla)!;
+    const negocio = usuario?.negocio.nombre ?? NEGOCIO;
+    document.title = !usuario ? `Iniciar sesión · ${negocio}` : n.id === "inicio" ? negocio : `${n.texto} · ${negocio}`;
+  }, [pantalla, usuario]);
   // El cambio de tema funde toda la página de una vez (View Transitions); sin soporte, cambia directo.
   const alternarTema = () => {
     const nuevo = tema === "oscuro" ? "claro" : "oscuro";
@@ -103,84 +112,104 @@ export function App() {
   );
 
   if (cargando) return <div className="min-h-dvh bg-background" />;
-  if (!usuario) return <Login acciones={botonTema} marca={<Marca nombre="Quiniela La Estrella" />} />;
+  if (!usuario) return <Login acciones={botonTema} marca={<Marca nombre={NEGOCIO} />} />;
 
   const Actual = PANTALLAS[pantalla];
   const actual = NAV.find((n) => n.id === pantalla)!;
   const enlace = (p: Pantalla) => `#${p === "inicio" ? "" : p}`;
+  // D100: arqueos pendientes + la rendición. El número va en un title (descripción), no en el nombre del enlace: sigue siendo "Inicio".
+  const pendientes = dia.data ? dia.data.arqueos_pendientes.length + (dia.data.rendicion_pendiente ? 1 : 0) : 0;
+  const pendientesDe = (id: Pantalla) => (id === "inicio" ? pendientes : 0);
+  const titulo = (id: Pantalla) => (pendientesDe(id) ? pendientesTexto(pendientes) : undefined);
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[256px_minmax(0,1fr)]">
-      <aside className="hidden border-r bg-sidebar lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col">
-        <div className="flex h-14 items-center px-4">
-          <Marca nombre={usuario.negocio.nombre} />
-        </div>
-        <nav aria-label="Principal" className="flex flex-col gap-0.5 p-2">
-          {NAV.map((n) => (
-            <a key={n.id} href={enlace(n.id)} aria-current={n.id === pantalla ? "page" : undefined}
-              className={`${ITEM_LATERAL} ${n.id === pantalla ? "font-medium" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>
-              {n.id === pantalla && <m.span layoutId="nav-lateral" className="absolute inset-0 rounded-md bg-muted" transition={{ type: "spring", duration: 0.25, bounce: 0 }} />}
-              <n.icono className="relative size-4" aria-hidden />
-              <span className="relative">{n.texto}</span>
-            </a>
-          ))}
-        </nav>
-        <div className="mt-auto flex flex-col gap-0.5 border-t p-2">
-          <p className={`${ITEM_LATERAL} font-medium`}>
-            <CircleUser className="size-4 text-muted-foreground" aria-hidden />
-            <span className="truncate">{usuario.nombre}</span>
-          </p>
-          <button type="button" onClick={cerrarSesion} className={`${ITEM_LATERAL} text-muted-foreground hover:bg-muted/60 hover:text-foreground`}>
-            <LogOut className="size-4" aria-hidden />
-            Cerrar sesión
-          </button>
-        </div>
-      </aside>
+    <>
+      <a href="#contenido" onClick={(e) => { e.preventDefault(); document.getElementById("contenido")?.focus(); }}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground">
+        Saltar al contenido
+      </a>
+      <SidebarProvider className="min-h-dvh">
+        <Sidebar className="sticky top-0 hidden h-dvh border-r lg:flex">
+          <SidebarHeader className="h-14 justify-center px-4"><Marca nombre={usuario.negocio.nombre} /></SidebarHeader>
+          <SidebarContent>
+            <nav aria-label="Principal" className="p-2">
+              <SidebarMenu className="gap-0.5">
+                {NAV.map((n) => {
+                  const activo = n.id === pantalla;
+                  return (
+                    <SidebarMenuItem key={n.id}>
+                      <SidebarMenuButton asChild isActive={activo} className={`presiona relative data-active:bg-transparent ${FOCO} ${activo ? "" : "text-muted-foreground"}`}>
+                        <a href={enlace(n.id)} aria-current={activo ? "page" : undefined} title={titulo(n.id)}>
+                          {activo && <m.span layoutId="nav-lateral" className="absolute inset-0 rounded-md bg-muted" transition={{ type: "spring", duration: 0.25, bounce: 0 }} />}
+                          <n.icono className="relative" aria-hidden />
+                          <span className="relative">{n.texto}</span>
+                          {pendientesDe(n.id) > 0 && <span aria-hidden className={`${INSIGNIA} ${activo ? "bg-aviso/8 text-foreground" : `${TONOS.aviso} group-hover/menu-button:text-foreground`} relative ml-auto`}>{pendientes}</span>}
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </nav>
+          </SidebarContent>
+          <SidebarFooter className="gap-0.5 border-t">
+            <p className="flex h-8 items-center gap-2 px-2 text-sm font-medium">
+              <CircleUser className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="truncate">{usuario.nombre}</span>
+            </p>
+            <SidebarMenuButton onClick={cerrarSesion} className={`presiona text-muted-foreground ${FOCO}`}>
+              <LogOut aria-hidden />
+              Cerrar sesión
+            </SidebarMenuButton>
+          </SidebarFooter>
+        </Sidebar>
 
-      <div className="min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
-        <header className="sticky top-0 z-20 border-b bg-background pt-[env(safe-area-inset-top)]">
-          <div className="flex h-14 items-center gap-1 pl-4 pr-2 lg:pl-8 lg:pr-6">
-            <span className="min-w-0 flex-1 lg:hidden"><Marca nombre={usuario.negocio.nombre} /></span>
-            <span className="hidden min-w-0 flex-1 items-center gap-3 text-sm lg:flex">
-              {dia.data && (
-                <>
-                  <span className="font-medium first-letter:uppercase">{fechaLarga(dia.data.dia.fecha)}</span>
-                  <span className={`${INSIGNIA} ${dia.data.dia.estado === "abierto" ? TONOS.exito : TONOS.neutro}`}>Día {dia.data.dia.estado}</span>
-                </>
-              )}
-            </span>
-            {botonTema}
-            <button type="button" onClick={cerrarSesion} aria-label="Cerrar sesión" className={`${ICONO_BOTON} lg:hidden`}>
-              <LogOut className="size-4" aria-hidden />
-            </button>
-          </div>
-        </header>
-
-        {/* Cambio de pantalla: solo un fundido corto, porque se navega decenas de veces por turno. */}
-        <m.main key={pantalla} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: EASE_SALIDA }}
-          className="mx-auto w-full max-w-6xl px-4 pb-8 pt-5 lg:mx-0 lg:max-w-[1600px] lg:px-8 lg:pb-12 lg:pt-8">
-          {actual.detalle && (
-            <div className="mb-6">
-              <h1 className="text-[22px] font-semibold tracking-tight lg:text-2xl">{actual.texto}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{actual.detalle}</p>
+        <div className="min-w-0 flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+          <header className="sticky top-0 z-20 border-b bg-background pt-[env(safe-area-inset-top)]">
+            <div className="flex h-14 items-center gap-1 pl-4 pr-2 lg:pl-8 lg:pr-6">
+              <span className="min-w-0 flex-1 lg:hidden"><Marca nombre={usuario.negocio.nombre} /></span>
+              <span className="hidden min-w-0 flex-1 items-center gap-3 text-sm lg:flex">
+                {dia.data && (
+                  <>
+                    <span className="font-medium first-letter:uppercase">{fechaLarga(dia.data.dia.fecha)}</span>
+                    <span className={`${INSIGNIA} ${dia.data.dia.estado === "abierto" ? TONOS.exito : TONOS.neutro}`}>Día {dia.data.dia.estado}</span>
+                  </>
+                )}
+              </span>
+              {botonTema}
+              <button type="button" onClick={cerrarSesion} aria-label="Cerrar sesión" className={`${ICONO_BOTON} lg:hidden`}>
+                <LogOut className="size-4" aria-hidden />
+              </button>
             </div>
-          )}
-          <Actual />
-        </m.main>
-      </div>
+          </header>
 
-      <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-30 border-t bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-6">
-          {NAV.map((n) => (
-            <a key={n.id} href={enlace(n.id)} aria-current={n.id === pantalla ? "page" : undefined}
-              className={`presiona relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium ${n.id === pantalla ? "text-foreground" : "text-muted-foreground"}`}>
-              {n.id === pantalla && <m.span layoutId="nav-inferior" className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-foreground" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />}
-              <n.icono className="size-5" strokeWidth={n.id === pantalla ? 2.25 : 1.75} aria-hidden />
-              {n.corto}
-            </a>
-          ))}
+          {/* Cambio de pantalla: solo un fundido corto, porque se navega decenas de veces por turno. */}
+          <m.main id="contenido" tabIndex={-1} key={pantalla} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: EASE_SALIDA }}
+            className="mx-auto w-full max-w-6xl px-4 pb-8 pt-5 lg:mx-0 lg:max-w-[1600px] lg:px-8 lg:pb-12 lg:pt-8">
+            {actual.detalle && (
+              <div className="mb-6">
+                <h1 className="text-[22px] font-semibold tracking-tight lg:text-2xl">{actual.texto}</h1>
+                <p className="mt-1 text-sm text-muted-foreground">{actual.detalle}</p>
+              </div>
+            )}
+            <Actual />
+          </m.main>
         </div>
-      </nav>
-    </div>
+
+        <nav aria-label="Principal" className="fixed inset-x-0 bottom-0 z-30 border-t bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
+          <div className="grid grid-cols-6">
+            {NAV.map((n) => (
+              <a key={n.id} href={enlace(n.id)} aria-current={n.id === pantalla ? "page" : undefined} title={titulo(n.id)}
+                className={`presiona relative flex h-16 flex-col items-center justify-center gap-1 text-xs font-medium ${n.id === pantalla ? "text-foreground" : "text-muted-foreground"}`}>
+                {n.id === pantalla && <m.span layoutId="nav-inferior" className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-foreground" transition={{ type: "spring", duration: 0.3, bounce: 0 }} />}
+                <n.icono className="size-5" strokeWidth={n.id === pantalla ? 2.25 : 1.75} aria-hidden />
+                {n.corto}
+                {pendientesDe(n.id) > 0 && <span aria-hidden className={`${TONOS.aviso} absolute left-1/2 top-1.5 ml-3 grid h-5 min-w-5 place-items-center rounded-md px-1 text-xs font-medium`}>{pendientes}</span>}
+              </a>
+            ))}
+          </div>
+        </nav>
+      </SidebarProvider>
+    </>
   );
 }

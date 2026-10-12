@@ -4,7 +4,12 @@ const formato = new Intl.NumberFormat("es-AR", { style: "currency", currency: "A
 // Las diferencias llevan signo: "+$ 2.000" sobra, "-$ 2.000" falta, "$ 0" cuadra.
 const conSigno = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0, signDisplay: "exceptZero" });
 
-export function pesos(monto: number, signo = false): string {
+export function pesos(monto: number, signo = false, compacto = false): string {
+  if (compacto && Math.abs(monto) >= 1000) {
+    // Para los ejes de los gráficos: "$400 mil", "$1,2 M".
+    const [n, sufijo] = Math.abs(monto) >= 1e6 ? [monto / 1e6, " M"] : [monto / 1e3, " mil"];
+    return `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("es-AR", { maximumFractionDigits: 1 })}${sufijo}`;
+  }
   // Intl mete un espacio duro (U+00A0) entre "$" y el número; lo sacamos para "$48.000".
   return (signo ? conSigno : formato).format(monto).replace(/ /g, "");
 }
@@ -16,6 +21,9 @@ export const fechaLarga = (f: string) => formatoFecha.format(new Date(`${f}T12:0
 export const fechaCorta = (f: string) => formatoCorto.format(new Date(`${f}T12:00:00`)).replace(".", "");
 // Instante ISO completo (con hora, ej. de un ingreso del dueño) → fecha corta en el huso horario local.
 export const fechaHoraCorta = (iso: string) => formatoCorto.format(new Date(iso)).replace(".", "");
+
+// Un fiado está vencido desde 30 días de deuda (D105).
+export const DIAS_VENCIDO = 30;
 
 // Hoy en la zona horaria local (no UTC, a diferencia de Date#toISOString).
 export function fechaHoy(): string {
@@ -58,6 +66,13 @@ export function useEscritorio(): boolean {
     return () => mq.removeEventListener("change", cambio);
   }, []);
   return es;
+}
+
+// El backend nombra un arqueo pendiente "<caja>_<turno>" ("caja_grande_mañana"): una función lo arma y la otra lo desarma.
+export const clavePendiente = (caja: string, turno: string) => `${caja.toLowerCase().replace(/ /g, "_")}_${turno}`;
+export function desarmarPendiente<T extends { nombre: string }>(clave: string, turnos: T[]) {
+  const turno = turnos.find((t) => clave.endsWith(`_${t.nombre}`));
+  return { turno, caja: (turno ? clave.slice(0, -(turno.nombre.length + 1)) : clave).replace(/_/g, " ") };
 }
 
 // crypto.randomUUID solo existe en contextos seguros (HTTPS o localhost); fuera de eso, armamos un UUID v4 a mano.

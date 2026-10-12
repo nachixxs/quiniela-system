@@ -1,70 +1,77 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
-import { api, ApiError } from "../api/cliente";
-import type { MovimientoOut } from "../api/tipos";
-import { pesos } from "../util";
-import { Aviso, Boton, Hoja, INSIGNIA, TARJETA, TIPOS, TONOS } from "../ui";
+import { toast } from "sonner";
+import { api } from "../api/cliente";
+import { detalleError, type MovimientoOut } from "../api/tipos";
+import { pesos, useEscritorio } from "../util";
+import { Aviso, Boton, FILA, hora, Hoja, INSIGNIA, montoFirmado, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 
-export const FILA = "flex min-h-14 items-center gap-3 px-4 py-2.5 lg:px-5";
-const horaFormato = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" });
-export const hora = (iso: string) => horaFormato.format(new Date(iso));
 // D41: cliente_nombre puede venir null aunque haya cliente_id; en ese caso no se inventa texto.
 const quien = (m: MovimientoOut) => m.contraparte ?? m.cliente_nombre ?? null;
 // Espejo de TIPOS_CARGA (app/operaciones.py:16): lo que el backend rechaza con tipo_no_anulable.
 const NO_ANULABLE = new Set<MovimientoOut["tipo"]>(["apuesta_quiniela", "venta_otro_juego", "traspaso", "traspaso_boletas", "rendicion_boletas"]);
 
-export const Reintentar = ({ onClick }: { onClick: () => void }) => (
-  <button type="button" onClick={onClick} className="presiona -my-1 h-11 rounded-md px-2 font-medium underline underline-offset-4 lg:h-8">
-    Reintentar
-  </button>
-);
-
-// Hoja de confirmación: qué se anula, el motivo (obligatorio) y el botón primario sin vuelta atrás.
-function HojaAnular({ mov, onCerrar, onExito }: { mov: MovimientoOut; onCerrar: () => void; onExito: () => void }) {
+// Hoja de confirmación: qué se anula y a quién, el motivo (obligatorio) y el botón sin vuelta atrás.
+function HojaAnular({ mov, onCerrar }: { mov: MovimientoOut; onCerrar: () => void }) {
   const [motivo, setMotivo] = useState("");
   const t = TIPOS[mov.tipo];
-
-  const anular = useMutation({ mutationFn: () => api.anular(mov.id, motivo), onSuccess: onExito });
+  const nombre = quien(mov);
+  const anular = useMutation({
+    mutationFn: () => api.anular(mov.id, motivo.trim()),
+    onSuccess: () => {
+      toast.success(`Anulado: ${t.etiqueta} · ${pesos(mov.monto)}${nombre ? ` · ${nombre}` : ""}`);
+      onCerrar();
+    },
+  });
 
   return (
     <Hoja titulo="Anular movimiento" descripcion="Queda un contra-asiento con el motivo: no se puede deshacer." onCerrar={onCerrar}>
-      <div className="flex flex-col gap-5">
-        <div className="flex items-center gap-3 rounded-lg border px-4 py-3">
-          <t.icono className={`size-4 shrink-0 ${t.tono}`} aria-hidden />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">{t.etiqueta}</span>
-            <span className="block truncate text-xs text-muted-foreground">{hora(mov.creado_en)}{quien(mov) ? ` · ${quien(mov)}` : ""}</span>
-          </span>
+      <form onSubmit={(e) => { e.preventDefault(); if (motivo.trim()) anular.mutate(); }} className="flex flex-col gap-5">
+        <div className="flex items-start gap-3 rounded-lg border px-4 py-3">
+          <t.icono className={`mt-0.5 size-4 shrink-0 ${t.tono}`} aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">{t.etiqueta} <span className="monto font-normal text-muted-foreground">{hora(mov.creado_en)}</span></p>
+            {nombre && <p className="break-words text-sm text-muted-foreground">{nombre}</p>}
+          </div>
           <span className="monto text-sm font-medium">{pesos(mov.monto)}</span>
         </div>
 
-        <div>
-          <label htmlFor="motivo-anulacion" className="mb-2 block text-sm font-medium">Motivo</label>
-          <textarea
-            id="motivo-anulacion"
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            rows={3}
-            placeholder="Por qué se anula"
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/20 dark:bg-input/30"
-          />
+        <div className="grid gap-2">
+          <Label htmlFor="motivo-anulacion">Motivo</Label>
+          <Textarea id="motivo-anulacion" value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Por qué se anula…" autoFocus />
         </div>
 
-        {anular.isError && <Aviso tono="error">{anular.error instanceof ApiError ? anular.error.detalle : "No se pudo anular."}</Aviso>}
+        {anular.isError && <Aviso tono="error">{detalleError(anular.error, "No se pudo anular.")}</Aviso>}
 
-        <Boton type="button" cargando={anular.isPending} disabled={!motivo.trim()} onClick={() => anular.mutate()} className="h-12 w-full text-base lg:h-10 lg:text-sm">
-          {anular.isPending ? "Anulando…" : "Anular"}
-        </Boton>
-      </div>
+        <div>
+          <div className="flex flex-col-reverse gap-2 lg:flex-row lg:justify-end">
+            <Boton type="button" variante="secundario" onClick={onCerrar}>Cancelar</Boton>
+            <Boton type="submit" cargando={anular.isPending} disabled={!motivo.trim()}>{anular.isPending ? "Anulando…" : "Anular movimiento"}</Boton>
+          </div>
+          {!motivo.trim() && <p className="mt-2 text-sm text-muted-foreground lg:text-right">Escribí el motivo para poder anular.</p>}
+        </div>
+      </form>
     </Hoja>
   );
 }
 
-// Últimos movimientos del día (D31).
+const BotonAnular = ({ onClick }: { onClick: () => void }) => (
+  <button type="button" onClick={onClick} className="presiona -my-1 h-11 shrink-0 rounded-md px-2 text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground lg:my-0 lg:h-8">
+    Anular
+  </button>
+);
+const TH = "h-9 text-xs font-medium text-muted-foreground";
+
+// Movimientos de hoy (D31, D95): los últimos 4 y "Ver todos" despliega la lista entera, con anular.
 export function TarjetaMovimientos() {
   const [aAnular, setAAnular] = useState<MovimientoOut | null>(null);
-  const [avisoExito, setAvisoExito] = useState<string | null>(null);
+  const [todos, setTodos] = useState(false);
+  const escritorio = useEscritorio();
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const fecha = dia.data?.dia.fecha;
   const movimientos = useQuery({
@@ -73,25 +80,34 @@ export function TarjetaMovimientos() {
     enabled: !!fecha,
   });
 
-  useEffect(() => {
-    if (!avisoExito) return;
-    const t = setTimeout(() => setAvisoExito(null), 4000);
-    return () => clearTimeout(t);
-  }, [avisoExito]);
-
   const items = movimientos.data ? [...movimientos.data.items].sort((a, b) => b.creado_en.localeCompare(a.creado_en)) : undefined;
   const anulados = new Set(items?.filter((m) => m.anula_id !== null).map((m) => m.anula_id));
   const cargando = dia.isLoading || (dia.isSuccess && movimientos.isLoading);
   const error = dia.isError || movimientos.isError;
 
+  const filas = (todos ? items : items?.slice(0, 4))?.map((mov) => {
+    const t = TIPOS[mov.tipo];
+    const anulado = anulados.has(mov.id);
+    const contra = mov.anula_id !== null;
+    const [monto, color] = montoFirmado(mov);
+    const detalle = [quien(mov), contra && `Anula #${mov.anula_id}`, mov.motivo_anulacion].filter(Boolean).join(" · ");
+    return {
+      mov, t, anulado, detalle, hora: hora(mov.creado_en), etiqueta: contra ? `Anulación · ${t.etiqueta}` : t.etiqueta,
+      monto, color: anulado ? "text-muted-foreground line-through" : color,
+      anular: !anulado && !contra && !NO_ANULABLE.has(mov.tipo) ? () => setAAnular(mov) : null,
+    };
+  });
+  const Anulado = <span className={`${INSIGNIA} ${TONOS.neutro}`}>Anulado</span>;
+
   return (
-    <section className={`${TARJETA} mt-3 overflow-hidden lg:mt-4`} aria-labelledby="movimientos-hoy">
-      <div className="px-4 pb-2 pt-4 lg:px-5 lg:pt-5">
-        <h2 id="movimientos-hoy" className="font-medium">Movimientos de hoy</h2>
-        <p className="text-sm text-muted-foreground">Lo cargado en el día, más nuevo primero</p>
+    <section className={`${TARJETA} overflow-hidden`} aria-labelledby="movimientos-hoy">
+      <div className="flex items-center justify-between gap-3 px-4 pb-2 pt-4 lg:px-5 lg:pt-5">
+        <h2 id="movimientos-hoy" className="font-semibold">Movimientos de hoy</h2>
+        {items && items.length > 4 && (
+          <Button type="button" variant="link" size="sm" onClick={() => setTodos(!todos)} className="-my-2 px-2">{todos ? "Ver menos" : "Ver todos"}</Button>
+        )}
       </div>
 
-      {avisoExito && <div className="px-4 pb-2 lg:px-5"><Aviso tono="exito">{avisoExito}</Aviso></div>}
       {cargando && <div className="esqueleto m-4 h-40" />}
       {error && (
         <div className="p-4">
@@ -100,50 +116,62 @@ export function TarjetaMovimientos() {
           </Aviso>
         </div>
       )}
-      {items?.length === 0 && <p className="px-4 py-8 text-center text-sm text-muted-foreground">Sin movimientos hoy. Los que cargues aparecen acá.</p>}
+      {items?.length === 0 && <p className="border-t px-4 py-8 text-center text-sm text-muted-foreground">Sin movimientos hoy. Los que cargues aparecen acá.</p>}
 
-      <ul className="divide-y">
-        {items?.map((mov) => {
-          const t = TIPOS[mov.tipo];
-          const anulado = anulados.has(mov.id);
-          const esContraAsiento = mov.anula_id !== null;
-          const anulable = !anulado && !esContraAsiento && !NO_ANULABLE.has(mov.tipo);
-          return (
-            <li key={mov.id} className={FILA}>
-              <t.icono className={`size-4 shrink-0 ${t.tono}`} aria-hidden />
+      {filas && filas.length > 0 && (escritorio ? (
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={`${TH} w-20 pl-5`}>Hora</TableHead>
+              <TableHead className={TH}>Tipo</TableHead>
+              <TableHead className={TH}>Detalle</TableHead>
+              <TableHead className={`${TH} text-right`}>Monto</TableHead>
+              <TableHead className={`${TH} w-20 pr-5`}><span className="sr-only">Acciones</span></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filas.map((f) => (
+              <TableRow key={f.mov.id} className="h-12">
+                <TableCell className="monto pl-5 text-xs text-muted-foreground">{f.hora}</TableCell>
+                <TableCell className="font-medium">
+                  <span className="inline-flex items-center gap-2">
+                    <f.t.icono className={`size-4 ${f.t.tono}`} aria-hidden />
+                    <span className={f.anulado ? "text-muted-foreground line-through" : ""}>{f.etiqueta}</span>
+                    {f.anulado && Anulado}
+                  </span>
+                </TableCell>
+                <TableCell className="whitespace-normal text-muted-foreground">{f.detalle}</TableCell>
+                <TableCell className={`monto text-right font-medium ${f.color}`}>{f.monto}</TableCell>
+                <TableCell className="pr-5 text-right">{f.anular && <BotonAnular onClick={f.anular} />}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <ul className="divide-y border-t">
+          {filas.map((f) => (
+            <li key={f.mov.id} className={FILA}>
+              <span className="monto w-11 shrink-0 text-xs text-muted-foreground">{f.hora}</span>
               <span className="min-w-0 flex-1">
-                <span className={`block text-sm font-medium ${anulado ? "text-muted-foreground line-through" : ""}`}>
-                  {esContraAsiento ? `Anulación · ${t.etiqueta}` : t.etiqueta}
+                <span className="flex items-start gap-2">
+                  <f.t.icono className={`mt-0.5 size-4 shrink-0 ${f.t.tono}`} aria-hidden />
+                  <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className={`text-sm font-medium ${f.anulado ? "text-muted-foreground line-through" : ""}`}>{f.etiqueta}</span>
+                    {f.anulado && Anulado}
+                  </span>
                 </span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {hora(mov.creado_en)}
-                  {quien(mov) ? ` · ${quien(mov)}` : ""}
-                  {esContraAsiento ? ` · Anula #${mov.anula_id}` : ""}
-                  {mov.motivo_anulacion ? ` · ${mov.motivo_anulacion}` : ""}
-                </span>
+                {f.detalle && <span className="mt-0.5 block break-words text-xs text-muted-foreground">{f.detalle}</span>}
               </span>
-              {anulado && <span className={`${INSIGNIA} ${TONOS.neutro}`}>Anulado</span>}
-              <span className={`monto text-sm font-medium ${anulado ? "text-muted-foreground line-through" : ""}`}>{pesos(esContraAsiento ? -mov.monto : mov.monto)}</span>
-              {anulable && (
-                <button type="button" onClick={() => setAAnular(mov)} className="presiona -my-1 h-11 shrink-0 rounded-md px-2 text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground lg:h-8">
-                  Anular
-                </button>
-              )}
+              <span className="flex shrink-0 flex-col items-end">
+                <span className={`monto text-sm font-medium ${f.color}`}>{f.monto}</span>
+                {f.anular && <BotonAnular onClick={f.anular} />}
+              </span>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      ))}
 
-      <AnimatePresence>
-        {aAnular && (
-          <HojaAnular
-            key={aAnular.id}
-            mov={aAnular}
-            onCerrar={() => setAAnular(null)}
-            onExito={() => { setAAnular(null); setAvisoExito("Movimiento anulado."); }}
-          />
-        )}
-      </AnimatePresence>
+      <AnimatePresence>{aAnular && <HojaAnular key={aAnular.id} mov={aAnular} onCerrar={() => setAAnular(null)} />}</AnimatePresence>
     </section>
   );
 }
