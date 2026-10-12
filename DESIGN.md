@@ -123,7 +123,7 @@ bundle, D26). Cifras tabulares en todo el `body`.
 - **Carga rápida:** cuatro tarjetas grandes, cada una con su ícono de color, el nombre y la
   ayuda. Cada tarjeta abre la hoja `Carga`. En **Pago (D18, D42)** hay cinco opciones: "MP /
   transferencia" (la de por defecto), "Retiro del dueño", "Gasto", "Banco" y "Sueldo"; en
-  celular, dos filas (3 + 2) y sin ícono (D115, D123). Al guardar aparece un
+  celular, dos filas (3 + 2), sin ícono ni punto: la elegida se marca con el borde y el anillo (D115, D123). Al guardar aparece un
   toast con el monto y el cliente.
 - **Arqueo:** caja (opciones con radio), turno (segmentado) y los dos conteos. En escritorio
   son dos columnas: el formulario en tarjeta y el resultado al lado.
