@@ -9,7 +9,6 @@
    `static`: salen todos, también los que solo se leen con var(--color-…) desde el código. */
 @theme static {
   --font-sans: "Geist Variable", system-ui, sans-serif;
-  --font-heading: var(--font-sans);
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
 
   /* Escala fija en rem: cifras de 22 (caja, celular), 34 (diferencia total, celular) y 40 (escritorio).
@@ -32,9 +31,6 @@
   --text-3xl: 2.125rem;
   --text-3xl--line-height: 2.5rem;
   --text-3xl--letter-spacing: -0.025em;
-  --text-4xl: 2.5rem;
-  --text-4xl--line-height: 3rem;
-  --text-4xl--letter-spacing: -0.025em;
 
   --color-background: #f5f5f5;
   --color-foreground: #0a0a0a;
@@ -44,10 +40,6 @@
   --color-popover-foreground: var(--color-foreground);
   --color-muted: #e5e5e5;
   --color-muted-foreground: #636363;
-  --color-secondary: var(--color-muted);
-  --color-secondary-foreground: var(--color-foreground);
-  --color-accent: var(--color-muted);
-  --color-accent-foreground: var(--color-foreground);
   --color-border: #e0e0e0;
   --color-input: #8a8a8a; /* D88: 3,2:1 contra el fondo y 3,5:1 contra la tarjeta */
   --color-ring: #737373;
@@ -66,8 +58,6 @@
 
   --color-sidebar: #f5f5f5;
   --color-sidebar-foreground: var(--color-foreground);
-  --color-sidebar-primary: var(--color-primary);
-  --color-sidebar-primary-foreground: var(--color-primary-foreground);
   --color-sidebar-accent: var(--color-muted);
   --color-sidebar-accent-foreground: var(--color-foreground);
   --color-sidebar-border: var(--color-border);
@@ -75,15 +65,12 @@
 
   /* Radios: tarjeta y diálogo 14 (xl), control 10 (lg), insignia 8 (md). */
   --radius: 0.625rem;
-  --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.4);
 
-  /* Una sola curva de salida para todo lo que se mueve; la de dos puntas solo para movimiento sin resorte. */
+  /* Una sola curva de salida para todo lo que se mueve. */
   --ease-salida: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-out: var(--ease-salida);
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 .dark {
@@ -252,8 +239,5 @@
     --tw-enter-translate-y: 0;
     --tw-exit-translate-x: 0;
     --tw-exit-translate-y: 0;
-  }
-  [data-sonner-toaster] [data-sonner-toast] {
-    transition: opacity 200ms linear;
   }
 }

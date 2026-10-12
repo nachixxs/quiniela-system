@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleAlertIcon, CircleCheckIcon, InfoIcon, TriangleAlertIcon } from "lucide-react"
+import { CircleCheckIcon } from "lucide-react"
 
 // El tema sale de la clase `.dark` de <html>, que pone util.ts (aplicarTema): sin next-themes.
 const alCambiarTema = (aviso: () => void) => {
@@ -20,12 +20,7 @@ const Toaster = (props: ToasterProps) => {
       theme={oscuro ? "dark" : "light"}
       position="top-center"
       mobileOffset={{ top: "calc(env(safe-area-inset-top) + 12px)" }}
-      icons={{
-        success: <CircleCheckIcon className="size-4 text-exito" />,
-        error: <CircleAlertIcon className="size-4 text-peligro" />,
-        warning: <TriangleAlertIcon className="size-4 text-aviso" />,
-        info: <InfoIcon className="size-4" />,
-      }}
+      icons={{ success: <CircleCheckIcon className="size-4 text-exito" /> }}
       style={
         {
           zIndex: 50,

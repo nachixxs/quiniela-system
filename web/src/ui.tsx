@@ -191,7 +191,6 @@ export function Hoja({
   return (
     <Dialog open={presente} onOpenChange={(abierta) => !abierta && onCerrar()}>
       <DialogContent
-        showCloseButton={false}
         className="gap-0 p-0 lg:p-0"
         {...(descripcion ? {} : { "aria-describedby": undefined })}
         // Si un hijo ya enfocó algo (CampoMonto con autoFocus) no se lo robamos; si no, el foco va a la hoja.

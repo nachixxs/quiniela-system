@@ -129,7 +129,7 @@ export function App() {
         Saltar al contenido
       </a>
       <SidebarProvider className="min-h-dvh">
-        <Sidebar collapsible="none" className="sticky top-0 hidden h-dvh border-r lg:flex">
+        <Sidebar className="sticky top-0 hidden h-dvh border-r lg:flex">
           <SidebarHeader className="h-14 justify-center px-4"><Marca nombre={usuario.negocio.nombre} /></SidebarHeader>
           <SidebarContent>
             <nav aria-label="Principal" className="p-2">
