@@ -51,7 +51,7 @@ Reglas:
   del 8 %. En claro, `background`/`sidebar` son un gris suave (#f5f5f5) y
   `card` queda blanco encima; `muted` (#e5e5e5) da un paso más oscuro que el fondo
   para seguir leyéndose sobre él. Medido: `foreground` 18,2:1 sobre `background` y 15,7:1
-  sobre `muted`; `muted-foreground` 4,7:1 sobre `background`, 6,0:1 sobre `card` y 4,8:1 sobre
+  sobre `muted`; `muted-foreground` 5,5:1 sobre `background`, 6,0:1 sobre `card` y 4,8:1 sobre
   `muted`.
 
 ## 3. Tipografía
@@ -106,7 +106,8 @@ bundle, D26). Cifras tabulares en todo el `body`.
   2. "Lo que falta hoy": un renglón por pendiente, con título, detalle y el botón de su
      acción. El primero es el único primario. En el encabezado de la tarjeta, un anillo de progreso chico
      (~20 px, trazo `foreground` sobre `muted`) con "Arqueos N de M" al lado (D102, 11/10):
-     N son los arqueos hechos del día y M, cajas × turnos. No es una cifra héroe.
+     N son los pares (caja, turno) ya arqueados del día (un arqueo repetido cuenta una vez, D108)
+     y M, cajas × turnos. No es una cifra héroe.
      Lo vencido o faltante (un pendiente de un turno ya pasado, un fiado vencido) lleva una
      insignia "Vencido" o "Falta" en `peligro` o `aviso` y el ícono del renglón en ese color,
      **sin borde lateral de color** (D101, 11/10).
@@ -166,7 +167,7 @@ un botón que está guardando, que es funcional.
 | Hoja / diálogo | Opacidad y escala desde 0,96 | Nunca desde escala 0 |
 | Aviso | Opacidad y 4 px | Aparece sin empujar |
 | Toast | Baja desde arriba y se va por el mismo lado | Confirma sin tapar la próxima carga |
-| Resultado del arqueo | Resorte de entrada, las filas en cascada corta y el tilde que se dibuja | Es el momento del día y se ve cuatro veces |
+| Resultado del arqueo | Resorte de entrada, las filas en cascada corta y el tilde que se dibuja (con reducir movimiento aparece completo, D110) | Es el momento del día y se ve cuatro veces |
 | Radio | El punto crece desde el centro | Confirma la elección |
 | Error de login | Una sacudida con WAAPI | No remonta el formulario ni pierde el foco |
 | Cambio de tema | Fundido de toda la página (View Transitions) | Sin él, cada superficie cambia a destiempo |
@@ -190,7 +191,7 @@ grueso), 16 px (20 en la barra inferior y en las tarjetas de carga), color por t
 - **Temas (D21):** sigue al sistema; la elección se guarda en `localStorage`. `theme-color`
   por tema en `index.html` (con script antidestello), actualizado por `util.ts`.
 - **Foco visible** en todo: un contorno de `ring`, el mismo en campos y botones.
-- `<form>` en todo: Enter guarda. Hojas con `role=dialog`, `aria-modal`, título enlazado,
+- `<form>` en todo: Enter guarda. Hojas con `role=dialog` y el fondo inerte (`aria-hidden`, lo pone Radix), título enlazado,
   Escape y foco devuelto. Errores con `role=alert`; lo demás, `role=status` / `aria-live`.
 - **Celular:** `interactive-widget=resizes-content` para que el teclado no tape la hoja;
   sin resaltado de toque ni pull-to-refresh; los controles no seleccionan su texto; campos
