@@ -107,6 +107,9 @@ bundle, D26). Cifras tabulares en todo el `body`.
      acción. El primero es el único primario. En el encabezado de la tarjeta, un anillo de progreso chico
      (~20 px, trazo `foreground` sobre `muted`) con "Arqueos N de M" al lado (D102, 11/10):
      N son los arqueos hechos del día y M, cajas × turnos. No es una cifra héroe.
+     Lo vencido o faltante (un pendiente de un turno ya pasado, un fiado vencido) lleva una
+     insignia "Vencido" o "Falta" en `peligro` o `aviso` y el ícono del renglón en ese color,
+     **sin borde lateral de color** (D101, 11/10).
   3. Los cuatro botones de carga (Fiado, Cobro, Pago, Premio).
   4. Los últimos 4 movimientos y "Ver todos", que despliega la lista entera ahí mismo, con
      anular.
