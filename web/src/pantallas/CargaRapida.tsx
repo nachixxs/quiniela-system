@@ -10,6 +10,8 @@ import { Aviso, AvisoAbrirDia, Boton, CampoMonto, Hoja, OPCION, PUNTO_RADIO, Rei
 import { Input } from "@/components/ui/input";
 
 // D18: Pago no es un solo tipo, es todo lo que no entró o salió de la caja. D42: Cobro tampoco.
+// Celular, Pago: 3 + 2 en 12 columnas; el primero es el más largo ("MP / transferencia"). Sin ícono ni punto, para que el rótulo entre entero (D115, D123).
+const FILAS_3_2 = ["max-lg:col-span-5 max-lg:px-2", "max-lg:col-span-4 max-lg:px-2", "max-lg:col-span-3 max-lg:px-2", "max-lg:col-span-6", "max-lg:col-span-6"];
 const OPCIONES_COBRO: MovimientoCrear["tipo"][] = ["cobro_fiado", "cobro_subagente", "ingreso_del_dueno"];
 const OPCIONES_PAGO: MovimientoCrear["tipo"][] = ["cobro_mercado_pago", "retiro_dueno", "gasto", "pago_banco", "sueldo"];
 // D42: estos van a la caja grande; el resto sigue en la chica.
@@ -83,6 +85,7 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
 
   // Caso 8: qué falta, escrito debajo del botón (solo si el día y la caja están; si no, ya hay un aviso).
   const falta = Number(monto) <= 0 ? "Escribí el monto." : requiereCliente && !cliente ? "Elegí el cliente." : requiereContraparte && !contraparte.trim() ? "Escribí el nombre del subagente." : null;
+  const dosFilas = seleccion?.opciones?.length === 5;
   const listo = !sinDia && !!caja && !falta;
   const nombreExiste = clientes.data?.some((c) => c.nombre.trim().toLowerCase() === busqueda.trim().toLowerCase());
 
@@ -103,15 +106,15 @@ export function Carga({ seleccion, onSeleccion }: { seleccion: BotonCarga | null
             {seleccion.opciones && (
               <fieldset>
                 <legend className="mb-2 text-sm font-medium">Qué fue</legend>
-                <div className="grid grid-cols-2 gap-2">
-                  {seleccion.opciones.map((op) => {
+                <div className={`grid grid-cols-2 gap-2 ${dosFilas ? "max-lg:grid-cols-12" : ""}`}>
+                  {seleccion.opciones.map((op, i) => {
                     const t = TIPOS[op];
                     return (
-                      <label key={op} className={`${OPCION} min-h-12 min-w-0 gap-2 px-3`}>
+                      <label key={op} className={`${OPCION} min-h-12 gap-2 px-3 ${dosFilas ? FILAS_3_2[i] : ""}`}>
                         <input type="radio" name="subtipo" className="sr-only" checked={tipoFinal === op} onChange={() => setSubtipo(op)} />
                         <t.icono className={`size-4 shrink-0 max-lg:hidden ${t.tono}`} aria-hidden />
-                        <span className="min-w-0 flex-1 break-words text-sm font-medium leading-tight">{t.etiqueta}</span>
-                        {PUNTO_RADIO}
+                        <span className="flex-1 text-sm font-medium leading-tight">{t.etiqueta}</span>
+                        <span className={dosFilas ? "max-lg:hidden" : "contents"}>{PUNTO_RADIO}</span>
                       </label>
                     );
                   })}
