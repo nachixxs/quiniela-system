@@ -121,8 +121,9 @@ bundle, D26). Cifras tabulares en todo el `body`.
   cargar el ticket", solo las boletas llevan monto y no hay esperado. Nunca un efectivo
   parcial. Se sabe porque la caja operativa llega con `esperado` nulo.
 - **Carga rápida:** cuatro tarjetas grandes, cada una con su ícono de color, el nombre y la
-  ayuda. Cada tarjeta abre la hoja `Carga`. En **Pago (D18)** hay tres opciones: "MP /
-  transferencia" (la de por defecto), "Retiro del dueño" y "Gasto". Al guardar aparece un
+  ayuda. Cada tarjeta abre la hoja `Carga`. En **Pago (D18, D42)** hay cinco opciones: "MP /
+  transferencia" (la de por defecto), "Retiro del dueño", "Gasto", "Banco" y "Sueldo"; en el
+  celular van sin ícono para que el rótulo entre entero (D115). Al guardar aparece un
   toast con el monto y el cliente.
 - **Arqueo:** caja (opciones con radio), turno (segmentado) y los dos conteos. En escritorio
   son dos columnas: el formulario en tarjeta y el resultado al lado.
@@ -140,9 +141,9 @@ bundle, D26). Cifras tabulares en todo el `body`.
 
 Desde el CP8 la base es shadcn (`web/src/components/ui/`, generado por el CLI y ajustado a
 estos tokens y a los tamaños de este archivo, D103: nunca se regenera con `shadcn add
---overwrite`). Encima, en `ui.tsx`: `Boton` (sobre `buttonVariants`), `Aviso`, `CampoMonto`,
-`Segmentado`, `Hoja` (sobre Dialog, con el foco atrapado), `Reintentar`, `AvisoAbrirDia` y
-`hora()` en 24 h; y `Carga` (la hoja de carga de Inicio y Carga rápida) en
+--overwrite`). Encima, en `ui.tsx`: `Boton` (sobre `Button`), `Aviso`, `CampoMonto` (sin placeholder, D116),
+`Segmentado`, `Hoja` (sobre Dialog, con el foco atrapado), `Reintentar`, `AvisoAbrirDia`,
+las clases `TARJETA`, `INSIGNIA`, `TONOS` y `FILA`, la curva `EASE_SALIDA` y `hora()` en 24 h; y `Carga` (la hoja de carga de Inicio y Carga rápida) en
 `pantallas/CargaRapida.tsx`. Un solo `Toaster` (Sonner) en `main.tsx`.
 
 Lo demás que se repite son **clases**, no componentes: `TARJETA`, `INSIGNIA`, `TONOS`,

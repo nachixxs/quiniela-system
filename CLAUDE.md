@@ -58,8 +58,9 @@ docker compose exec api alembic upgrade head  # migraciones (el contenedor ya la
 
 - El orquestador es una sesión de Claude Desktop abierta sobre la carpeta de su worktree (el de
   `cp-8` sigue en `D:\Orca\workspaces\quiniela-system\cp3-b9-diseno`). Un worktree nuevo se arma
-  con `.\setup-worktree.ps1`: su `.venv` y su `web/node_modules` (no se comparten) y
-  `CLAUDE.local.md`. Los de subagentes copian lo de `.worktreeinclude`.
+  con `.\setup-worktree.ps1`: su `.venv`, `web/node_modules` y `e2e/node_modules` (no se
+  comparten ni se enlazan, D119) y `CLAUDE.local.md`. Los de subagentes copian lo de
+  `.worktreeinclude` y también corren `setup-worktree.ps1` antes de trabajar.
 - Puertos: db 5433, API 8000, Vite 5173 (proxy `/api` → 8000). Fijos: **un solo checkout de
   la caja con Docker levantado a la vez.** Postgres nativo de la PC en 5432; web de la agencia
   en 4321.
