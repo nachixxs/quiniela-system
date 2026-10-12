@@ -1,10 +1,11 @@
-import { type ReactNode, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { type ReactNode, lazy, Suspense, useState } from "react";
+import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "../api/cliente";
-import type { MovimientoOut, ResumenMes } from "../api/tipos";
+import type { MovimientoOut, ReporteDia, ReporteMercadoPago, ResumenMes } from "../api/tipos";
 import { fechaCorta, fechaHoraCorta, fechaHoy, pesos } from "../util";
-import { Aviso, hora, INSIGNIA, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
+import { Aviso, Boton, hora, INSIGNIA, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
 
 // "2026-09" ± meses, sin pasar por Date con día fijo (evita saltos por zona horaria).
 function sumarMes(mes: string, delta: number): string {
@@ -19,27 +20,45 @@ function rangoMes(mes: string): { desde: string; hasta: string } {
 const formatoMes = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" });
 const mesLabel = (mes: string) => formatoMes.format(new Date(`${mes}-01T12:00:00`));
 
+// Celdas de las tablas de la pantalla: el rótulo a la izquierda, los montos a la derecha.
+const TD_ROTULO = "whitespace-normal py-2.5 pl-4 pr-2 lg:pl-5";
+const TD_MONTO = "monto px-2 py-2.5 text-right last:pr-4 lg:last:pr-5";
+const TH_MONTO = "px-2 text-right text-xs font-medium text-muted-foreground last:pr-4 lg:last:pr-5";
+const Encabezado = ({ titulo, descripcion }: { titulo: string; descripcion: string }) => (
+  <div className="p-4 pb-2 lg:p-5 lg:pb-2">
+    <h2 className="font-medium">{titulo}</h2>
+    <p className="text-sm text-muted-foreground">{descripcion}</p>
+  </div>
+);
+
 // Una fila de un grupo: el valor sale del mes elegido y del anterior, sin restarlos ni sumarlos acá.
+type NumKey = { [K in keyof ResumenMes]: ResumenMes[K] extends number ? K : never }[keyof ResumenMes];
 type Fila = { etiqueta: string; valor: (r: ResumenMes) => number; signo?: boolean; moneda?: boolean };
 function Grupo({ titulo, descripcion, filas, actual, anterior, nota }: {
   titulo: string; descripcion: string; filas: Fila[]; actual: ResumenMes; anterior: ResumenMes; nota?: ReactNode;
 }) {
   const val = (f: Fila, r: ResumenMes) => (f.moneda === false ? String(f.valor(r)) : pesos(f.valor(r), f.signo));
   return (
-    <section className={`${TARJETA} p-4 lg:p-5`}>
-      <h2 className="font-medium">{titulo}</h2>
-      <p className="text-sm text-muted-foreground">{descripcion}</p>
-      <ul className="mt-3 divide-y">
-        {filas.map((f) => (
-          <li key={f.etiqueta} className="flex items-center justify-between gap-3 py-2 text-sm">
-            <span className="text-muted-foreground">{f.etiqueta}</span>
-            <span className="flex items-baseline gap-2">
-              <span className="monto font-medium">{val(f, actual)}</span>
-              <span className="monto text-xs text-muted-foreground">{val(f, anterior)}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+    <section className={`${TARJETA} overflow-hidden`}>
+      <Encabezado titulo={titulo} descripcion={descripcion} />
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="pl-4 lg:pl-5"><span className="sr-only">Concepto</span></TableHead>
+            <TableHead className={TH_MONTO}>Este mes</TableHead>
+            <TableHead className={TH_MONTO}>Mes anterior</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filas.map((f) => (
+            <TableRow key={f.etiqueta}>
+              <TableCell className={`${TD_ROTULO} text-muted-foreground`}>{f.etiqueta}</TableCell>
+              <TableCell className={`${TD_MONTO} font-medium ${f.signo && f.valor(actual) !== 0 ? "text-peligro" : ""}`}>{val(f, actual)}</TableCell>
+              <TableCell className={`${TD_MONTO} text-muted-foreground`}>{val(f, anterior)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
       {nota}
     </section>
   );
@@ -49,6 +68,9 @@ function Grupo({ titulo, descripcion, filas, actual, anterior, nota }: {
 function construirGrupos(actual: ResumenMes, anterior: ResumenMes, deudaHoy: number) {
   const juegos = new Map<number, string>();
   for (const v of [...actual.ventas_por_juego, ...anterior.ventas_por_juego]) juegos.set(v.juego_id, v.nombre);
+  // "dif" = diferencia con signo; "cuenta" = una cantidad de arqueos, no plata.
+  const n = (etiqueta: string, k: NumKey, tipo?: "cuenta" | "dif"): Fila =>
+    ({ etiqueta, valor: (r) => r[k], signo: tipo === "dif", moneda: tipo !== "cuenta" });
   const ventaJuego = (id: number) => (r: ResumenMes) => r.ventas_por_juego.find((v) => v.juego_id === id)?.total ?? 0;
   return [
     {
@@ -56,84 +78,68 @@ function construirGrupos(actual: ResumenMes, anterior: ResumenMes, deudaHoy: num
       filas: [...juegos].map(([id, nombre]) => ({ etiqueta: nombre, valor: ventaJuego(id) }))
         .concat([{ etiqueta: "Total vendido", valor: (r: ResumenMes) => r.total_vendido }]),
     },
-    {
-      titulo: "Entradas además de ventas", descripcion: "Lo que entró a las cajas sin ser venta de juego",
-      filas: [
-        { etiqueta: "Cobros de fiados", valor: (r: ResumenMes) => r.cobros_fiado },
-        { etiqueta: "Cobros de subagentes", valor: (r: ResumenMes) => r.cobros_subagente },
-        { etiqueta: "Lo que trajo el dueño", valor: (r: ResumenMes) => r.ingresos_del_dueno },
-      ],
-    },
-    {
-      titulo: "Salidas", descripcion: "Lo que salió de las cajas en el mes",
-      filas: [
-        { etiqueta: "Premios pagados", valor: (r: ResumenMes) => r.premios_pagados },
-        { etiqueta: "Mercado Pago / transferencia", valor: (r: ResumenMes) => r.cobros_mercado_pago },
-        { etiqueta: "Pagos al banco", valor: (r: ResumenMes) => r.pagos_banco },
-        { etiqueta: "Sueldos", valor: (r: ResumenMes) => r.sueldos },
-        { etiqueta: "Gastos", valor: (r: ResumenMes) => r.gastos },
-        { etiqueta: "Retiros del dueño", valor: (r: ResumenMes) => r.retiros_dueno },
-      ],
-    },
+    { titulo: "Entradas además de ventas", descripcion: "Lo que entró a las cajas sin ser venta de juego",
+      filas: [n("Cobros de fiados", "cobros_fiado"), n("Cobros de subagentes", "cobros_subagente"), n("Lo que trajo el dueño", "ingresos_del_dueno")] },
+    { titulo: "Salidas", descripcion: "Lo que salió de las cajas en el mes",
+      filas: [n("Premios pagados", "premios_pagados"), n("Mercado Pago / transferencia", "cobros_mercado_pago"), n("Pagos al banco", "pagos_banco"),
+        n("Sueldos", "sueldos"), n("Gastos", "gastos"), n("Retiros del dueño", "retiros_dueno")] },
     {
       titulo: "Fiados", descripcion: "Lo anotado y lo cobrado en el mes",
-      filas: [
-        { etiqueta: "Anotado en el mes", valor: (r: ResumenMes) => r.fiado },
-        { etiqueta: "Cobrado en el mes", valor: (r: ResumenMes) => r.cobros_fiado },
-      ],
+      filas: [n("Anotado en el mes", "fiado"), n("Cobrado en el mes", "cobros_fiado")],
       nota: (
-        <p className="mt-3 flex items-center justify-between border-t pt-3 text-sm">
+        <p className="mt-3 flex items-center justify-between border-t px-4 py-3 text-sm lg:px-5">
           <span className="text-muted-foreground">Deben hoy (todos los clientes)</span>
           <span className="monto font-medium">{pesos(deudaHoy)}</span>
         </p>
       ),
     },
-    {
-      titulo: "Arqueos", descripcion: "Hechos, cuadrados y con diferencia en el mes",
-      filas: [
-        { etiqueta: "Arqueos hechos", valor: (r: ResumenMes) => r.arqueos_hechos, moneda: false },
-        { etiqueta: "Cuadran", valor: (r: ResumenMes) => r.arqueos_cuadran, moneda: false },
-        { etiqueta: "No cuadran", valor: (r: ResumenMes) => r.arqueos_con_diferencia, moneda: false },
-        { etiqueta: "Explicados después", valor: (r: ResumenMes) => r.arqueos_explicados, moneda: false },
-        { etiqueta: "Diferencia en efectivo", valor: (r: ResumenMes) => r.diferencia_efectivo, signo: true },
-        { etiqueta: "Diferencia en boletas", valor: (r: ResumenMes) => r.diferencia_boletas, signo: true },
-        { etiqueta: "Diferencia total (sin explicar)", valor: (r: ResumenMes) => r.diferencia_total, signo: true },
-      ],
-    },
+    { titulo: "Arqueos", descripcion: "Hechos, cuadrados y con diferencia en el mes",
+      filas: [n("Arqueos hechos", "arqueos_hechos", "cuenta"), n("Cuadran", "arqueos_cuadran", "cuenta"), n("No cuadran", "arqueos_con_diferencia", "cuenta"),
+        n("Explicados después", "arqueos_explicados", "cuenta"), n("Diferencia en efectivo", "diferencia_efectivo", "dif"),
+        n("Diferencia en boletas", "diferencia_boletas", "dif"), n("Diferencia total (sin explicar)", "diferencia_total", "dif")] },
   ];
 }
 
-// Barras a mano en SVG, un día por barra; los días en 0 quedan como una barra apenas visible.
-// `total` sale del reporte (total_vendido del mes), no de sumar las barras acá: el front no calcula plata.
-function GraficoVentas({ dias, total }: { dias: { fecha: string; total: number }[]; total: number }) {
-  const max = Math.max(1, ...dias.map((d) => d.total));
-  const marcados = new Set([0, dias.length - 1, ...dias.map((_, i) => i).filter((i) => (i + 1) % 5 === 0)]);
-  return (
-    <svg viewBox={`0 0 ${dias.length * 10} 46`} role="img" className="h-32 w-full text-foreground"
-      aria-label={`Ventas por día del mes: total ${pesos(total)}, un ${dias.length > 0 ? "día por barra" : "mes sin días"}`}>
-      {dias.map((d, i) => {
-        const alto = Math.max((d.total / max) * 34, 1);
-        return (
-          <g key={d.fecha}>
-            <rect x={i * 10 + 1.5} y={38 - alto} width={7} height={alto} rx={1}
-              className={`fill-current ${d.total > 0 ? "" : "text-muted-foreground/30"}`}>
-              <title>{fechaCorta(d.fecha)}: {pesos(d.total)}</title>
-            </rect>
-            {marcados.has(i) && (
-              <text x={i * 10 + 5} y={45} textAnchor="middle" fontSize={4.5} className="fill-current text-muted-foreground">
-                {Number(d.fecha.slice(-2))}
-              </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
+// Una sola serie en columnas, con el chart de shadcn (Recharts). Se carga aparte (lazy): Recharts no entra al bundle inicial.
+// El tooltip nunca es la única vía al dato: "Ver por día" trae la misma información en una tabla.
+type DiaVenta = { fecha: string; total: number };
+const GraficoVentas = lazy(async () => {
+  const [R, C] = await Promise.all([import("recharts"), import("@/components/ui/chart")]);
+  const eje = { fontSize: 12, fill: "var(--color-muted-foreground)" };
+  return {
+    default: function GraficoVentas({ dias }: { dias: DiaVenta[] }) {
+      // Tres marcas redondas: 0, la mitad y el tope (1, 2 o 5 por una potencia de 10), no el máximo exacto.
+      const max = Math.max(1000, ...dias.map((d) => d.total));
+      const p = 10 ** Math.floor(Math.log10(max / 2));
+      const paso = [1, 2, 5, 10].map((k) => k * p).find((v) => v * 2 >= max) ?? max;
+      return (
+        <C.ChartContainer config={{ total: { label: "Vendido", color: "var(--color-chart-1)" } }} className="mt-3 aspect-auto h-56 w-full">
+          <R.BarChart data={dias} accessibilityLayer barCategoryGap={2} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+            <R.CartesianGrid vertical={false} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="0" />
+            <R.XAxis dataKey="fecha" tickLine={false} axisLine={false} tickMargin={6} tick={eje} interval={0}
+              ticks={dias.filter((_, i) => i === 0 || (i + 1) % 5 === 0).map((d) => d.fecha)} tickFormatter={(f: string) => String(Number(f.slice(-2)))} />
+            <R.YAxis width={60} tickLine={false} axisLine={false} tick={eje} ticks={[0, paso, paso * 2]} domain={[0, paso * 2]}
+              tickFormatter={(v: number) => pesos(v, false, true)} />
+            <C.ChartTooltip cursor={{ fill: "var(--color-muted)" }} content={({ active, payload }) => {
+              const d = payload?.[0]?.payload as DiaVenta | undefined;
+              return active && d ? (
+                <div className="rounded-lg border bg-card px-2.5 py-1.5 text-xs shadow-xs">
+                  <p className="monto text-sm font-semibold">{pesos(d.total)}</p>
+                  <p className="text-muted-foreground">{fechaCorta(d.fecha)}</p>
+                </div>
+              ) : null;
+            }} />
+            <R.Bar dataKey="total" fill="var(--color-total)" radius={[4, 4, 0, 0]} maxBarSize={24} isAnimationActive={false} />
+          </R.BarChart>
+        </C.ChartContainer>
+      );
+    },
+  };
+});
 
 // Ya sin "cuadra": esa lista solo trae lo que no cuadró o quedó explicado.
 function estadoInsignia(estado: "con_diferencia" | "explicada") {
-  return estado === "explicada" ? { texto: "Explicada", clase: TONOS.aviso } : { texto: "No cuadra", clase: "bg-peligro/8 text-peligro" };
+  return estado === "explicada" ? { texto: "Explicada", clase: TONOS.aviso } : { texto: "No cuadra", clase: TONOS.peligro };
 }
 // Ya van aparte (Ventas y Premios pagados) o son internos que el cierre del mes deja afuera (D39).
 const FUERA_DE_LISTA_POR_TIPO = new Set(["apuesta_quiniela", "venta_otro_juego", "pago_premio", "traspaso", "traspaso_boletas", "rendicion_boletas"]);
@@ -141,7 +147,8 @@ const FUERA_DE_LISTA_POR_TIPO = new Set(["apuesta_quiniela", "venta_otro_juego",
 export function Reportes() {
   const [mes, setMes] = useState(() => fechaHoy().slice(0, 7));
   const { desde, hasta } = rangoMes(mes);
-  const cierre = useQuery({ queryKey: ["reportes-mes", mes], queryFn: () => api.reportesMes(mes) });
+  // Al cambiar de mes se queda el anterior, atenuado, hasta que llega el nuevo: el esqueleto es solo la primera vez.
+  const cierre = useQuery({ queryKey: ["reportes-mes", mes], queryFn: () => api.reportesMes(mes), placeholderData: keepPreviousData });
   const mp = useQuery({ queryKey: ["reportes-mp"], queryFn: api.reportesMercadoPago });
   const diferencias = useQuery({ queryKey: ["reportes-diferencias", mes], queryFn: () => api.reportesDiferencias({ desde, hasta }) });
   const rendiciones = useQuery({ queryKey: ["reportes-rendiciones", mes], queryFn: () => api.reportesRendiciones({ desde, hasta }) });
@@ -152,17 +159,14 @@ export function Reportes() {
   const nombreCaja = (id: number) => cajas.data?.find((c) => c.id === id)?.nombre ?? `Caja #${id}`;
   const grupos = cierre.data ? construirGrupos(cierre.data.actual, cierre.data.anterior, cierre.data.deuda_total_hoy) : null;
   const sinCuadrar = diferencias.data?.filter((d) => d.estado !== "cuadra");
+  const esteMes = mes >= fechaHoy().slice(0, 7);
 
   return (
     <div className="flex flex-col gap-4 lg:gap-5">
-      <div className="flex items-center gap-1">
-        <button type="button" onClick={() => setMes((m) => sumarMes(m, -1))} aria-label="Mes anterior" className="presiona grid size-9 place-items-center rounded-md hover:bg-muted">
-          <ChevronLeft className="size-4" aria-hidden />
-        </button>
-        <span className="w-40 text-center text-sm font-medium first-letter:uppercase">{mesLabel(mes)}</span>
-        <button type="button" onClick={() => setMes((m) => sumarMes(m, 1))} aria-label="Mes siguiente" className="presiona grid size-9 place-items-center rounded-md hover:bg-muted">
-          <ChevronRight className="size-4" aria-hidden />
-        </button>
+      <div className="flex items-center justify-between lg:justify-start lg:gap-3">
+        <Boton variante="secundario" size="icon" onClick={() => setMes((m) => sumarMes(m, -1))} aria-label="Mes anterior"><ChevronLeft aria-hidden /></Boton>
+        <span className="text-base font-semibold first-letter:uppercase lg:min-w-44 lg:text-center lg:text-sm" aria-live="polite">{mesLabel(mes)}</span>
+        <Boton variante="secundario" size="icon" onClick={() => setMes((m) => sumarMes(m, 1))} disabled={esteMes} aria-label="Mes siguiente"><ChevronRight aria-hidden /></Boton>
       </div>
 
       {cierre.isLoading && <div className="esqueleto h-96" />}
@@ -171,116 +175,132 @@ export function Reportes() {
       )}
 
       {grupos && cierre.data && (
-        <>
-          <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
+        <div className={`grid gap-4 transition-opacity lg:grid-cols-2 lg:items-start lg:gap-5 ${cierre.isPlaceholderData ? "opacity-60" : ""}`}>
+          <div className="flex flex-col gap-4 lg:gap-5">
+            <div className={`${TARJETA} grid grid-cols-2 gap-3 p-4 lg:p-5`}>
+              <div><p className="rotulo text-muted-foreground">Este mes</p><p className="monto text-2xl font-semibold lg:text-[34px]">{pesos(cierre.data.actual.total_vendido)}</p></div>
+              <div className="border-l pl-3"><p className="rotulo text-muted-foreground">Mes anterior</p><p className="monto text-2xl font-semibold text-muted-foreground lg:text-[34px]">{pesos(cierre.data.anterior.total_vendido)}</p></div>
+              <p className="col-span-2 text-sm text-muted-foreground">Total vendido en el mes</p>
+            </div>
+            <section className={`${TARJETA} p-4 lg:p-5`}>
+              <h2 className="font-medium">Ventas por día</h2>
+              <p className="text-sm text-muted-foreground">Lo vendido cada día de {mesLabel(mes)}</p>
+              <Suspense fallback={<div className="esqueleto mt-3 h-56" />}><GraficoVentas dias={cierre.data.ventas_por_dia} /></Suspense>
+              <details className="mt-2">
+                <summary className="flex min-h-11 w-fit cursor-pointer items-center text-sm font-medium underline underline-offset-4 lg:min-h-9">Ver por día</summary>
+                <div className="max-h-72 overflow-y-auto">
+                  <Table>
+                    <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="pl-0">Día</TableHead><TableHead className="pr-0 text-right">Vendido</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                      {cierre.data.ventas_por_dia.map((d) => (
+                        <TableRow key={d.fecha}><TableCell className="pl-0">{fechaCorta(d.fecha)}</TableCell><TableCell className="monto pr-0 text-right">{pesos(d.total)}</TableCell></TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </details>
+            </section>
+            <MercadoPago mp={mp} />
+            <CierreDia dia={dia} />
+          </div>
+          <div className="flex flex-col gap-4 lg:gap-5">
             {grupos.map((g) => (
               <Grupo key={g.titulo} {...g} actual={cierre.data.actual} anterior={cierre.data.anterior} />
             ))}
           </div>
-          <section className={`${TARJETA} p-4 lg:p-5`}>
-            <h2 className="font-medium">Ventas por día</h2>
-            <p className="text-sm text-muted-foreground">Un día por barra; en gris, los días sin ventas</p>
-            <div className="mt-3"><GraficoVentas dias={cierre.data.ventas_por_dia} total={cierre.data.actual.total_vendido} /></div>
-          </section>
-        </>
+        </div>
       )}
 
-      <section className={`${TARJETA} p-4 lg:p-5`}>
-        <h2 className="font-medium">Mercado Pago acumulado</h2>
-        <p className="text-sm text-muted-foreground">Lo cobrado por MP o transferencia desde el último ingreso del dueño</p>
-        {mp.isLoading && <div className="esqueleto mt-3 h-12" />}
-        {mp.isError && <div className="mt-3"><Aviso tono="error" accion={<Reintentar onClick={() => mp.refetch()} />}>No se pudo traer Mercado Pago.</Aviso></div>}
-        {mp.data && (
-          <div className="mt-3">
-            <p className="monto text-2xl font-semibold">{pesos(mp.data.acumulado)}</p>
-            <p className="text-xs text-muted-foreground">{mp.data.desde ? `Desde ${fechaHoraCorta(mp.data.desde)}` : "Todavía no hubo ingresos del dueño"}</p>
-          </div>
-        )}
-      </section>
-
-      <section className={`${TARJETA} p-4 lg:p-5`}>
-        <h2 className="font-medium">Cierre del día</h2>
-        <p className="text-sm text-muted-foreground">Lo movido hoy, sin anulados</p>
-        {dia.isLoading && <div className="esqueleto mt-3 h-40" />}
-        {dia.isError && <div className="mt-3"><Aviso tono="error" accion={<Reintentar onClick={() => dia.refetch()} />}>No se pudo traer el cierre del día.</Aviso></div>}
-        {dia.data && (
-          <ul className="mt-3 divide-y text-sm">
-            <li className="flex items-center justify-between gap-3 py-2">
-              <span className="text-muted-foreground">Ventas</span>
-              <span className="monto font-medium">{pesos(dia.data.apuestas)}</span>
-            </li>
-            <li className="flex items-center justify-between gap-3 py-2">
-              <span className="text-muted-foreground">Premios pagados</span>
-              <span className="monto font-medium">{pesos(dia.data.boletas)}</span>
-            </li>
-            {Object.entries(dia.data.totales_por_tipo).filter(([tipo]) => !FUERA_DE_LISTA_POR_TIPO.has(tipo)).map(([tipo, monto]) => (
-              <li key={tipo} className="flex items-center justify-between gap-3 py-2">
-                <span className="text-muted-foreground">{TIPOS[tipo as MovimientoOut["tipo"]]?.etiqueta ?? tipo}</span>
-                <span className="monto font-medium">{pesos(monto)}</span>
-              </li>
-            ))}
-            <li className="flex items-center justify-between gap-3 py-2">
-              <span className="text-muted-foreground">Arqueos: cuadran / no cuadran</span>
-              <span className="font-medium">
-                {dia.data.arqueos.filter((a) => a.estado === "cuadra").length} / {dia.data.arqueos.filter((a) => a.estado === "con_diferencia").length}
-              </span>
-            </li>
-          </ul>
-        )}
-      </section>
-
-      <section className={`${TARJETA} overflow-hidden`}>
-        <div className="p-4 pb-2 lg:p-5 lg:pb-2">
-          <h2 className="font-medium">Diferencias de arqueo</h2>
-          <p className="text-sm text-muted-foreground">Los arqueos del mes que no cuadraron o quedaron explicados</p>
-        </div>
-        {diferencias.isLoading && <div className="esqueleto m-4 h-24" />}
-        {diferencias.isError && <div className="p-4"><Aviso tono="error" accion={<Reintentar onClick={() => diferencias.refetch()} />}>No se pudieron traer las diferencias.</Aviso></div>}
-        {sinCuadrar?.length === 0 && <p className="px-4 pb-4 text-sm text-muted-foreground">Sin diferencias en {mesLabel(mes)}.</p>}
-        {!!sinCuadrar?.length && (
-          <ul className="divide-y">
-            {sinCuadrar.map((d) => {
-              const e = estadoInsignia(d.estado as "con_diferencia" | "explicada");
-              return (
-                <li key={d.id} className="flex items-center gap-3 px-4 py-2.5 text-sm lg:px-5">
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium">{nombreCaja(d.caja_id)} · {hora(d.momento)}</span>
-                    <span className="block text-xs text-muted-foreground">{fechaCorta(d.momento.slice(0, 10))}</span>
-                  </span>
-                  <span className="monto text-right text-xs text-muted-foreground">
-                    <span className="block">{pesos(d.diferencia_efectivo, true)} ef.</span>
-                    <span className="block">{pesos(d.diferencia_boletas, true)} bol.</span>
-                  </span>
-                  <span className={`${INSIGNIA} ${e.clase}`}>{e.texto}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section className={`${TARJETA} overflow-hidden`}>
-        <div className="p-4 pb-2 lg:p-5 lg:pb-2">
-          <h2 className="font-medium">Lotes de rendición</h2>
-          <p className="text-sm text-muted-foreground">Las boletas rendidas en el mes</p>
-        </div>
-        {rendiciones.isLoading && <div className="esqueleto m-4 h-24" />}
-        {rendiciones.isError && <div className="p-4"><Aviso tono="error" accion={<Reintentar onClick={() => rendiciones.refetch()} />}>No se pudieron traer las rendiciones.</Aviso></div>}
-        {rendiciones.data?.length === 0 && <p className="px-4 pb-4 text-sm text-muted-foreground">Sin lotes rendidos en {mesLabel(mes)}.</p>}
-        {!!rendiciones.data?.length && (
-          <ul className="divide-y">
-            {rendiciones.data.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 px-4 py-2.5 text-sm lg:px-5">
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-5">
+        <Lista titulo="Diferencias de arqueo" descripcion="Los arqueos del mes que no cuadraron o quedaron explicados" q={diferencias} items={sinCuadrar}
+          error="No se pudieron traer las diferencias." vacio={`Sin diferencias en ${mesLabel(mes)}.`} fila={(d) => {
+            const e = estadoInsignia(d.estado as "con_diferencia" | "explicada");
+            return (
+              <li key={d.id} className="flex items-center gap-3 px-4 py-2.5 text-sm lg:px-5">
                 <span className="min-w-0 flex-1">
-                  <span className="block font-medium">{fechaCorta(r.fecha)}</span>
-                  <span className="block text-xs text-muted-foreground">{r.cantidad_boletas} boletas</span>
+                  <span className="block font-medium">{nombreCaja(d.caja_id)}</span>
+                  <span className="block text-xs text-muted-foreground">{fechaCorta(d.momento.slice(0, 10))} · {hora(d.momento)}</span>
                 </span>
-                <span className="monto text-sm">{pesos(r.diferencia, true)}</span>
+                <span className="monto text-right text-xs text-muted-foreground">
+                  <span className="block">{pesos(d.diferencia_efectivo, true)} efectivo</span>
+                  <span className="block">{pesos(d.diferencia_boletas, true)} boletas</span>
+                </span>
+                <span className={`${INSIGNIA} ${e.clase}`}>{e.texto}</span>
               </li>
-            ))}
-          </ul>
-        )}
-      </section>
+            );
+          }} />
+        <Lista titulo="Lotes de rendición" descripcion="Las boletas rendidas en el mes" q={rendiciones} items={rendiciones.data}
+          error="No se pudieron traer las rendiciones." vacio={`Sin lotes rendidos en ${mesLabel(mes)}.`} fila={(r) => (
+            <li key={r.id} className="flex items-center gap-3 px-4 py-2.5 text-sm lg:px-5">
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">{fechaCorta(r.fecha)}</span>
+                <span className="block text-xs text-muted-foreground">{r.cantidad_boletas} boletas</span>
+              </span>
+              <span className="monto text-sm">{pesos(r.diferencia, true)}</span>
+            </li>
+          )} />
+      </div>
     </div>
+  );
+}
+
+// Tarjeta con una lista de renglones y sus tres estados: cargando, error con "Reintentar" y vacío.
+function Lista<T>({ titulo, descripcion, q, items, error, vacio, fila }: {
+  titulo: string; descripcion: string; q: UseQueryResult<unknown>; items?: T[]; error: string; vacio: string; fila: (x: T) => ReactNode;
+}) {
+  return (
+    <section className={`${TARJETA} overflow-hidden`}>
+      <Encabezado titulo={titulo} descripcion={descripcion} />
+      {q.isLoading && <div className="esqueleto m-4 h-24" />}
+      {q.isError && <div className="p-4"><Aviso tono="error" accion={<Reintentar onClick={() => q.refetch()} />}>{error}</Aviso></div>}
+      {items?.length === 0 && <p className="px-4 pb-4 text-sm text-muted-foreground lg:px-5">{vacio}</p>}
+      {!!items?.length && <ul className="divide-y">{items.map(fila)}</ul>}
+    </section>
+  );
+}
+
+function MercadoPago({ mp }: { mp: UseQueryResult<ReporteMercadoPago> }) {
+  return (
+    <section className={`${TARJETA} p-4 lg:p-5`}>
+      <h2 className="font-medium">Mercado Pago acumulado</h2>
+      <p className="text-sm text-muted-foreground">Lo cobrado por MP o transferencia desde el último ingreso del dueño</p>
+      {mp.isLoading && <div className="esqueleto mt-3 h-12" />}
+      {mp.isError && <div className="mt-3"><Aviso tono="error" accion={<Reintentar onClick={() => mp.refetch()} />}>No se pudo traer Mercado Pago.</Aviso></div>}
+      {mp.data && (
+        <div className="mt-3">
+          <p className="monto text-2xl font-semibold">{pesos(mp.data.acumulado)}</p>
+          <p className="text-xs text-muted-foreground">{mp.data.desde ? `Desde ${fechaHoraCorta(mp.data.desde)}` : "Todavía no hubo ingresos del dueño"}</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CierreDia({ dia }: { dia: UseQueryResult<ReporteDia> }) {
+  const Renglon = ({ etiqueta, children }: { etiqueta: string; children: ReactNode }) => (
+    <li className="flex items-center justify-between gap-3 py-2">
+      <span className="text-muted-foreground">{etiqueta}</span>
+      <span className="monto font-medium">{children}</span>
+    </li>
+  );
+  return (
+    <section className={`${TARJETA} p-4 lg:p-5`}>
+      <h2 className="font-medium">Cierre del día</h2>
+      <p className="text-sm text-muted-foreground">Lo movido hoy, sin anulados</p>
+      {dia.isLoading && <div className="esqueleto mt-3 h-40" />}
+      {dia.isError && <div className="mt-3"><Aviso tono="error" accion={<Reintentar onClick={() => dia.refetch()} />}>No se pudo traer el cierre del día.</Aviso></div>}
+      {dia.data && (
+        <ul className="mt-3 divide-y text-sm">
+          <Renglon etiqueta="Ventas">{pesos(dia.data.apuestas)}</Renglon>
+          <Renglon etiqueta="Premios pagados">{pesos(dia.data.boletas)}</Renglon>
+          {Object.entries(dia.data.totales_por_tipo).filter(([tipo]) => !FUERA_DE_LISTA_POR_TIPO.has(tipo)).map(([tipo, monto]) => (
+            <Renglon key={tipo} etiqueta={TIPOS[tipo as MovimientoOut["tipo"]]?.etiqueta ?? tipo}>{pesos(monto)}</Renglon>
+          ))}
+          <Renglon etiqueta="Arqueos: cuadran / no cuadran">
+            {dia.data.arqueos.filter((a) => a.estado === "cuadra").length} / {dia.data.arqueos.filter((a) => a.estado === "con_diferencia").length}
+          </Renglon>
+        </ul>
+      )}
+    </section>
   );
 }
