@@ -22,6 +22,9 @@ export const fechaCorta = (f: string) => formatoCorto.format(new Date(`${f}T12:0
 // Instante ISO completo (con hora, ej. de un ingreso del dueño) → fecha corta en el huso horario local.
 export const fechaHoraCorta = (iso: string) => formatoCorto.format(new Date(iso)).replace(".", "");
 
+// Un fiado está vencido desde 30 días de deuda (D105).
+export const DIAS_VENCIDO = 30;
+
 // Hoy en la zona horaria local (no UTC, a diferencia de Date#toISOString).
 export function fechaHoy(): string {
   const d = new Date();

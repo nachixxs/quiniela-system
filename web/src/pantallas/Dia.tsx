@@ -51,7 +51,7 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
   });
 
   // Si la lista de juegos no cargó, no se guarda: mandaría el ticket sin las ventas de esos juegos.
-  const falta = Number(quiniela) <= 0 ? "Falta la quiniela: escribí el total que imprime la terminal." : juegos.isError && "Falta traer los juegos: tocá Reintentar.";
+  const falta = Number(quiniela) <= 0 ? "Falta la quiniela: escribí el total que imprime la terminal." : juegos.isLoading ? "Cargando los juegos…" : juegos.isError && "Falta traer los juegos: tocá Reintentar.";
   const listo = !falta && juegos.isSuccess;
   return (
     <Hoja titulo="Cargar ticket" descripcion={`Turno ${turno.nombre} · acumulado del día, tal cual lo imprime la terminal`} onCerrar={onCerrar}>
@@ -80,33 +80,34 @@ function HojaTicket({ turno, onCerrar }: { turno: TurnoOut; onCerrar: () => void
 // D27: con la chica sin ticket (esperado nulo) su efectivo es parcial y no se muestra nunca.
 function HojaTraspaso({ cajaId, onCerrar }: { cajaId: number; onCerrar: () => void }) {
   const [monto, setMonto] = useState("");
+  const conMonto = Number(monto) > 0;
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
   const hayArqueo = !!dia.data?.turnos.some((t) => t.estado === "cerrado");
   // Saldo actual de la caja chica (después del arqueo, lo contado): lo que se va a mover.
   const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
   const caja = cajas.data?.find((c) => c.id === cajaId);
   const hacer = useMutation({
-    mutationFn: () => api.traspaso({ caja_origen_id: cajaId, monto: monto ? Number(monto) : null }),
+    mutationFn: () => api.traspaso({ caja_origen_id: cajaId, monto: conMonto ? Number(monto) : null }),
     onSuccess: (s) => {
       toast.success(`Traspaso a la caja grande: ${pesos(s.efectivo)} en efectivo${s.boletas ? ` y ${pesos(s.boletas)} en boletas` : ""}`);
       onCerrar();
     },
   });
-  const falta = !monto && !hayArqueo && "Falta el monto: escribí cuánto efectivo pasás (todavía no hay un arqueo del que subir lo contado).";
+  const falta = !conMonto && !hayArqueo && "Falta el monto: escribí cuánto efectivo pasás (todavía no hay un arqueo del que subir lo contado).";
   const fuerte = "monto font-medium text-foreground";
 
   return (
     <Hoja titulo="Traspaso a caja grande" descripcion="Sin monto sube lo contado en el último arqueo; con monto mueve ese efectivo ahora." onCerrar={onCerrar}>
       <form onSubmit={(e) => { e.preventDefault(); if (!falta) hacer.mutate(); }} className="flex flex-col gap-4">
         <CampoMonto etiqueta={hayArqueo ? "Monto (opcional)" : "Monto"} valor={monto} onValor={setMonto} autoFocus />
-        {monto ? (
+        {conMonto ? (
           <p className="text-sm text-muted-foreground">Se mueven <span className={fuerte}>{pesos(Number(monto))}</span> en efectivo a la caja grande.</p>
         ) : !caja ? (
           <div className="esqueleto h-5" />
-        ) : !caja.esperado ? (
-          <p className="text-sm text-muted-foreground">La caja chica todavía no tiene el ticket del turno, así que su efectivo no se conoce. {hayArqueo && "Se sube lo contado en el último arqueo."}</p>
-        ) : (
-          <p className="text-sm text-muted-foreground">Se mueven <span className={fuerte}>{pesos(caja.efectivo)}</span> en efectivo y <span className={fuerte}>{pesos(caja.boletas)}</span> en boletas a la caja grande.</p>
+        ) : hayArqueo ? (
+          <p className="text-sm text-muted-foreground">Se sube lo contado en el último arqueo.</p>
+        ) : !caja.esperado && (
+          <p className="text-sm text-muted-foreground">La caja chica todavía no tiene el ticket del turno, así que su efectivo no se conoce.</p>
         )}
         {hacer.isError && <Aviso tono="error">{detalleError(hacer.error, "No se pudo traspasar.")}</Aviso>}
         <div>

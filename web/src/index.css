@@ -55,7 +55,7 @@
   --color-primary-foreground: #fafafa;
 
   /* Significado: entró plata o cuadra · salió plata, deuda o no cuadra · mirá esto · premio (sin signo). */
-  --color-exito: oklch(50.8% 0.118 165.612); /* emerald-700 */
+  --color-exito: oklch(49% 0.118 165.612); /* emerald-700 un poco más oscuro: 4,7:1 con el tinte del 8 % sobre el fondo */
   --color-peligro: oklch(50.5% 0.213 27.518); /* red-700 */
   --color-aviso: #a45106; /* amber-700 un paso más oscuro: 4,6:1 con el tinte del 8 % sobre el fondo */
   --color-premio: oklch(54.1% 0.281 293.009); /* violet-600 */

@@ -106,13 +106,15 @@ export function Arqueo() {
   const [resultado, setResultado] = useState<Hecho | null>(null);
   const [accion, setAccion] = useState<AccionDia | null>(null);
   // Desde un pendiente de Inicio: #arqueo?pendiente=caja_grande_mañana.
-  const [desdeInicio] = useState(() => new URLSearchParams(location.hash.split("?")[1]).get("pendiente"));
+  const [enlace] = useState(() => new URLSearchParams(location.hash.split("?")[1]).get("pendiente"));
 
   const cajas = dia.data?.cajas ?? [];
   const turnos = dia.data?.turnos ?? [];
-  const pendientes = [...(desdeInicio ? [desdeInicio] : []), ...(dia.data?.arqueos_pendientes ?? [])];
+  const pendientes = dia.data?.arqueos_pendientes ?? [];
+  // Solo vale mientras siga pendiente: si ya se arqueó, no se vuelve a marcar ese turno.
+  const desdeInicio = enlace && pendientes.includes(enlace) ? enlace : null;
   const pendienteDe = (c: CajaEstado) => {
-    for (const p of pendientes) {
+    for (const p of desdeInicio ? [desdeInicio, ...pendientes] : pendientes) {
       const t = turnos.find((t) => p === `${slug(c.nombre)}_${t.nombre}`);
       if (t) return t;
     }
@@ -131,6 +133,8 @@ export function Arqueo() {
     mutationFn: (v: ArqueoRequest) => api.arqueo(v),
     onSuccess: (r, v) => {
       const donde = `${cajas.find((c) => c.id === v.caja_id)?.nombre} · ${turnos.find((t) => t.id === v.turno_id)?.nombre}`;
+      // Se fija lo arqueado: la invalidación global recalcularía el turno debajo del resultado.
+      setCajaId(v.caja_id); setTurnoId(v.turno_id);
       setResultado({ r, v, donde });
     },
   });

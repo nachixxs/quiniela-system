@@ -5,14 +5,11 @@ import { ChevronRight, Clock, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
 import { api, ApiError } from "../api/cliente";
 import { esSinDia } from "../api/tipos";
-import { fechaCorta, pesos, useEscritorio, uuid } from "../util";
-import { Aviso, AvisoAbrirDia, Boton, CampoMonto, Hoja, Reintentar, Segmentado, TARJETA, TIPOS } from "../ui";
+import { DIAS_VENCIDO, fechaCorta, pesos, useEscritorio, uuid } from "../util";
+import { Aviso, Boton, CampoMonto, Hoja, Reintentar, Segmentado, TARJETA, TIPOS } from "../ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-// Días de deuda desde los que un fiado se marca como vencido (D101). El plazo no está fijado en SPECS: ver el reporte.
-const DIAS_VENCIDO = 30;
 
 // Saldo, movimientos que lo componen y cobro total o parcial de un cliente.
 function Detalle({ clienteId }: { clienteId: number }) {
@@ -68,7 +65,6 @@ function Detalle({ clienteId }: { clienteId: number }) {
           <p aria-live="polite" className="text-sm text-muted-foreground empty:hidden">{motivo}</p>
         </form>
       )}
-      {sinDia && c.saldo > 0 && <AvisoAbrirDia />}
       {cobrar.isError && <Aviso tono="error">{cobrar.error instanceof ApiError ? cobrar.error.detalle : "No se pudo cobrar."}</Aviso>}
 
       <div>

@@ -4,15 +4,13 @@ import { Archive, Calculator, Clock, Landmark, Moon, Sunrise, type LucideIcon } 
 import { api } from "../api/cliente";
 import { esSinDia, type CajaEstado, type TurnoOut } from "../api/tipos";
 import { useUsuario } from "../contexto/usuario";
-import { fechaLarga, pesos } from "../util";
+import { DIAS_VENCIDO, fechaLarga, pesos } from "../util";
 import { Aviso, Boton, FILA, INSIGNIA, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
 import { buttonVariants } from "@/components/ui/button";
 import { BOTONES, Carga, type BotonCarga } from "./CargaRapida";
 import { AccionesDia, TarjetaAbrirDia, type AccionDia } from "./Dia";
 import { TarjetaMovimientos } from "./Movimientos";
 
-// Un fiado con más de 30 días de deuda está vencido (D101). Coincide con DIAS_VENCIDO de CuentaCorriente.tsx.
-const DIAS_VENCIDO = 30;
 const diasDesde = (d: number) => (d === 0 ? "Desde hoy" : `Hace ${d} ${d === 1 ? "día" : "días"}`);
 const ENCABEZADO = "flex items-center justify-between gap-3 px-4 pb-2 pt-4 lg:px-5 lg:pt-5";
 
@@ -104,7 +102,8 @@ export function Inicio() {
       const caja = (t ? a.slice(0, -(t.nombre.length + 1)) : a).replace(/_/g, " ");
       return { clave: a, icono: Calculator, titulo: `Arqueo de ${caja}`, detalle: t ? `Turno ${t.nombre}` : "Contá efectivo y boletas", accion: "Arquear", estado: estadoDe(t), href: `#arqueo?pendiente=${a}` };
     }),
-    ...turnos.filter((t) => t.estado === "abierto" && !t.tiene_ticket).map((t) => ({
+    // Solo el turno de ahora: el de la noche no admite ticket hasta que se cierre el de la mañana.
+    ...turnos.filter((t, i) => i === actual && !t.tiene_ticket).map((t) => ({
       clave: `ticket-${t.id}`, icono: t.nombre === "mañana" ? Sunrise : t.nombre === "noche" ? Moon : Clock, titulo: `Turno ${t.nombre}`,
       detalle: "Sin ticket, la caja chica no tiene esperado", accion: "Cargar ticket", estado: estadoDe(t), onClick: () => setAccion({ tipo: "ticket", turno: t }),
     })),
@@ -214,7 +213,7 @@ export function Inicio() {
             )}
             <ul className="divide-y border-t empty:hidden">
               {conDeuda?.slice(0, 4).map((d) => {
-                const vencido = d.dias_deuda_mas_vieja > DIAS_VENCIDO;
+                const vencido = d.dias_deuda_mas_vieja >= DIAS_VENCIDO;
                 return (
                   <li key={d.id} className={FILA}>
                     <TIPOS.fiado.icono className={`size-4 shrink-0 ${vencido ? "text-peligro" : "text-aviso"}`} aria-hidden />

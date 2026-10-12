@@ -34,8 +34,8 @@ const Encabezado = ({ titulo, descripcion }: { titulo: string; descripcion: stri
 // Una fila de un grupo: el valor sale del mes elegido y del anterior, sin restarlos ni sumarlos acá.
 type NumKey = { [K in keyof ResumenMes]: ResumenMes[K] extends number ? K : never }[keyof ResumenMes];
 type Fila = { etiqueta: string; valor: (r: ResumenMes) => number; signo?: boolean; moneda?: boolean };
-function Grupo({ titulo, descripcion, filas, actual, anterior, nota }: {
-  titulo: string; descripcion: string; filas: Fila[]; actual: ResumenMes; anterior: ResumenMes; nota?: ReactNode;
+function Grupo({ titulo, descripcion, filas, actual, anterior, nota, rotulos }: {
+  titulo: string; descripcion: string; filas: Fila[]; actual: ResumenMes; anterior: ResumenMes; nota?: ReactNode; rotulos: string[];
 }) {
   const val = (f: Fila, r: ResumenMes) => (f.moneda === false ? String(f.valor(r)) : pesos(f.valor(r), f.signo));
   return (
@@ -45,8 +45,7 @@ function Grupo({ titulo, descripcion, filas, actual, anterior, nota }: {
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="pl-4 lg:pl-5"><span className="sr-only">Concepto</span></TableHead>
-            <TableHead className={TH_MONTO}>Este mes</TableHead>
-            <TableHead className={TH_MONTO}>Mes anterior</TableHead>
+            {rotulos.map((r) => <TableHead key={r} className={`${TH_MONTO} first-letter:uppercase`}>{r}</TableHead>)}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -152,14 +151,14 @@ export function Reportes() {
   const mp = useQuery({ queryKey: ["reportes-mp"], queryFn: api.reportesMercadoPago });
   const diferencias = useQuery({ queryKey: ["reportes-diferencias", mes], queryFn: () => api.reportesDiferencias({ desde, hasta }) });
   const rendiciones = useQuery({ queryKey: ["reportes-rendiciones", mes], queryFn: () => api.reportesRendiciones({ desde, hasta }) });
-  const diaActual = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
-  const fechaDia = diaActual.data?.dia.fecha ?? fechaHoy();
+  const fechaDia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual }).data?.dia.fecha ?? fechaHoy();
   const dia = useQuery({ queryKey: ["reportes-dia", fechaDia], queryFn: () => api.reportesDia(fechaDia) });
   const cajas = useQuery({ queryKey: ["cajas"], queryFn: api.cajas });
   const nombreCaja = (id: number) => cajas.data?.find((c) => c.id === id)?.nombre ?? `Caja #${id}`;
   const grupos = cierre.data ? construirGrupos(cierre.data.actual, cierre.data.anterior, cierre.data.deuda_total_hoy) : null;
   const sinCuadrar = diferencias.data?.filter((d) => d.estado !== "cuadra");
   const esteMes = mes >= fechaHoy().slice(0, 7);
+  const rotulos = esteMes ? ["Este mes", "Mes anterior"] : [mesLabel(mes), mesLabel(sumarMes(mes, -1))];
 
   return (
     <div className="flex flex-col gap-4 lg:gap-5">
@@ -178,8 +177,8 @@ export function Reportes() {
         <div className={`grid gap-4 transition-opacity lg:grid-cols-2 lg:items-start lg:gap-5 ${cierre.isPlaceholderData ? "opacity-60" : ""}`}>
           <div className="flex flex-col gap-4 lg:gap-5">
             <div className={`${TARJETA} grid grid-cols-2 gap-3 p-4 lg:p-5`}>
-              <div><p className="rotulo text-muted-foreground">Este mes</p><p className="monto text-2xl font-semibold lg:text-[34px]">{pesos(cierre.data.actual.total_vendido)}</p></div>
-              <div className="border-l pl-3"><p className="rotulo text-muted-foreground">Mes anterior</p><p className="monto text-2xl font-semibold text-muted-foreground lg:text-[34px]">{pesos(cierre.data.anterior.total_vendido)}</p></div>
+              <div><p className="rotulo text-muted-foreground">{rotulos[0]}</p><p className="monto text-2xl font-semibold lg:text-[34px]">{pesos(cierre.data.actual.total_vendido)}</p></div>
+              <div className="border-l pl-3"><p className="rotulo text-muted-foreground">{rotulos[1]}</p><p className="monto text-2xl font-semibold text-muted-foreground lg:text-[34px]">{pesos(cierre.data.anterior.total_vendido)}</p></div>
               <p className="col-span-2 text-sm text-muted-foreground">Total vendido en el mes</p>
             </div>
             <section className={`${TARJETA} p-4 lg:p-5`}>
@@ -205,7 +204,7 @@ export function Reportes() {
           </div>
           <div className="flex flex-col gap-4 lg:gap-5">
             {grupos.map((g) => (
-              <Grupo key={g.titulo} {...g} actual={cierre.data.actual} anterior={cierre.data.anterior} />
+              <Grupo key={g.titulo} {...g} actual={cierre.data.actual} anterior={cierre.data.anterior} rotulos={rotulos} />
             ))}
           </div>
         </div>

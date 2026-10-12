@@ -52,7 +52,7 @@ const PANTALLAS = { inicio: Inicio, "carga-rapida": CargaRapida, arqueo: Arqueo,
 const ICONO_BOTON = "presiona grid size-11 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:size-8";
 const NEGOCIO = "Quiniela La Estrella";
 // Foco del sidebar de shadcn (outline-hidden + ring-2): el mismo contorno global de index.css.
-const FOCO = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:ring-0";
+const FOCO = "focus-visible:outline-solid focus-visible:outline-2focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:ring-0";
 const pendientesTexto = (n: number) => `${n} ${n === 1 ? "pendiente" : "pendientes"}`;
 
 function Marca({ nombre }: { nombre: string }) {
