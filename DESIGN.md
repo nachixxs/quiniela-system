@@ -87,8 +87,8 @@ bundle, D26). Cifras tabulares en todo el `body`.
   una raya fina arriba que viaja.
 - **Contador de pendientes (D100, 11/10):** el destino "Inicio" lleva, en la barra lateral y
   en la inferior, una insignia en `aviso` con la cantidad de pendientes del día (arqueos
-  pendientes + rendición). Sin pendientes, no se muestra. El número también va en el nombre
-  accesible del enlace ("Inicio, 3 pendientes").
+  pendientes + rendición). Sin pendientes, no se muestra. El nombre del enlace sigue siendo
+  "Inicio"; el número va como descripción accesible ("3 pendientes").
 - **Navegación por hash** (`#arqueo`, `#carga-rapida`, `#cuenta-corriente`): el botón atrás
   funciona y cada pantalla tiene su URL. Cada pantalla, salvo Inicio, abre con título y una
   línea que explica para qué es.
