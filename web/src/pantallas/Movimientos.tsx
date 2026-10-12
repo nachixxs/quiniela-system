@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { api, ApiError } from "../api/cliente";
-import type { MovimientoOut } from "../api/tipos";
+import { api } from "../api/cliente";
+import { detalleError, type MovimientoOut } from "../api/tipos";
 import { pesos, useEscritorio } from "../util";
-import { Aviso, Boton, FILA, hora, Hoja, INSIGNIA, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
+import { Aviso, Boton, FILA, hora, Hoja, INSIGNIA, montoFirmado, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,9 +15,6 @@ import { Textarea } from "@/components/ui/textarea";
 const quien = (m: MovimientoOut) => m.contraparte ?? m.cliente_nombre ?? null;
 // Espejo de TIPOS_CARGA (app/operaciones.py:16): lo que el backend rechaza con tipo_no_anulable.
 const NO_ANULABLE = new Set<MovimientoOut["tipo"]>(["apuesta_quiniela", "venta_otro_juego", "traspaso", "traspaso_boletas", "rendicion_boletas"]);
-// DESIGN §6: entra plata = "+" en exito, sale = "−" en peligro; premio y traspasos van sin signo.
-const ENTRA = new Set<MovimientoOut["tipo"]>(["cobro_fiado", "cobro_subagente", "ingreso_del_dueno", "apuesta_quiniela", "venta_otro_juego"]);
-const SALE = new Set<MovimientoOut["tipo"]>(["fiado", "cobro_mercado_pago", "retiro_dueno", "gasto", "pago_banco", "sueldo"]);
 
 // Hoja de confirmación: qué se anula y a quién, el motivo (obligatorio) y el botón sin vuelta atrás.
 function HojaAnular({ mov, onCerrar }: { mov: MovimientoOut; onCerrar: () => void }) {
@@ -49,7 +46,7 @@ function HojaAnular({ mov, onCerrar }: { mov: MovimientoOut; onCerrar: () => voi
           <Textarea id="motivo-anulacion" value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Por qué se anula…" autoFocus />
         </div>
 
-        {anular.isError && <Aviso tono="error">{anular.error instanceof ApiError ? anular.error.detalle : "No se pudo anular."}</Aviso>}
+        {anular.isError && <Aviso tono="error">{detalleError(anular.error, "No se pudo anular.")}</Aviso>}
 
         <div>
           <div className="flex flex-col-reverse gap-2 lg:flex-row lg:justify-end">
@@ -92,12 +89,11 @@ export function TarjetaMovimientos() {
     const t = TIPOS[mov.tipo];
     const anulado = anulados.has(mov.id);
     const contra = mov.anula_id !== null;
-    const dir = (ENTRA.has(mov.tipo) ? 1 : SALE.has(mov.tipo) ? -1 : 0) * (contra ? -1 : 1);
+    const [monto, color] = montoFirmado(mov);
     const detalle = [quien(mov), contra && `Anula #${mov.anula_id}`, mov.motivo_anulacion].filter(Boolean).join(" · ");
     return {
       mov, t, anulado, detalle, hora: hora(mov.creado_en), etiqueta: contra ? `Anulación · ${t.etiqueta}` : t.etiqueta,
-      monto: dir ? `${dir > 0 ? "+" : "−"}${pesos(mov.monto)}` : pesos(mov.monto),
-      color: anulado ? "text-muted-foreground line-through" : dir > 0 ? "text-exito" : dir < 0 ? "text-peligro" : "",
+      monto, color: anulado ? "text-muted-foreground line-through" : color,
       anular: !anulado && !contra && !NO_ANULABLE.has(mov.tipo) ? () => setAAnular(mov) : null,
     };
   });

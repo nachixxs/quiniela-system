@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { ChevronRight, Clock, MousePointerClick } from "lucide-react";
 import { toast } from "sonner";
-import { api, ApiError } from "../api/cliente";
-import { esSinDia } from "../api/tipos";
+import { api } from "../api/cliente";
+import { detalleError, faltaDia } from "../api/tipos";
 import { DIAS_VENCIDO, fechaCorta, pesos, useEscritorio, uuid } from "../util";
-import { Aviso, Boton, CampoMonto, Hoja, Reintentar, Segmentado, TARJETA, TIPOS } from "../ui";
+import { Aviso, Boton, CampoMonto, Hoja, montoFirmado, Reintentar, Segmentado, TARJETA, TIPOS } from "../ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,10 +14,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 // Saldo, movimientos que lo componen y cobro total o parcial de un cliente.
 function Detalle({ clienteId }: { clienteId: number }) {
   const [monto, setMonto] = useState("");
-  const [refCliente, setRefCliente] = useState(() => uuid());
   const dia = useQuery({ queryKey: ["dia-actual"], queryFn: api.diaActual });
-  const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
+  const sinDia = faltaDia(dia);
   const cajaChica = dia.data?.cajas.find((c) => c.tipo === "operativa");
+  // Misma ref para reintentos del mismo cobro (doble clic, error de red); ref nueva apenas cambia el payload.
+  const refCliente = useMemo(uuid, [clienteId, monto, cajaChica?.id]);
   const detalle = useQuery({ queryKey: ["cliente", clienteId], queryFn: () => api.cliente(clienteId) });
 
   const cobrar = useMutation({
@@ -26,7 +27,6 @@ function Detalle({ clienteId }: { clienteId: number }) {
       caja_id: cajaChica!.id, cliente_id: clienteId,
     }),
     onSuccess: (mov) => {
-      setRefCliente(uuid());
       setMonto("");
       toast.success(`Cobrado: ${pesos(mov.monto)} · ${detalle.data?.nombre}`);
     },
@@ -53,9 +53,9 @@ function Detalle({ clienteId }: { clienteId: number }) {
           }}
           className="flex flex-col gap-3"
         >
-          <CampoMonto etiqueta="Cobrar" valor={monto} onValor={(v) => { setMonto(v); setRefCliente(uuid()); }} enterKeyHint="done" />
+          <CampoMonto etiqueta="Cobrar" valor={monto} onValor={setMonto} enterKeyHint="done" />
           <div className="flex gap-2">
-            <Boton type="button" variante="secundario" onClick={() => { setMonto(String(c.saldo)); setRefCliente(uuid()); }} className="shrink-0">
+            <Boton type="button" variante="secundario" onClick={() => setMonto(String(c.saldo))} className="shrink-0">
               <span>Todo (<span className="monto">{pesos(c.saldo)}</span>)</span>
             </Boton>
             <Boton type="submit" cargando={cobrar.isPending} disabled={!!motivo || dia.isLoading} className="flex-1">
@@ -65,7 +65,7 @@ function Detalle({ clienteId }: { clienteId: number }) {
           <p aria-live="polite" className="text-sm text-muted-foreground empty:hidden">{motivo}</p>
         </form>
       )}
-      {cobrar.isError && <Aviso tono="error">{cobrar.error instanceof ApiError ? cobrar.error.detalle : "No se pudo cobrar."}</Aviso>}
+      {cobrar.isError && <Aviso tono="error">{detalleError(cobrar.error, "No se pudo cobrar.")}</Aviso>}
 
       <div>
         <h3 className="border-b pb-2 text-sm font-medium">Movimientos</h3>
@@ -74,8 +74,7 @@ function Detalle({ clienteId }: { clienteId: number }) {
           {c.movimientos.map((mov) => {
             const t = TIPOS[mov.tipo];
             const contra = mov.anula_id !== null;
-            // Fiado suma deuda (sale plata del cliente a la cuenta); el cobro la baja. Una anulación va sin signo.
-            const signo = contra ? null : mov.tipo === "fiado" ? ["−", "text-peligro"] : mov.tipo === "cobro_fiado" ? ["+", "text-exito"] : null;
+            const [monto, color] = montoFirmado(mov);
             return (
               <li key={mov.id} className="flex min-h-14 items-center gap-3 py-2.5">
                 <t.icono className={`size-4 shrink-0 ${t.tono}`} aria-hidden />
@@ -85,7 +84,7 @@ function Detalle({ clienteId }: { clienteId: number }) {
                     {fechaCorta(mov.corresponde_a_fecha)}{mov.nota ? ` · ${mov.nota}` : ""}
                   </span>
                 </span>
-                <span className={`monto text-sm font-medium ${signo?.[1] ?? ""}`}>{signo?.[0]}{pesos(mov.monto)}</span>
+                <span className={`monto text-sm font-medium ${color}`}>{monto}</span>
               </li>
             );
           })}

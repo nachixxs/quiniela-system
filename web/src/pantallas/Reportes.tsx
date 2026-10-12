@@ -222,8 +222,8 @@ export function Reportes() {
                   <span className="block text-xs text-muted-foreground">{fechaCorta(d.momento.slice(0, 10))} · {hora(d.momento)}</span>
                 </span>
                 <span className="monto text-right text-xs text-muted-foreground">
-                  <span className="block">{pesos(d.diferencia_efectivo, true)} efectivo</span>
-                  <span className="block">{pesos(d.diferencia_boletas, true)} boletas</span>
+                  <span className={`block ${d.diferencia_efectivo ? "text-peligro" : ""}`}>{pesos(d.diferencia_efectivo, true)} efectivo</span>
+                  <span className={`block ${d.diferencia_boletas ? "text-peligro" : ""}`}>{pesos(d.diferencia_boletas, true)} boletas</span>
                 </span>
                 <span className={`${INSIGNIA} ${e.clase}`}>{e.texto}</span>
               </li>
@@ -236,7 +236,7 @@ export function Reportes() {
                 <span className="block font-medium">{fechaCorta(r.fecha)}</span>
                 <span className="block text-xs text-muted-foreground">{r.cantidad_boletas} boletas</span>
               </span>
-              <span className="monto text-sm">{pesos(r.diferencia, true)}</span>
+              <span className={`monto text-sm ${r.diferencia ? "text-peligro" : ""}`}>{pesos(r.diferencia, true)}</span>
             </li>
           )} />
       </div>

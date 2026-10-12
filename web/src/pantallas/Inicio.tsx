@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Archive, Calculator, Clock, Landmark, Moon, Sunrise, type LucideIcon } from "lucide-react";
 import { api } from "../api/cliente";
-import { esSinDia, type CajaEstado, type TurnoOut } from "../api/tipos";
+import { faltaDia, type CajaEstado, type TurnoOut } from "../api/tipos";
 import { useUsuario } from "../contexto/usuario";
-import { DIAS_VENCIDO, fechaLarga, pesos } from "../util";
+import { DIAS_VENCIDO, desarmarPendiente, fechaLarga, pesos } from "../util";
 import { Aviso, Boton, FILA, INSIGNIA, Reintentar, TARJETA, TIPOS, TONOS } from "../ui";
 import { buttonVariants } from "@/components/ui/button";
 import { BOTONES, Carga, type BotonCarga } from "./CargaRapida";
@@ -81,7 +81,7 @@ export function Inicio() {
   const fecha = dia.data?.dia.fecha;
   const reporte = useQuery({ queryKey: ["reporte-dia", fecha], queryFn: () => api.reportesDia(fecha!), enabled: !!fecha });
   const conDeuda = deudores.data?.filter((d) => d.saldo > 0);
-  const sinDia = dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto";
+  const sinDia = faltaDia(dia);
   const turnos = dia.data?.turnos ?? [];
   const cajaChicaId = dia.data?.cajas.find((c) => c.tipo === "operativa")?.id;
   const turnosAbiertos = turnos.some((t) => t.estado === "abierto");
@@ -98,8 +98,7 @@ export function Inicio() {
   };
   const pendientes: Pendiente[] = [
     ...arqueosPendientes.map((a) => {
-      const t = turnos.find((x) => a.endsWith(`_${x.nombre}`));
-      const caja = (t ? a.slice(0, -(t.nombre.length + 1)) : a).replace(/_/g, " ");
+      const { turno: t, caja } = desarmarPendiente(a, turnos);
       return { clave: a, icono: Calculator, titulo: `Arqueo de ${caja}`, detalle: t ? `Turno ${t.nombre}` : "Contá efectivo y boletas", accion: "Arquear", estado: estadoDe(t), href: `#arqueo?pendiente=${a}` };
     }),
     // Solo el turno de ahora: el de la noche no admite ticket hasta que se cierre el de la mañana.

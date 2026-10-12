@@ -68,6 +68,13 @@ export function useEscritorio(): boolean {
   return es;
 }
 
+// El backend nombra un arqueo pendiente "<caja>_<turno>" ("caja_grande_mañana"): una función lo arma y la otra lo desarma.
+export const clavePendiente = (caja: string, turno: string) => `${caja.toLowerCase().replace(/ /g, "_")}_${turno}`;
+export function desarmarPendiente<T extends { nombre: string }>(clave: string, turnos: T[]) {
+  const turno = turnos.find((t) => clave.endsWith(`_${t.nombre}`));
+  return { turno, caja: (turno ? clave.slice(0, -(turno.nombre.length + 1)) : clave).replace(/_/g, " ") };
+}
+
 // crypto.randomUUID solo existe en contextos seguros (HTTPS o localhost); fuera de eso, armamos un UUID v4 a mano.
 export function uuid(): string {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();

@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MovimientoOut } from "./api/tipos";
+import { pesos } from "./util";
 
 export const EASE_SALIDA = [0.23, 1, 0.32, 1] as const;
 
@@ -53,6 +54,14 @@ export const TIPOS: Record<MovimientoOut["tipo"], ReturnType<typeof T>> = {
   traspaso_boletas: T("Traspaso de boletas"),
   rendicion_boletas: T("Rendición de boletas"),
 };
+
+// DESIGN §6: entra plata = "+" en exito, sale = "−" en peligro; premio y traspasos van sin signo. Un contra-asiento invierte el signo.
+const ENTRA = new Set<MovimientoOut["tipo"]>(["cobro_fiado", "cobro_subagente", "ingreso_del_dueno", "apuesta_quiniela", "venta_otro_juego"]);
+const SALE = new Set<MovimientoOut["tipo"]>(["fiado", "cobro_mercado_pago", "retiro_dueno", "gasto", "pago_banco", "sueldo"]);
+export function montoFirmado(mov: MovimientoOut): [texto: string, color: string] {
+  const dir = (ENTRA.has(mov.tipo) ? 1 : SALE.has(mov.tipo) ? -1 : 0) * (mov.anula_id !== null ? -1 : 1);
+  return [dir ? `${dir > 0 ? "+" : "−"}${pesos(mov.monto)}` : pesos(mov.monto), dir > 0 ? "text-exito" : dir < 0 ? "text-peligro" : ""];
+}
 
 // Botón: primario claro sobre oscuro (una acción principal por vista), secundario con borde. Los tamaños
 // (44 px en el celular, 48 el "lg" de guardar y arquear, y la escala de escritorio desde lg) vienen de buttonVariants.
@@ -127,7 +136,6 @@ export function CampoMonto({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="0"
           {...props}
           value={valor ? Number(valor).toLocaleString("es-AR") : ""}
           onChange={(e) => onValor(e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 9))}

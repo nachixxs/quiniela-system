@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Info, Landmark, Store, TriangleAlert } from "lucide-react";
-import { api, ApiError } from "../api/cliente";
-import { esSinDia, type ArqueoOut, type ArqueoRequest, type CajaEstado } from "../api/tipos";
-import { pesos } from "../util";
+import { api } from "../api/cliente";
+import { detalleError, faltaDia, type ArqueoOut, type ArqueoRequest, type CajaEstado } from "../api/tipos";
+import { clavePendiente, pesos } from "../util";
 import { Aviso, Boton, CampoMonto, EASE_SALIDA, OPCION, PUNTO_RADIO, Reintentar, Segmentado, TARJETA } from "../ui";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AccionesDia, TarjetaAbrirDia, type AccionDia } from "./Dia";
@@ -15,8 +15,6 @@ const fila = (i: number, dy: number) => ({
   animate: { opacity: 1, transform: "translateY(0px)" },
   transition: { duration: 0.22, delay: 0.12 + i * 0.04, ease: EASE_SALIDA },
 });
-// El backend nombra un pendiente caja_turno: "caja_grande_mañana".
-const slug = (nombre: string) => nombre.toLowerCase().replace(/ /g, "_");
 const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 type Hecho = { r: ArqueoOut; v: ArqueoRequest; donde: string };
@@ -118,11 +116,11 @@ export function Arqueo() {
   const desdeInicio = enlace && pendientes.includes(enlace) ? enlace : null;
   const pendienteDe = (c: CajaEstado) => {
     for (const p of desdeInicio ? [desdeInicio, ...pendientes] : pendientes) {
-      const t = turnos.find((t) => p === `${slug(c.nombre)}_${t.nombre}`);
+      const t = turnos.find((t) => p === clavePendiente(c.nombre, t.nombre));
       if (t) return t;
     }
   };
-  const cajaId = cajaElegida ?? (desdeInicio ? cajas.find((c) => desdeInicio.startsWith(`${slug(c.nombre)}_`))?.id : undefined) ?? null;
+  const cajaId = cajaElegida ?? (desdeInicio ? cajas.find((c) => turnos.some((t) => clavePendiente(c.nombre, t.nombre) === desdeInicio))?.id : undefined) ?? null;
   const caja = cajas.find((c) => c.id === cajaId);
   const pendiente = caja && pendienteDe(caja);
   // La caja grande acepta cualquier turno, abierto o cerrado (D5); la chica solo el abierto, porque lo cierra.
@@ -149,7 +147,7 @@ export function Arqueo() {
     guardar.reset();
   };
 
-  if (dia.isError ? esSinDia(dia.error) : dia.isSuccess && dia.data.dia.estado !== "abierto") {
+  if (faltaDia(dia)) {
     return <TarjetaAbrirDia cerrado={dia.data?.dia.estado === "cerrado" ? dia.data.dia : undefined} />;
   }
 
@@ -223,7 +221,7 @@ export function Arqueo() {
           <CampoMonto etiqueta="Boletas contadas" valor={boletas} onValor={cambiar(setBoletas)} enterKeyHint="done" />
         </div>
 
-        {guardar.isError && <Aviso tono="error">{guardar.error instanceof ApiError ? guardar.error.detalle : "No se pudo arquear."}</Aviso>}
+        {guardar.isError && <Aviso tono="error">{detalleError(guardar.error, "No se pudo arquear.")}</Aviso>}
 
         <div>
           <Boton type="submit" size="lg" cargando={guardar.isPending} disabled={!!motivo} className="w-full">

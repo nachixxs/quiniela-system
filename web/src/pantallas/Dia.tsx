@@ -2,14 +2,13 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { api, ApiError } from "../api/cliente";
-import type { RendicionOut, TurnoOut } from "../api/tipos";
+import { api } from "../api/cliente";
+import { detalleError, type RendicionOut, type TurnoOut } from "../api/tipos";
 import { fechaLarga, pesos } from "../util";
 import { Aviso, Boton, CampoMonto, Hoja, Reintentar, TARJETA } from "../ui";
 
 // Qué falta, escrito debajo del botón deshabilitado (caso 8). Sin motivo no se muestra nada.
 const Motivo = ({ children }: { children?: string | false }) => children ? <p className="mt-2 text-center text-sm text-muted-foreground">{children}</p> : null;
-const detalleError = (e: unknown, defecto: string) => (e instanceof ApiError ? e.detalle : defecto);
 
 // Tarjeta de Inicio cuando no hay día abierto (§3): sin ella no hay turnos, cajas ni nada que cargar.
 // `cerrado` llega cuando el día actual existe pero ya se cerró: se ofrece abrir el siguiente.
