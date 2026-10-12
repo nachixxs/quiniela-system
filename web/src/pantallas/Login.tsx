@@ -17,6 +17,7 @@ export function Login({ acciones, marca }: { acciones: ReactNode; marca: ReactNo
   const form = useRef<HTMLFormElement>(null);
 
   const mutacion = useMutation({
+    mutationKey: ["login"],
     mutationFn: async () => {
       await api.login(usuario, password);
       return api.yo();

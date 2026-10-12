@@ -140,7 +140,7 @@ export function App() {
                           {activo && <m.span layoutId="nav-lateral" className="absolute inset-0 rounded-md bg-muted" transition={{ type: "spring", duration: 0.25, bounce: 0 }} />}
                           <n.icono className="relative" aria-hidden />
                           <span className="relative">{n.texto}</span>
-                          {pendientesDe(n.id) > 0 && <span aria-hidden className={`${INSIGNIA} ${TONOS.aviso} relative ml-auto`}>{pendientes}</span>}
+                          {pendientesDe(n.id) > 0 && <span aria-hidden className={`${INSIGNIA} ${activo ? "bg-aviso/8 text-foreground" : TONOS.aviso} relative ml-auto`}>{pendientes}</span>}
                         </a>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
