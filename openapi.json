@@ -1756,6 +1756,14 @@
             "type": "integer",
             "title": "Id"
           },
+          "caja_id": {
+            "type": "integer",
+            "title": "Caja Id"
+          },
+          "turno_id": {
+            "type": "integer",
+            "title": "Turno Id"
+          },
           "efectivo_esperado": {
             "type": "integer",
             "title": "Efectivo Esperado"
@@ -1785,6 +1793,8 @@
         "type": "object",
         "required": [
           "id",
+          "caja_id",
+          "turno_id",
           "efectivo_esperado",
           "boletas_esperadas",
           "diferencia_efectivo",
