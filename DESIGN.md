@@ -170,8 +170,9 @@ un botón que está guardando, que es funcional.
 | Error de login | Una sacudida con WAAPI | No remonta el formulario ni pierde el foco |
 | Cambio de tema | Fundido de toda la página (View Transitions) | Sin él, cada superficie cambia a destiempo |
 
-Con `prefers-reduced-motion` se apagan la escala del toque, la transición de tema, la
-sacudida y el scroll suave. Motion reduce lo suyo a opacidad.
+Con `prefers-reduced-motion` se apagan la escala del toque, la sacudida y el scroll suave.
+Motion reduce lo suyo a opacidad. El cambio de tema mantiene su fundido de ~180 ms, solo de
+opacidad (D91).
 
 Descartado a propósito: contar montos, escalonar las tarjetas de carga (alta frecuencia),
 deslizar entre pantallas, levantar tarjetas en hover y el esqueleto que late.
