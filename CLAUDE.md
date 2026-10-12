@@ -54,10 +54,12 @@ docker compose up -d --build                  # api (127.0.0.1:8000) y db (127.0
 docker compose exec api alembic upgrade head  # migraciones (el contenedor ya las corre al arrancar)
 ```
 
-## Worktrees de Orca
+## Worktrees
 
-- Cada tarea corre en su worktree, en `D:\Orca\workspaces\`. Al crearlo, `orca.yaml` arma su
-  `.venv` y su `web/node_modules` (no se comparten) y `.worktreeinclude` copia `CLAUDE.local.md`.
+- El orquestador es una sesión de Claude Desktop abierta sobre la carpeta de su worktree (el de
+  `cp-8` sigue en `D:\Orca\workspaces\quiniela-system\cp3-b9-diseno`). Un worktree nuevo se arma
+  con `.\setup-worktree.ps1`: su `.venv` y su `web/node_modules` (no se comparten) y
+  `CLAUDE.local.md`. Los de subagentes copian lo de `.worktreeinclude`.
 - Puertos: db 5433, API 8000, Vite 5173 (proxy `/api` → 8000). Fijos: **un solo checkout de
   la caja con Docker levantado a la vez.** Postgres nativo de la PC en 5432; web de la agencia
   en 4321.
