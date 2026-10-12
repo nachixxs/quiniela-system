@@ -4,7 +4,12 @@ const formato = new Intl.NumberFormat("es-AR", { style: "currency", currency: "A
 // Las diferencias llevan signo: "+$ 2.000" sobra, "-$ 2.000" falta, "$ 0" cuadra.
 const conSigno = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0, signDisplay: "exceptZero" });
 
-export function pesos(monto: number, signo = false): string {
+export function pesos(monto: number, signo = false, compacto = false): string {
+  if (compacto && Math.abs(monto) >= 1000) {
+    // Para los ejes de los gráficos: "$400 mil", "$1,2 M".
+    const [n, sufijo] = Math.abs(monto) >= 1e6 ? [monto / 1e6, " M"] : [monto / 1e3, " mil"];
+    return `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("es-AR", { maximumFractionDigits: 1 })}${sufijo}`;
+  }
   // Intl mete un espacio duro (U+00A0) entre "$" y el número; lo sacamos para "$48.000".
   return (signo ? conSigno : formato).format(monto).replace(/ /g, "");
 }
