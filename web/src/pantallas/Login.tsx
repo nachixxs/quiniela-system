@@ -1,11 +1,14 @@
 import { useRef, useState, type ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { api, ApiError } from "../api/cliente";
 import { useUsuario } from "../contexto/usuario";
 import { Aviso, Boton, TARJETA } from "../ui";
 
-const CAMPO =
-  "h-11 w-full rounded-md border border-input bg-background px-3 text-base shadow-xs transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/20 lg:h-10 lg:text-sm dark:bg-input/30";
+// Mensaje de error que dice qué hacer (nunca solo "error"): credenciales, otro error de la API o sin conexión.
+const mensajeDe = (e: unknown) =>
+  e instanceof ApiError ? (e.status === 401 ? `${e.detalle} Revisá los dos datos y probá de nuevo.` : e.detalle) : "No se pudo conectar. Revisá la conexión y probá de nuevo.";
 
 export function Login({ acciones, marca }: { acciones: ReactNode; marca: ReactNode }) {
   const [usuario, setUsuario] = useState("");
@@ -28,6 +31,7 @@ export function Login({ acciones, marca }: { acciones: ReactNode; marca: ReactNo
       );
     },
   });
+  const invalido = mutacion.isError && mutacion.error instanceof ApiError && mutacion.error.status === 401;
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -48,10 +52,10 @@ export function Login({ acciones, marca }: { acciones: ReactNode; marca: ReactNo
             }}
             className={`${TARJETA} mt-6 flex flex-col gap-5 p-5 lg:p-6`}
           >
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium">Usuario</span>
-              <input
-                className={CAMPO}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="usuario">Usuario</Label>
+              <Input
+                id="usuario"
                 name="usuario"
                 value={usuario}
                 onChange={(e) => setUsuario(e.target.value)}
@@ -59,17 +63,26 @@ export function Login({ acciones, marca }: { acciones: ReactNode; marca: ReactNo
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
+                autoFocus
                 required
+                aria-invalid={invalido || undefined}
               />
-            </label>
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium">Contraseña</span>
-              <input type="password" name="password" className={CAMPO} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
-            </label>
-            {mutacion.isError && (
-              <Aviso tono="error">{mutacion.error instanceof ApiError ? mutacion.error.detalle : "No se pudo conectar. Revisá la conexión y probá de nuevo."}</Aviso>
-            )}
-            <Boton type="submit" cargando={mutacion.isPending} className="h-11 w-full lg:h-10">
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+                aria-invalid={invalido || undefined}
+              />
+            </div>
+            {mutacion.isError && <Aviso tono="error">{mensajeDe(mutacion.error)}</Aviso>}
+            <Boton type="submit" size="lg" cargando={mutacion.isPending} className="w-full">
               {mutacion.isPending ? "Entrando…" : "Entrar"}
             </Boton>
           </form>

@@ -133,6 +133,14 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    /* Lo enfocado no queda bajo una barra fija: barra de arriba (3,5 rem) y de abajo (4 rem) más aire y safe area. */
+    scroll-padding-top: calc(4rem + env(safe-area-inset-top));
+    scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+  @media (min-width: 64rem) {
+    html {
+      scroll-padding-bottom: 1rem;
+    }
   }
 
   body {
