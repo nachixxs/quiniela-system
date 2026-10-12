@@ -85,6 +85,10 @@ bundle, D26). Cifras tabulares en todo el `body`.
 - **Celular:** arriba, marca, tema y salida. Abajo, la barra en `card` con borde superior y
   seis destinos. El activo no lleva pastilla: texto en `foreground`, trazo más grueso y
   una raya fina arriba que viaja.
+- **Contador de pendientes (D100, 11/10):** el destino "Inicio" lleva, en la barra lateral y
+  en la inferior, una insignia en `aviso` con la cantidad de pendientes del día (arqueos
+  pendientes + rendición). Sin pendientes, no se muestra. El número también va en el nombre
+  accesible del enlace ("Inicio, 3 pendientes").
 - **Navegación por hash** (`#arqueo`, `#carga-rapida`, `#cuenta-corriente`): el botón atrás
   funciona y cada pantalla tiene su URL. Cada pantalla, salvo Inicio, abre con título y una
   línea que explica para qué es.
@@ -100,7 +104,9 @@ bundle, D26). Cifras tabulares en todo el `body`.
   1. Las dos cajas, con el efectivo como cifra principal (22 px en el celular, 34 en
      escritorio) y las boletas debajo.
   2. "Lo que falta hoy": un renglón por pendiente, con título, detalle y el botón de su
-     acción. El primero es el único primario.
+     acción. El primero es el único primario. En el encabezado de la tarjeta, un anillo de progreso chico
+     (~20 px, trazo `foreground` sobre `muted`) con "Arqueos N de M" al lado (D102, 11/10):
+     N son los arqueos hechos del día y M, cajas × turnos. No es una cifra héroe.
   3. Los cuatro botones de carga (Fiado, Cobro, Pago, Premio).
   4. Los últimos 4 movimientos y "Ver todos", que despliega la lista entera ahí mismo, con
      anular.
