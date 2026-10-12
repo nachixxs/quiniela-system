@@ -247,7 +247,7 @@ test("reportes muestra los totales esperados del día", async () => {
   const grafico = page.locator("section").filter({ has: page.getByRole("heading", { name: /ventas por día/i }) });
   await caso(13, "el gráfico tiene eje con montos legibles", async () => {
     await expect(grafico).toBeVisible(); const ejes = grafico.locator("svg").getByText(/^\$\s?[\d.,]+(\s?(mil|M|k))?$/).filter({ visible: true });
-    expect(await ejes.count(), "marcas de monto en el eje").toBeGreaterThanOrEqual(2);
+    await expect.poll(() => ejes.count(), { message: "marcas de monto en el eje" }).toBeGreaterThanOrEqual(2);
   });
   await caso(13, "el detalle por día se ve sin pasar el mouse", () => expect(page.getByText(/ver por día/i).or(grafico.getByRole("table")).first()).toBeVisible());
   await caso(13, "el mes siguiente no deja pasar del mes actual", () => expect(page.getByRole("button", { name: /mes siguiente/i })).toBeDisabled());
