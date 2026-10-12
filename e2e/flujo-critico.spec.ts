@@ -51,6 +51,8 @@ const listo = async () => {
   const l = page.getByRole("button", { name: "Listo" }); if (await l.isVisible()) await l.click();
   await expect(page.getByRole("dialog")).toBeHidden();
 };
+// Caso 7 (D97): solo la rendición conserva la pantalla de resultado; el ticket y el traspaso no.
+const sinListo = () => expect(page.getByRole("button", { name: "Listo" })).toHaveCount(0);
 // Caso 8: el botón deshabilitado trae escrito qué falta, debajo de él.
 const bloqueado = (boton: string | RegExp, donde?: Locator) => async () => {
   const b = page.getByRole("button", { name: boton }), motivo = (donde ?? page.getByRole("dialog")).getByText(MOTIVO);
@@ -91,14 +93,16 @@ async function cargarTicket(turno: string, quinielaAcumulada: string, enToast: s
   await page.getByRole("button", { name: new RegExp(`Turno ${turno}`) }).click();
   await page.getByLabel("Quiniela", { exact: true }).fill(quinielaAcumulada); // "Quiniela Instantánea" (CP7) también contiene el texto
   await page.getByRole("button", { name: "Guardar ticket" }).click();
-  await caso(7, "cargar el ticket avisa con un toast con el monto", toast(enToast)); await listo();
+  await caso(7, "cargar el ticket avisa con un toast con el monto", toast(enToast));
+  await caso(7, "cargar el ticket no deja pantalla de resultado (Listo)", sinListo); await listo();
 }
 
 // Traspaso de la chica a la grande; el toast trae el efectivo que se movió.
 async function traspasar(enToast: string) {
   await page.getByRole("button", { name: /Traspaso a la caja grande/ }).click();
   await page.getByRole("button", { name: "Confirmar traspaso" }).click();
-  await caso(7, "traspasar avisa con un toast con el monto", toast(enToast)); await listo();
+  await caso(7, "traspasar avisa con un toast con el monto", toast(enToast));
+  await caso(7, "traspasar no deja pantalla de resultado (Listo)", sinListo); await listo();
 }
 
 // Arqueo (§6, §8.3): dos campos, resultado inmediato.
@@ -182,12 +186,14 @@ test("carga la mañana en carga rápida y cierra el turno con su arqueo", async 
   await conHoja(6, "Carga: el foco no sale de la hoja", pago, trampa(pago));
   await cargar("Pago", "2000", "Gasto");
   await cargar("Pago", "5000", "MP / transferencia");
-  await page.getByRole("link", { name: "Inicio", exact: true }).click();
+  // Tras cada guardado se invalida todo: Inicio refetchea /api/cajas al montar. Se espera esa respuesta, o la hoja mostraría el saldo viejo ($0).
+  const cajasFrescas = page.waitForResponse(/\/api\/cajas/); await page.getByRole("link", { name: "Inicio", exact: true }).click(); await cajasFrescas;
   // Chica sin ticket y con -14.000 de movimientos: el traspaso no puede mostrar ese efectivo parcial (D27).
   const traspaso = page.getByRole("button", { name: /Traspaso a la caja grande/ }), ticket = page.getByRole("button", { name: /Turno mañana/ });
   await conHoja(2, "el traspaso con la chica sin ticket no muestra efectivo parcial ni negativo", traspaso, async () => {
     const d = page.getByRole("dialog", { name: /traspaso/i }); await expect(d).toBeVisible(); // la hoja ya cargó
     await expect(d).not.toContainText("14.000"); // el efectivo parcial conocido
+    await expect(d).not.toContainText(/-\s*\$/); // y nunca un monto negativo ("-$14.000")
   });
   await conHoja(8, "Traspaso: el botón bloqueado dice qué falta", traspaso, bloqueado("Confirmar traspaso"));
   await conHoja(8, "Ticket: el botón bloqueado dice qué falta", ticket, bloqueado("Guardar ticket"));
