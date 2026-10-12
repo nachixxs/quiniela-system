@@ -9,7 +9,7 @@ Status: simulated case study. No real agency uses it, and every name, user and a
 <p align="center">
   <img src="docs/img/carga-rapida.png" width="240" alt="Quick-entry screen on a phone, dark theme: four cards (Fiado, Cobro, Pago, Premio) and a bottom bar with six tabs.">
   <img src="docs/img/arqueo.png" width="240" alt="Cash count screen on a phone, dark theme: counted cash and prize tickets entered, with a result table showing that the count balances.">
-  <img src="docs/img/asistente.png" width="240" alt="Assistant screen on a phone, dark theme: a question about a count that did not balance and the answer below it.">
+  <img src="docs/img/asistente.png" width="240" alt="Assistant screen on a phone, dark theme: the question &quot;who has owed for more than 30 days?&quot; and a plain-text answer naming fictitious customers.">
 </p>
 
 ## The problem
