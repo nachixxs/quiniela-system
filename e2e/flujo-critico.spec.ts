@@ -2,6 +2,7 @@
 // Incluye los casos [E2E] de CONTRATO-CP8.md ("contrato N: ..."): rojos hasta que el rediseño los cumpla.
 import { test, expect, type Page, type BrowserContext, type Locator } from "@playwright/test";
 import { stripVTControlCharacters } from "node:util";
+import AxeBuilder from "@axe-core/playwright";
 import { SEED_PASSWORD } from "./global-setup";
 
 const remoto = !!process.env.E2E_URL;
@@ -61,7 +62,7 @@ const bloqueado = (boton: string | RegExp, donde?: Locator) => async () => {
   expect(Math.max(...ys), "el motivo no está debajo del botón").toBeGreaterThanOrEqual(bb.y + bb.height);
 };
 // Va a una pantalla y espera su título: hasta entonces el contenido de la anterior sigue en el DOM.
-const ir = async (enlace: string, titulo = enlace) => { await page.getByRole("link", { name: enlace, exact: true }).click(); await expect(page.getByRole("heading", { level: 1, name: titulo })).toBeVisible(); };
+const ir = async (enlace: string, titulo: string | RegExp = enlace) => { await page.getByRole("link", { name: enlace, exact: true }).click(); await expect(page.getByRole("heading", { level: 1, name: titulo })).toBeVisible(); };
 // Caso 5: el nombre se lee entero (puede ir en dos renglones), sin "…" por texto cortado.
 const entero = async (l: Locator) => {
   await expect(l.first()).toBeVisible();
@@ -70,6 +71,61 @@ const entero = async (l: Locator) => {
     const b = (await e.boundingBox())!; expect(b.x + b.width).toBeLessThanOrEqual(360);
   }
 };
+
+// Casos 16 y 17 (8.5): cada pantalla en claro y oscuro, a tres anchos. axe: solo falla lo serio o crítico. Capturas: línea de base en
+// flujo-critico.spec.ts-snapshots. Se tapan (mask) horas, fechas, el toast y el gráfico de Reportes: dependen del reloj.
+const ANCHOS = [{ width: 360, height: 780 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }];
+const MES = "(?:ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z]*";
+const DIA = "(?:(?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo) )?";
+const RELOJ = new RegExp(String.raw`\b\d{1,2}:\d{2}\b|${DIA}\b\d{1,2}(?: de)? ${MES}\b|\b${MES}(?: de)? \d{4}\b`, "i");
+const esOscuro = () => page.evaluate(() => document.documentElement.classList.contains("dark"));
+// Cambia el tema como el usuario: con el botón del encabezado (App.tsx), que pone la clase `dark`; no con la preferencia del sistema.
+async function poner(tema: "claro" | "oscuro") {
+  if ((await esOscuro()) !== (tema === "oscuro")) { await page.getByRole("button", { name: /^Cambiar a tema/ }).click(); await expect.poll(esOscuro).toBe(tema === "oscuro"); }
+}
+const quieto = () => page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getComputedTiming().iterations !== Infinity).map((a) => a.finished.catch(() => 0))));
+async function revisar(nombre: string, abrir: () => Promise<void>) {
+  for (const tema of ["claro", "oscuro"] as const) {
+    await page.setViewportSize(V390); await poner(tema); await abrir();
+    for (const ancho of ANCHOS) {
+      const id = `${nombre}-${ancho.width}-${tema}`;
+      await page.setViewportSize(ancho); await page.waitForLoadState("networkidle"); await quieto();
+      await caso(16, `${id}: axe sin fallas serias ni críticas`, async () => {
+        const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+        const graves = violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+        if (graves.length) throw new Error(`pantalla ${nombre}, tema ${tema}, ${ancho.width} px: ` + graves.map((v) => `${v.id} [${v.impact}] ${v.nodes.slice(0, 4).map((n) => n.target.join(" ")).join(" , ")}`).join(" ; "));
+      });
+      await caso(17, `${id}: sin scroll horizontal ni texto cortado, con captura`, async () => {
+        const medida = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, ventana: innerWidth,
+          cortados: [...document.querySelectorAll("*")].filter((e) => e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).textOverflow === "ellipsis").map((e) => `<${e.tagName.toLowerCase()}> "${e.textContent?.trim().slice(0, 30)}"`) }));
+        expect(medida.scroll, `${id}: scroll horizontal`).toBeLessThanOrEqual(medida.ventana);
+        expect(medida.cortados, `${id}: texto cortado con "…"`).toEqual([]);
+        const grafico = page.locator("section").filter({ has: page.getByRole("heading", { name: /ventas por día/i }) });
+        // El mask sigue el ancho del texto: se fija el de horas y fechas ("00:00") para que la caja no cambie de un día a otro.
+        await page.evaluate((fuente) => { const re = new RegExp(fuente, "gi"), w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); for (let n; (n = w.nextNode()); ) n.nodeValue = n.nodeValue!.replace(re, "00:00"); }, RELOJ.source);
+        // Con la hoja abierta, solo lo que se ve (el velo es fijo). Sin hoja, la página entera, con la barra inferior fija pasada al pie de la página: si no, taparía el medio.
+        const hoja = await page.getByRole("dialog").isVisible(), css = hoja ? null : await page.addStyleTag({ content: "html { position: relative !important } nav.fixed { position: absolute !important }" });
+        try {
+          if (!remoto) await expect(page).toHaveScreenshot(`${id}.png`, { fullPage: !hoja, animations: "disabled", maskColor: "#9ca3af", mask: [page.getByText(RELOJ), page.locator("[data-sonner-toaster]"), grafico] });
+        } finally { await css?.evaluate((e) => e.remove()); }
+      });
+    }
+    if (await page.getByRole("dialog").isVisible()) await cerrarHoja();
+  }
+  await poner("claro"); await page.setViewportSize(V390);
+}
+// Las 9 pantallas: Login (antes de entrar) y, con el día listo para cerrar, Inicio, Día (su hoja "Cerrar el día"), Movimientos ("Ver todos"),
+// Carga rápida, Arqueo, Cuenta corriente, Reportes y Asistente. Dia y Movimientos son tarjetas de Inicio, no rutas.
+const PANTALLAS: [string, () => Promise<void>][] = [
+  ["inicio", () => ir("Inicio", /^Hola,/)],
+  ["dia", async () => { await ir("Inicio", /^Hola,/); await page.getByRole("button", { name: "Cerrar el día" }).click(); await expect(page.getByRole("dialog")).toBeVisible(); }],
+  ["movimientos", async () => { await ir("Inicio", /^Hola,/); const v = page.getByRole("button", { name: "Ver todos" }); if (await v.isVisible()) await v.click(); await expect(page.getByRole("button", { name: "Ver menos" })).toBeVisible(); }],
+  ["carga-rapida", () => ir("Cargar", "Carga rápida")],
+  ["arqueo", () => ir("Arqueo")],
+  ["cuenta-corriente", () => ir("Fiados", "Cuenta corriente")],
+  ["reportes", () => ir("Reportes")],
+  ["asistente", () => ir("Asistente")],
+];
 
 async function cargar(boton: string, monto: string, opcion?: string) {
   await page.getByRole("button", { name: new RegExp(`^${boton}`) }).click();
@@ -118,6 +174,7 @@ async function arquear(caja: string, turno: string, efectivo: string, boletas: s
 test("login, abre el día y arquea la caja grande de la mañana", async () => {
   await page.goto("/");
   await caso(9, "el foco está en Usuario al abrir el login", () => expect(page.getByLabel("Usuario")).toBeFocused());
+  await revisar("login", () => expect(page.getByRole("heading", { name: "Iniciar sesión" })).toBeVisible());
   await page.getByLabel("Usuario").fill(remoto ? process.env.E2E_USUARIO! : "demo");
   await page.getByLabel("Contraseña").fill(remoto ? process.env.E2E_PASSWORD! : SEED_PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
@@ -305,6 +362,8 @@ test("anula un movimiento desde la app y el saldo del cliente vuelve", async () 
 
 test("cierra el día", async () => {
   await page.getByRole("link", { name: "Inicio", exact: true }).click();
+  for (const [nombre, abrir] of PANTALLAS) await revisar(nombre, abrir); // casos 16 y 17, con el día listo para cerrar
+  await ir("Inicio", /^Hola,/);
   const cerrar = page.getByRole("button", { name: "Cerrar el día" });
   await cerrar.click(); const d = page.getByRole("dialog");
   await caso(4, "el diálogo dice qué pasa y no muestra referencias internas (§)", async () => { await expect(d).toContainText(/reabr|cerrad/i); await expect(d).not.toContainText("§"); });
