@@ -162,8 +162,10 @@ export function TarjetaMovimientos() {
                 </span>
                 {f.detalle && <span className="mt-0.5 block break-words text-xs text-muted-foreground">{f.detalle}</span>}
               </span>
-              <span className={`monto text-sm font-medium ${f.color}`}>{f.monto}</span>
-              {f.anular && <BotonAnular onClick={f.anular} />}
+              <span className="flex shrink-0 flex-col items-end">
+                <span className={`monto text-sm font-medium ${f.color}`}>{f.monto}</span>
+                {f.anular && <BotonAnular onClick={f.anular} />}
+              </span>
             </li>
           ))}
         </ul>

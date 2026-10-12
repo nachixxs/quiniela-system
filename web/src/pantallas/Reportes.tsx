@@ -53,7 +53,7 @@ function Grupo({ titulo, descripcion, filas, actual, anterior, nota, rotulos }: 
             <TableRow key={f.etiqueta}>
               <TableCell className={`${TD_ROTULO} text-muted-foreground`}>{f.etiqueta}</TableCell>
               <TableCell className={`${TD_MONTO} font-medium ${f.signo && f.valor(actual) !== 0 ? "text-peligro" : ""}`}>{val(f, actual)}</TableCell>
-              <TableCell className={`${TD_MONTO} text-muted-foreground`}>{val(f, anterior)}</TableCell>
+              <TableCell className={`${TD_MONTO} ${f.signo && f.valor(anterior) !== 0 ? "text-peligro" : "text-muted-foreground"}`}>{val(f, anterior)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -113,7 +113,7 @@ const GraficoVentas = lazy(async () => {
       const paso = [1, 2, 5, 10].map((k) => k * p).find((v) => v * 2 >= max) ?? max;
       return (
         <C.ChartContainer config={{ total: { label: "Vendido", color: "var(--color-chart-1)" } }} className="mt-3 aspect-auto h-56 w-full">
-          <R.BarChart data={dias} accessibilityLayer barCategoryGap={2} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+          <R.BarChart data={dias} accessibilityLayer barCategoryGap={2} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <R.CartesianGrid vertical={false} stroke="var(--color-border)" strokeWidth={1} strokeDasharray="0" />
             <R.XAxis dataKey="fecha" tickLine={false} axisLine={false} tickMargin={6} tick={eje} interval={0}
               ticks={dias.filter((_, i) => i === 0 || (i + 1) % 5 === 0).map((d) => d.fecha)} tickFormatter={(f: string) => String(Number(f.slice(-2)))} />
